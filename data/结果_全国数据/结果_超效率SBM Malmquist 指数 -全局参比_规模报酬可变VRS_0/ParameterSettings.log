@@ -1,0 +1,11 @@
+Date: 2026-04-14 23:19:52
+Data: 全国数据
+Name: 结果_超效率SBM Malmquist 指数 -全局参比_规模报酬可变VRS_0.xlsx
+Parameters: 
+时期列名为:Year
+投入为['Population', 'GDP']
+产出为['Capital']
+非期望产出为['Carbon']
+模型信息: 超效率SBM Malmquist 指数模型,参比形式为全局参比
+DMU个数为30,期数为8
+
