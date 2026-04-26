@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "4-codex_5_5.md",
+                "file": "5-codex_mod.md",
                 "mode": "preview",
                 "source": true
               },
               "icon": "lucide-file",
-              "title": "4-codex_5_5"
+              "title": "5-codex_mod"
             }
           }
         ]
@@ -185,6 +185,10 @@
   },
   "active": "358c725288169ea4",
   "lastOpenFiles": [
+    "数据清洗.md",
+    "4-codex.md",
+    "4-codex_5_5.md",
+    "5-codex_mod.md",
     "prcd/process2_es_proxy.csv",
     "prcd",
     "data/process.xlsx",
@@ -195,11 +199,9 @@
     "data/结果_SBM超效率模型_规模报酬可变VRS_0.xlsx",
     "data/2015-2022各省排放清单(2)/~$2015年30个省份排放清单.xlsx",
     "data/merged_test.csv",
-    "data/排放比例_es近似.csv",
     "data/D128 各省资本存量数据集/获取全部数据.jpg",
     "data/D128 各省资本存量数据集/D128 各省资本存量数据集/获取全部数据.jpg",
     "3-curor_auto.md",
-    "4-codex_5_5.md",
     "2.md",
     "4.md"
   ]

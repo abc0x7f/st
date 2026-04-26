@@ -7,11 +7,7 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 
 #
-#  python connect.py ^
-#  --left data\DEA合并资本存量_无全国.csv ^
-#  --right data\排放比例_es近似.csv ^
-#  --output data\合并结果.csv ^
-#  --include-right es_proxy total_emissions_mt_co2
+# python connect.py --left process2.csv --right 排放比例_es近似.csv --output prcd/process2_es_proxy.csv --include-right es_proxy --how left
 #
 
 def parse_args() -> argparse.Namespace:
