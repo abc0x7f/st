@@ -1,0 +1,29 @@
+﻿variable,test,statistic,pvalue,decision_5pct,note
+eff,LLC,-1.7102107026424063,0.043613458649619345,Reject H0,lags=0
+eff,IPS,0.5176947488477893,0.6976643686984126,Fail to reject H0,mean_lag=0.17
+eff,ADF-Fisher,165.0090563727244,9.638179143678371e-12,Reject H0,statsmodels.adfuller + Fisher combine
+eff,PP-Fisher,1675.8739908778882,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+lntl,LLC,-6.399684364019236,7.784923815017342e-11,Reject H0,lags=0
+lntl,IPS,-8.622823941728162,3.2661423654135175e-18,Reject H0,mean_lag=0.43
+lntl,ADF-Fisher,150.6897833251747,9.369990339180845e-10,Reject H0,statsmodels.adfuller + Fisher combine
+lntl,PP-Fisher,92.51217427130841,0.004469185537959386,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+ind,LLC,-8.628611142335577,3.1050717778330004e-18,Reject H0,lags=0
+ind,IPS,-70.00237626832866,0.0,Reject H0,mean_lag=0.13
+ind,ADF-Fisher,205.10665847776008,0.0,Reject H0,statsmodels.adfuller + Fisher combine
+ind,PP-Fisher,329.08262408094663,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+urb,LLC,-17.79312282475861,3.995013949333692e-71,Reject H0,lags=0
+urb,IPS,-19.871668676331982,3.5791669152947275e-88,Reject H0,mean_lag=0.17
+urb,ADF-Fisher,384.5185147707297,0.0,Reject H0,statsmodels.adfuller + Fisher combine
+urb,PP-Fisher,1585.725503909413,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+rd,LLC,-1.4316166998035424,0.07612677383494587,Fail to reject H0,lags=0
+rd,IPS,-0.17074114621220662,0.43221365392712335,Fail to reject H0,mean_lag=0.07
+rd,ADF-Fisher,84.51395949733872,0.020233745264723435,Reject H0,statsmodels.adfuller + Fisher combine
+rd,PP-Fisher,72.61361405288355,0.1272838826863657,Fail to reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+open,LLC,-5.128708839073915,1.458680710253214e-07,Reject H0,lags=0
+open,IPS,-4.466612868398326,3.973387226947167e-06,Reject H0,mean_lag=0.60
+open,ADF-Fisher,242.35419964136668,0.0,Reject H0,statsmodels.adfuller + Fisher combine
+open,PP-Fisher,338.59683908770955,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+es,LLC,-5.028461640199131,2.472151975188326e-07,Reject H0,lags=0
+es,IPS,-71.571910686907,0.0,Reject H0,mean_lag=0.37
+es,ADF-Fisher,281.5092923451151,0.0,Reject H0,statsmodels.adfuller + Fisher combine
+es,PP-Fisher,245.5205647670216,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine

@@ -1,0 +1,8 @@
+﻿variable,reject_count_5pct,llc,ips,adf_fisher,pp_fisher
+eff,3,Reject H0,Fail to reject H0,Reject H0,Reject H0
+es,4,Reject H0,Reject H0,Reject H0,Reject H0
+ind,4,Reject H0,Reject H0,Reject H0,Reject H0
+lntl,4,Reject H0,Reject H0,Reject H0,Reject H0
+open,4,Reject H0,Reject H0,Reject H0,Reject H0
+rd,1,Fail to reject H0,Fail to reject H0,Reject H0,Fail to reject H0
+urb,4,Reject H0,Reject H0,Reject H0,Reject H0
