@@ -416,3 +416,85 @@ $$
 2. 解释 `N` 的含义
 3. 明确当前应纳入描述统计表的变量清单
 4. 补充描述统计的写作口径
+
+### 5. 8.1.4 平稳性检验已补充完整口径
+
+本轮新增并固定了第六章 `8.1.4 平稳性检验` 的解释框架，核心口径如下：
+
+- 单位根的含义：变量不是围绕稳定均值波动，而是存在随机趋势或持续漂移，可能导致伪回归。
+- 一阶差分的含义：
+
+$$
+\Delta x_{it}=x_{it}-x_{i,t-1}
+$$
+
+- “一阶差分后平稳”并不自动意味着正文模型必须全部改为差分模型；是否差分需要结合研究目标和经济含义判断。
+- 对当前第二阶段短面板而言，不宜机械地把全部变量统一差分，否则会把“水平影响”问题改写为“变化影响”问题。
+
+本轮实际完成了 `LLC`、`IPS`、`ADF-Fisher`、`PP-Fisher` 四类面板单位根检验，并生成：
+
+- 脚本：[prcd/panel_unit_root_tests.py](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\panel_unit_root_tests.py>)
+- 汇总表：[prcd/unit_root_tests/panel_unit_root_summary.csv](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\unit_root_tests\panel_unit_root_summary.csv>)
+- 详细结果：[prcd/unit_root_tests/panel_unit_root_results.csv](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\unit_root_tests\panel_unit_root_results.csv>)
+- 一阶差分复检：[prcd/unit_root_tests/panel_unit_root_first_difference_checks.csv](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\unit_root_tests\panel_unit_root_first_difference_checks.csv>)
+
+当前最终结论口径为：
+
+- `lntl`、`ind`、`urb`、`open`、`es`：四类检验均支持水平值平稳。
+- `eff`：多数检验支持平稳，仅 `IPS` 未拒绝单位根原假设，整体仍可视为基本平稳。
+- `rd`：水平值检验结果分歧较大，但一阶差分后在各类检验下均显著平稳，因此属于边界平稳或弱平稳变量。
+
+因此后续论文写作应采用：
+
+1. 基准回归继续保留水平值双固定效应模型；
+2. 不将全部变量统一做一阶差分；
+3. 在正文中对 `rd` 的平稳性偏弱作谨慎说明。
+
+### 6. 8.1.5 模型设定检验已实际完成
+
+本轮已补充并执行了第六章 `8.1.5 模型设定检验`，除原定的 Hausman、Pesaran CD、Modified Wald、Wooldridge 外，又新增了更规范的：
+
+- `Pooled F` 检验：判断是否需要固定效应
+- 年份效应联合检验：判断时间效应是否应保留
+
+已生成：
+
+- 脚本：[prcd/model_specification_tests.py](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\model_specification_tests.py>)
+- 结果表：[prcd/model_spec_tests/model_specification_tests.csv](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\model_spec_tests\model_specification_tests.csv>)
+- 说明稿：[prcd/model_spec_tests/model_specification_tests.md](<c:\Users\abc0x7f\Desktop\PRO\统计建模\prcd\model_spec_tests\model_specification_tests.md>)
+
+当前实际结果为：
+
+- `Pooled F = 60.6519`, `p=0.0000`
+- 年份效应联合检验 `stat = 25.1665`, `p=0.0007`
+- `Hausman = 13.9716`, `p=0.0300`
+- `Pesaran CD = 1.8131`, `p=0.0698`
+- `Modified Wald = 265.8160`, `p=0.0000`
+- `Wooldridge = 15.4935`, `p=0.0005`
+
+据此固定的论文口径为：
+
+1. 不能采用 pooled OLS；
+2. 时间效应应保留；
+3. Hausman 支持固定效应；
+4. 存在明显异方差和序列相关；
+5. 截面相关在 5% 水平下未显著，但在 10% 水平附近边界显著；
+6. 因此基准模型采用双固定效应，并优先使用 `Driscoll-Kraay` 标准误。
+
+### 7. Hausman 前后显著性差异的解释已固定
+
+本轮用户追问了一个关键问题：为什么 Hausman 检验一开始不显著，后来又显著。
+
+最终确认的解释口径是：
+
+- 两次检验并非数据不同，而是比较参数集合不同。
+- 若把 `const` 与年份虚拟变量一起纳入 Hausman 比较，统计量本身变化不大，但自由度会明显上升，从而抬高 `p` 值，可能表现为“不显著”。
+- 若只比较核心解释变量与控制变量的斜率系数，即 `lntl`、`ind`、`urb`、`rd`、`open`、`es`，则更符合 Hausman 检验“判断解释变量是否与个体效应相关”的理论目的，也更适合作为论文写作口径。
+
+因此本项目后续固定采用：
+
+1. Hausman 只比较斜率系数；
+2. 常数项和年份虚拟变量不作为 Hausman 的核心比较对象；
+3. 时间效应是否保留，改由年份效应联合检验单独说明。
+
+这一解释已同步补入 [6-codex.md](<c:\Users\abc0x7f\Desktop\PRO\统计建模\6-codex.md>) 的 `8.1.5 模型设定检验` 部分。

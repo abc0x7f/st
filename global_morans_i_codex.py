@@ -18,25 +18,17 @@ EFF_PATH = ROOT / "prcd" / "dearun_eff.csv"
 OUT_DIR = ROOT / "prcd" / "spatial_plots"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-TARGET_YEARS = [2018, 2019, 2020, 2021, 2022]
+TARGET_YEARS = list(range(2015, 2023))
 N_PERMUTATIONS = 9999
 RANDOM_SEED = 42
 
 
 def configure_matplotlib() -> None:
     sns.set_theme(style="whitegrid")
-    candidates = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Noto Sans SC",
-        "Source Han Sans SC",
-        "Arial Unicode MS",
-    ]
+    candidates = ["Times New Roman", "SimSun"]
     available = {f.name for f in font_manager.fontManager.ttflist}
-    chosen = next((name for name in candidates if name in available), "DejaVu Sans")
-    matplotlib.rcParams["font.family"] = "sans-serif"
-    matplotlib.rcParams["font.sans-serif"] = [chosen]
+    chosen = [name for name in candidates if name in available] or ["DejaVu Serif"]
+    matplotlib.rcParams["font.family"] = chosen
     matplotlib.rcParams["axes.unicode_minus"] = False
 
 
@@ -70,9 +62,9 @@ def row_standardize(matrix: np.ndarray) -> np.ndarray:
 
 def morans_i(values: np.ndarray, weights: np.ndarray) -> float:
     n = len(values)
-    z = values - values.mean()
+    centered = values - values.mean()
     s0 = weights.sum()
-    return float((n / s0) * (z @ weights @ z) / (z @ z))
+    return float((n / s0) * (centered @ weights @ centered) / (centered @ centered))
 
 
 def permutation_test(
@@ -114,7 +106,7 @@ def calculate_global_morans_i() -> pd.DataFrame:
             raise ValueError(f"{year} 年缺少省份数据: {missing}")
 
         values = year_df.loc[provinces, "eff"].to_numpy(dtype=float)
-        moran_i, z_value, p_value, sim_mean, sim_std = permutation_test(
+        moran_i_value, z_value, p_value, sim_mean, sim_std = permutation_test(
             values=values,
             weights=weights,
             n_permutations=N_PERMUTATIONS,
@@ -123,7 +115,7 @@ def calculate_global_morans_i() -> pd.DataFrame:
         rows.append(
             {
                 "year": year,
-                "moran_i": moran_i,
+                "moran_i": moran_i_value,
                 "z_value": z_value,
                 "p_value": p_value,
                 "perm_mean": sim_mean,
@@ -139,13 +131,13 @@ def calculate_global_morans_i() -> pd.DataFrame:
 
 
 def save_result_table(result: pd.DataFrame) -> Path:
-    out_path = OUT_DIR / "global_morans_i_2018_2022.csv"
+    out_path = OUT_DIR / "global_morans_i_2015_2022.csv"
     result.to_csv(out_path, index=False, encoding="utf-8-sig")
     return out_path
 
 
 def save_plot(result: pd.DataFrame) -> Path:
-    fig, ax_left = plt.subplots(figsize=(11.8, 7.2))
+    fig, ax_left = plt.subplots(figsize=(12.2, 7.4))
     ax_right = ax_left.twinx()
     ax_left.set_zorder(2)
     ax_right.set_zorder(1)
@@ -154,10 +146,10 @@ def save_plot(result: pd.DataFrame) -> Path:
     ax_right.grid(False)
 
     x = np.arange(len(result))
-    width = 0.18
+    width = 0.16
     p_color = "#D62728"
-    z_color = "#1F77B4"
-    i_color = "#2E8B57"
+    z_color = "#F28E2B"
+    i_color = "#1F77B4"
     p_sig = ("p值5%显著性（p=0.05）", 0.05, "#C44E52", "--")
     z_sig = ("z值10%显著性（z=1.645）", 1.645, "#8172B2", "-.")
 
@@ -188,7 +180,7 @@ def save_plot(result: pd.DataFrame) -> Path:
     ]
     legend_labels = ["p 值", "z 值", "Moran's I", z_sig[0], p_sig[0]]
 
-    ax_left.set_title("2018-2022 年 Global Moran's I、p 值与 z 值", fontsize=15, pad=14)
+    ax_left.set_title("2015-2022 年 Global Moran's I、p 值与 z 值", fontsize=15, pad=14)
     ax_left.set_xlabel("年份")
     ax_left.set_ylabel("p 值 / Global Moran's I")
     ax_right.set_ylabel("z 值")
@@ -197,7 +189,7 @@ def save_plot(result: pd.DataFrame) -> Path:
 
     left_step = 0.05
     left_upper = max(float(result["p_value"].max()), float(result["moran_i"].max()), p_sig[1])
-    left_upper = float(np.ceil(left_upper / left_step) * left_step) + left_step
+    left_upper = float(np.ceil(left_upper / left_step) * left_step) + left_step * 2
     right_upper = max(float(result["z_value"].max()), z_sig[1])
     n_intervals = max(int(round(left_upper / left_step)), int(np.ceil(right_upper)))
     left_upper = n_intervals * left_step
@@ -253,7 +245,7 @@ def save_plot(result: pd.DataFrame) -> Path:
     fig.text(0.01, 0.01, note, ha="left", va="bottom", fontsize=9, color="#52606D")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
 
-    out_path = OUT_DIR / "18_global_morans_i_2018_2022.png"
+    out_path = OUT_DIR / "18_global_morans_i_2015_2022.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out_path
@@ -277,7 +269,7 @@ def save_analysis(result: pd.DataFrame) -> Path:
     marginal_years = result.loc[(result["p_value"] >= 0.05) & (result["p_value"] < 0.10), "year"].tolist()
 
     lines = [
-        "# 2018-2022 年全局 Moran's I 分析",
+        "# 2015-2022 年全局 Moran's I 分析",
         "",
         "## 结果概览",
         "",
@@ -286,14 +278,15 @@ def save_analysis(result: pd.DataFrame) -> Path:
         "## 分析",
         "",
         (
-            f"1. 2018-2022 年 Moran's I 均为正值，介于 {result['moran_i'].min():.3f} 到 "
+            f"1. 2015-2022 年 Moran's I 均为正值，介于 {result['moran_i'].min():.3f} 到 "
             f"{result['moran_i'].max():.3f} 之间，说明省际碳排放效率整体存在正向空间自相关。"
         ),
         (
-            f"2. 从变化趋势看，2018-2020 年 Moran's I 由 "
-            f"{result.loc[result['year'] == 2018, 'moran_i'].iloc[0]:.3f} 小幅升至 "
-            f"{result.loc[result['year'] == 2020, 'moran_i'].iloc[0]:.3f}，2021 年回落至 "
-            f"{low_row['moran_i']:.3f}，2022 年升至 {peak_row['moran_i']:.3f}。"
+            f"2. 从变化趋势看，2015 年 Moran's I 为 "
+            f"{result.loc[result['year'] == 2015, 'moran_i'].iloc[0]:.3f}，"
+            f"2022 年升至 {result.loc[result['year'] == 2022, 'moran_i'].iloc[0]:.3f}；"
+            f"样本期最低值出现在 {int(low_row['year'])} 年，为 {low_row['moran_i']:.3f}，"
+            f"最高值出现在 {int(peak_row['year'])} 年，为 {peak_row['moran_i']:.3f}。"
         ),
         (
             f"3. 置换检验下，z 值最高的年份为 {int(strongest_z_row['year'])} 年，"
@@ -308,13 +301,13 @@ def save_analysis(result: pd.DataFrame) -> Path:
         "## 写作建议",
         "",
         (
-            "可在正文中表述为：2018-2022 年我国省际碳排放效率的全局 Moran's I 均为正，"
-            "且 2022 年的空间集聚信号最强，说明碳排放效率存在一定的正向空间集聚特征，"
+            "可在正文中表述为：2015-2022 年我国省际碳排放效率的全局 Moran's I 均为正，"
+            "且样本期末的空间集聚信号较强，说明碳排放效率存在一定的正向空间集聚特征，"
             "邻近省份之间呈现相似效率水平，为后续空间计量分析提供了依据。"
         ),
     ]
 
-    out_path = OUT_DIR / "global_morans_i_2018_2022_analysis.md"
+    out_path = OUT_DIR / "global_morans_i_2015_2022_analysis.md"
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return out_path
 

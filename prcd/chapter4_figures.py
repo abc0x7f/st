@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+from matplotlib.colors import BoundaryNorm
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 import pandas as pd
 import seaborn as sns
@@ -18,17 +19,18 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 def configure_matplotlib() -> None:
     sns.set_theme(style="whitegrid")
     candidates = [
-        "Microsoft YaHei",
+        "Times New Roman",
+        "SimSun",
         "SimHei",
+        "Microsoft YaHei",
+        "Noto Serif CJK SC",
         "Noto Sans CJK SC",
-        "Noto Sans SC",
-        "Source Han Sans SC",
-        "Arial Unicode MS",
     ]
     available = {f.name for f in font_manager.fontManager.ttflist}
-    chosen = next((name for name in candidates if name in available), "DejaVu Sans")
-    matplotlib.rcParams["font.family"] = "sans-serif"
-    matplotlib.rcParams["font.sans-serif"] = [chosen]
+    chosen = [name for name in candidates if name in available]
+    if not chosen:
+        chosen = ["DejaVu Serif"]
+    matplotlib.rcParams["font.family"] = chosen
     matplotlib.rcParams["axes.unicode_minus"] = False
 
 
@@ -213,28 +215,33 @@ def create_missing_heatmap() -> None:
         .sort_index()
     )
     heatmap_df = heatmap_df.reindex(sorted(heatmap_df.columns), axis=1)
+    max_missing = int(heatmap_df.max().max()) if not heatmap_df.empty else 0
+    levels = max_missing + 1 if max_missing > 0 else 1
+    boundaries = list(range(levels + 1))
+    cmap = plt.get_cmap("YlOrRd", levels)
+    norm = BoundaryNorm(boundaries, cmap.N)
 
     fig, ax = plt.subplots(figsize=(11, 8.5))
     sns.heatmap(
         heatmap_df,
-        cmap=sns.light_palette("#D64541", as_cmap=True),
+        cmap=cmap,
+        norm=norm,
         cbar=True,
-        linewidths=0.6,
-        linecolor="#D9E2EC",
-        annot=True,
-        fmt=".0f",
-        annot_kws={"fontsize": 8},
+        linewidths=0.8,
+        linecolor="white",
+        annot=False,
+        vmin=0,
+        vmax=max_missing if max_missing > 0 else 1,
+        cbar_kws={
+            "ticks": list(range(levels)),
+            "boundaries": boundaries,
+            "spacing": "proportional",
+            "location": "right",
+        },
         ax=ax,
     )
     colorbar = ax.collections[0].colorbar
-    max_missing = int(heatmap_df.max().max()) if not heatmap_df.empty else 0
-    ticks = list(range(0, max_missing + 1))
-    if len(ticks) > 8:
-        step = max(1, round(max_missing / 6))
-        ticks = list(range(0, max_missing + 1, step))
-        if ticks[-1] != max_missing:
-            ticks.append(max_missing)
-    colorbar.set_ticks(ticks)
+    colorbar.set_ticks(list(range(levels)))
     colorbar.set_label("缺失项个数", rotation=90, labelpad=12)
 
     ax.set_title("图5 各省能源结构原始数据缺失项计数热力图", fontsize=17, pad=14)
@@ -250,7 +257,7 @@ def create_missing_heatmap() -> None:
         .loc[lambda x: x["missing_count"] > 0, ["province", "year", "missing_count"]]
         .drop_duplicates()
     )
-    note = "注：0 值和空值均视为缺失；色阶与单元格数字表示该省份-年份样本的缺失项个数。"
+    note = "注：0 值和空值均视为缺失；色阶表示该省份-年份样本的缺失项个数。"
     fig.text(0.01, 0.02, note, ha="left", va="bottom", fontsize=9.5, color="#52606D")
 
     fig.tight_layout(rect=(0, 0.06, 0.96, 1))
