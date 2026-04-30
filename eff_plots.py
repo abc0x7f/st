@@ -46,12 +46,10 @@ REGION_MAP = {
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
-    plt.rcParams["font.sans-serif"] = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Arial Unicode MS",
-        "DejaVu Sans",
+    plt.rcParams["font.family"] = [
+        "Times New Roman",
+        "SimSun",
+        "DejaVu Serif",
     ]
     plt.rcParams["axes.unicode_minus"] = False
 
@@ -298,6 +296,8 @@ def save_eff_map(df: pd.DataFrame) -> Path:
     main_features = []
     scs_features = []
     hainan_feature = None
+    guangdong_feature = None
+    guangxi_feature = None
     for feat in geo.get("features", []):
         props = feat.get("properties", {})
         raw_name = (
@@ -313,6 +313,10 @@ def save_eff_map(df: pd.DataFrame) -> Path:
         main_features.append(feat)
         if "海南" in str(raw_name):
             hainan_feature = feat
+        if "广东" in str(raw_name):
+            guangdong_feature = feat
+        if "广西" in str(raw_name):
+            guangxi_feature = feat
 
     fig = plt.figure(figsize=(14, 11))
     ax = fig.add_axes([0.09, 0.10, 0.78, 0.82])
@@ -368,9 +372,21 @@ def save_eff_map(df: pd.DataFrame) -> Path:
         spine.set_color("black")
     ax.set_title(f"{MAP_YEAR} 年省际碳排放效率分级地图", fontsize=16, fontweight="bold", pad=12)
 
-    ax_scs = fig.add_axes([0.70, 0.14, 0.14, 0.22])
+    ax_scs = fig.add_axes([0.71, 0.14, 0.14, 0.22])
     scs_patches = []
     scs_colors = []
+    if guangdong_feature is not None:
+        guangdong_value = value_map.get("广东")
+        guangdong_color = "#D9D9D9" if guangdong_value is None else cmap(norm(guangdong_value))
+        for poly in iter_feature_polygons(guangdong_feature.get("geometry", {})):
+            scs_patches.append(Polygon(poly, closed=True))
+            scs_colors.append(guangdong_color)
+    if guangxi_feature is not None:
+        guangxi_value = value_map.get("广西")
+        guangxi_color = "#D9D9D9" if guangxi_value is None else cmap(norm(guangxi_value))
+        for poly in iter_feature_polygons(guangxi_feature.get("geometry", {})):
+            scs_patches.append(Polygon(poly, closed=True))
+            scs_colors.append(guangxi_color)
     if hainan_feature is not None:
         hainan_value = value_map.get("海南")
         hainan_color = "#D9D9D9" if hainan_value is None else cmap(norm(hainan_value))
@@ -389,8 +405,8 @@ def save_eff_map(df: pd.DataFrame) -> Path:
             linewidths=0.6,
         )
         ax_scs.add_collection(scs_collection)
-    ax_scs.set_xlim(106, 123)
-    ax_scs.set_ylim(2, 26)
+    ax_scs.set_xlim(104, 123)
+    ax_scs.set_ylim(2, 23)
     ax_scs.set_aspect(1 / np.cos(np.radians(14)))
     ax_scs.set_xticks([])
     ax_scs.set_yticks([])
