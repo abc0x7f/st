@@ -3,41 +3,48 @@
 ## 模型
 
 ```text
-eff ~ lntl + ind + urb + rd + open + es + C(province) + C(year)
+PanelOLS: eff ~ lntl + ind + urb + rd + open + es
+Effects: Entity + Time
+Covariance: Driscoll-Kraay
 ```
 
 ## 拟合摘要
 
 ```text
-       metric         value
-         nobs  2.400000e+02
-  n_provinces  3.000000e+01
-      n_years  8.000000e+00
-    r_squared  9.573916e-01
-adj_r_squared  9.483076e-01
-  f_statistic  1.053929e+02
-     f_pvalue 9.576176e-114
-          aic -7.020719e+02
-          bic -5.524045e+02
- n_parameters  4.300000e+01
+                 metric          value
+                   nobs          240.0
+            n_provinces           30.0
+                n_years            8.0
+              r_squared       0.264737
+       r_squared_within      -0.198179
+      r_squared_between      -5.053956
+      r_squared_overall      -4.992308
+            f_statistic      11.821896
+               f_pvalue            0.0
+     f_statistic_robust      339.90528
+        f_pvalue_robust            0.0
+poolability_f_statistic      60.650944
+   poolability_f_pvalue            0.0
+           n_parameters            6.0
+          cov_estimator Driscoll-Kraay
 ```
 
 ## 核心系数
 
 ```text
 variable      coef  std_err   t_value  p_value  ci_lower  ci_upper
-    lntl  0.172489 0.063555  2.714022 0.007237  0.047154  0.297824
-     ind  0.082859 0.131288  0.631121 0.528693 -0.176052  0.341769
-     urb -1.928470 0.389614 -4.949689 0.000002 -2.696820 -1.160120
-      rd  6.588261 2.817764  2.338117 0.020384  1.031408 12.145114
-    open  0.452085 0.105900  4.268961 0.000031  0.243241  0.660929
-      es -0.138637 0.145208 -0.954752 0.340873 -0.424998  0.147724
+    lntl  0.172467 0.087610  1.968583 0.050404 -0.000306  0.345240
+     ind  0.082844 0.072910  1.136246 0.257234 -0.060941  0.226628
+     urb -1.928235 0.381577 -5.053335 0.000001 -2.680735 -1.175736
+      rd  6.588901 3.440434  1.915137 0.056924 -0.195907 13.373708
+    open  0.452167 0.223639  2.021857 0.044544  0.011132  0.893201
+      es -0.138637 0.111644 -1.241774 0.215796 -0.358808  0.081534
 ```
 
 ## 图形输出
 
 - `01_lntl_eff_scatter_fit.png`
 - `02_true_vs_pred_sequence.png`
-- `03_pred_vs_actual_scatter.png`
-- `04_residual_vs_fitted.png`
-- `05_residual_qq.png`
+- `06_coefficient_forest.png`
+- `07_partial_relationship_lntl_eff.png`
+- `08_diagnostics_triptych.png`

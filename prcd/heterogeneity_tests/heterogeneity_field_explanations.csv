@@ -1,0 +1,15 @@
+﻿field,meaning,interpretation
+region,地区分组,东部、中部、西部、东北
+variable,回归变量名,核心解释变量与控制变量名称
+coef,系数估计值,变量每增加1单位对eff的边际影响方向和大小
+std_err,标准误,Driscoll-Kraay稳健标准误
+t_stat,t统计量,用于检验系数是否显著偏离0
+p_value,P值,常用阈值为0.01、0.05、0.10
+ci_lower,95%置信区间下限,系数可能取值范围下界
+ci_upper,95%置信区间上限,系数可能取值范围上界
+stars,显著性星号,"*** p<0.01, ** p<0.05, * p<0.10"
+nobs,样本量,地区组内省份数乘以年份数后的有效观测值
+n_provinces,省份数,该地区参与回归的省份数量
+n_years,年份数,该地区参与回归的年份数量
+r2_model,模型R²,模型整体拟合度
+cov_type,协方差估计方法,这里固定为Driscoll-Kraay

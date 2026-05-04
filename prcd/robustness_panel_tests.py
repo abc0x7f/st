@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import font_manager
+from matplotlib.colors import TwoSlopeNorm
 from linearmodels.panel import PanelOLS
 
 
@@ -19,6 +23,105 @@ BASE_CORE_VAR = "lntl"
 LAG_CORE_VAR = "lntl_lag1"
 CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
 WINSOR_VARS = [DEP_VAR, BASE_CORE_VAR, *CONTROL_VARS]
+
+
+def configure_matplotlib() -> None:
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
+    chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
+    serif = next((name for name in serif_candidates if name in available), "DejaVu Serif")
+    chinese = next((name for name in chinese_candidates if name in available), "DejaVu Sans")
+    matplotlib.rcParams["font.family"] = [serif, chinese]
+    matplotlib.rcParams["font.serif"] = [serif]
+    matplotlib.rcParams["font.sans-serif"] = [chinese]
+    matplotlib.rcParams["axes.unicode_minus"] = False
+
+
+def format_decimal(value: float, digits: int = 4) -> str:
+    rounded = round(float(value), digits)
+    if rounded == 0:
+        rounded = 0.0
+    return f"{rounded:.{digits}f}"
+
+
+def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
+    plot_df = summary_df.copy()
+    label_map = {
+        "baseline": "基准模型",
+        "winsor_1pct": "1%缩尾",
+        "winsor_5pct": "5%缩尾",
+        "lag1": "滞后一期",
+    }
+    plot_df["label"] = plot_df["model"].map(label_map)
+    plot_df = plot_df.iloc[::-1].reset_index(drop=True)
+    y_pos = np.arange(len(plot_df))
+
+    fig = plt.figure(figsize=(10.8, 5.6))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.4, 2.15, 1.75], wspace=0.04)
+    ax_left = fig.add_subplot(gs[0, 0])
+    ax = fig.add_subplot(gs[0, 1])
+    ax_right = fig.add_subplot(gs[0, 2], sharey=ax)
+
+    xmin = float(min(plot_df["ci_lower"].min(), 0.0))
+    xmax = float(plot_df["ci_upper"].max() * 1.25)
+    norm = TwoSlopeNorm(vmin=min(-0.03, xmin), vcenter=0.0, vmax=max(0.24, xmax))
+    cmap = plt.get_cmap("RdBu")
+
+    def strong_rdbu_color(value: float):
+        scaled = float(np.clip(norm(value), 0.0, 1.0))
+        if value >= 0:
+            scaled = 0.30 + 0.70 * scaled
+        else:
+            scaled = 0.30 * scaled / max(norm(0.0), 1e-9)
+        scaled = float(np.clip(scaled, 0.0, 1.0))
+        return cmap(scaled)
+
+    for idx, row in plot_df.iterrows():
+        color = strong_rdbu_color(row["coef_core"])
+        ax.hlines(y_pos[idx], row["ci_lower"], row["ci_upper"], color=color, linewidth=1.6, zorder=2)
+        ax.vlines([row["ci_lower"], row["ci_upper"]], y_pos[idx] - 0.10, y_pos[idx] + 0.10, color=color, linewidth=1.2, zorder=2)
+        ax.scatter(row["coef_core"], y_pos[idx], marker="s", s=20, color=color, edgecolor=color, linewidth=0.5, zorder=3)
+
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(-0.6, len(plot_df) - 0.4)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels([])
+    xticks = np.arange(0.0, xmax + 0.05, 0.05)
+    xticks = [x for x in xticks if x <= xmax]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([f"{x:.2f}" for x in xticks])
+    ax.set_xlabel("系数估计值")
+    ax.set_title("稳健性检验核心系数森林图")
+    ax.grid(axis="y", linestyle=":", alpha=0.22)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+
+    ax_left.set_xlim(0, 1)
+    ax_left.set_ylim(ax.get_ylim())
+    ax_left.axis("off")
+    ax_left.text(0.00, len(plot_df) - 0.1, "模型", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
+    for idx, row in plot_df.iterrows():
+        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=9.6, color="black")
+
+    ax_right.set_xlim(0, 1)
+    ax_right.set_ylim(ax.get_ylim())
+    ax_right.axis("off")
+    ax_right.text(0.02, len(plot_df) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
+    ax_right.text(0.98, len(plot_df) - 0.1, "p", ha="right", va="bottom", fontsize=10, color="black", fontweight="bold")
+    for idx, row in plot_df.iterrows():
+        coef_text = (
+            f"{format_decimal(row['coef_core'])} "
+            f"({format_decimal(row['ci_lower'])}, {format_decimal(row['ci_upper'])})"
+        )
+        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=9.2, color="black")
+        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", fontsize=9.2, color="black")
+
+    fig.tight_layout()
+    out = OUT_DIR / "robustness_core_forest.png"
+    fig.savefig(out, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return out
 
 
 def load_panel_data(path: Path, required_cols: list[str]) -> pd.DataFrame:
@@ -110,6 +213,7 @@ def safe_float(value) -> float:
 
 
 def extract_model_summary(result, model_name: str, core_var: str, df: pd.DataFrame) -> dict[str, float | str]:
+    conf_int = result.conf_int()
     return {
         "model": model_name,
         "data_file": df.attrs.get("data_file", ""),
@@ -121,6 +225,8 @@ def extract_model_summary(result, model_name: str, core_var: str, df: pd.DataFra
         "se_core": float(result.std_errors[core_var]),
         "t_core": float(result.tstats[core_var]),
         "p_core": float(result.pvalues[core_var]),
+        "ci_lower": float(conf_int.loc[core_var, "lower"]),
+        "ci_upper": float(conf_int.loc[core_var, "upper"]),
         "stars_core": significance_stars(float(result.pvalues[core_var])),
         "r2_within": safe_float(result.rsquared_within),
         "r2_between": safe_float(result.rsquared_between),
@@ -194,6 +300,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    configure_matplotlib()
 
     baseline_df = load_panel_data(
         BASELINE_DATA_PATH,
@@ -231,6 +338,7 @@ def main() -> None:
     coef_df = pd.concat(coef_tables, ignore_index=True)
     core_df = build_core_comparison(summary_df)
     thresholds_df = pd.concat([win1_thresholds, win5_thresholds], ignore_index=True)
+    forest_path = plot_core_robustness_forest(summary_df)
 
     summary_df.to_csv(OUT_DIR / "robustness_model_summary.csv", index=False, encoding="utf-8-sig")
     coef_df.to_csv(OUT_DIR / "robustness_coefficients.csv", index=False, encoding="utf-8-sig")
@@ -249,6 +357,10 @@ def main() -> None:
         "## 核心结果对比",
         "",
         df_to_md(core_df),
+        "",
+        "## 图形输出",
+        "",
+        f"- `{forest_path.name}`",
         "",
         "## 各模型完整系数表",
         "",

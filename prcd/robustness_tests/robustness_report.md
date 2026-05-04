@@ -15,6 +15,10 @@
 | winsor_5pct | lntl | 0.1703 | 0.0861 | 1.9774 | 0.0494 | ** | 0.1633 | 240 |
 | lag1 | lntl_lag1 | 0.2215 | 0.0761 | 2.9101 | 0.0040 | *** | 0.2699 | 240 |
 
+## 图形输出
+
+- `robustness_core_forest.png`
+
 ## 各模型完整系数表
 
 | model | variable | coef | std_err | t_stat | p_value | ci_lower | ci_upper | stars |
