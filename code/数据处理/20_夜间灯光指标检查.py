@@ -12,13 +12,14 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon, FancyArrowPatch, Rectangle
 from matplotlib.lines import Line2D
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "prcd" / "process2.csv"
-OUTPUT_DIR = BASE_DIR / "prcd" / "ntl_check"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "数据处理" / "20_夜间灯光指标检查"
 MAP_PATHS = [
-    BASE_DIR / "data" / "china_provinces.geojson",
-    BASE_DIR / "data" / "china.geojson",
-    BASE_DIR / "data" / "中国省级.geojson",
+    PROJECT_ROOT / "data" / "外部资料" / "中国省级地图.geojson",
+    PROJECT_ROOT / "data" / "china_provinces.geojson",
+    PROJECT_ROOT / "data" / "china.geojson",
+    PROJECT_ROOT / "data" / "中国省级.geojson",
 ]
 MAP_YEAR = 2022
 
@@ -119,7 +120,7 @@ def save_distribution_plot(df):
                             "Oranges", "#C65D00", force_xlim_left=0)
     fig.suptitle("夜间灯光指标分布检验", fontsize=14)
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "01_distribution.png", dpi=300, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / "01_指标分布图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -134,7 +135,7 @@ def save_time_series_plots(df):
                  marker="o", linewidth=2, label="全国年度均值", ax=ax)
     ax.set_title("ntl 年度均值"); ax.set_xlabel("year"); ax.set_ylabel("mean ntl")
     ax.legend(); fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "02_year_mean.png", dpi=300, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / "02_年度均值图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(12, 6.5))
@@ -146,7 +147,7 @@ def save_time_series_plots(df):
         ax.legend(handles=h, labels=l, title="province",
                   bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8, title_fontsize=9)
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "03_province_trend.png", dpi=300, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / "03_各省变化趋势图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -175,7 +176,7 @@ def save_spatial_proxy_plot(df):
     ax.set_title("各省 ntl / lntl 均值排序")
     ax.set_xlabel("value"); ax.set_ylabel("province"); ax.legend()
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "04_province_mean_rank.png", dpi=300, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / "04_各省均值排序图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -403,10 +404,10 @@ def save_lntl_map(df):
                 "夜间灯光聚合度对数", ha="center", va="top",
                 fontsize=8, fontweight="bold")
 
-    fig.savefig(OUTPUT_DIR / f"05_lntl_map_{MAP_YEAR}.png",
+    fig.savefig(OUTPUT_DIR / f"05_夜间灯光对数分级地图_{MAP_YEAR}.png",
                 dpi=300, bbox_inches="tight")
     plt.close(fig)
-    return f"已生成省级地图: {OUTPUT_DIR / f'05_lntl_map_{MAP_YEAR}.png'}"
+    return f"已生成省级地图: {OUTPUT_DIR / f'05_夜间灯光对数分级地图_{MAP_YEAR}.png'}"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -461,22 +462,22 @@ def main():
     configure_style()
     df = load_data()
     df[["year", "province", "ntl"]].to_csv(
-        OUTPUT_DIR / "ntl.csv", index=False, encoding="utf-8-sig")
+        OUTPUT_DIR / "夜间灯光检查数据.csv", index=False, encoding="utf-8-sig")
     save_distribution_plot(df)
     save_time_series_plots(df)
     save_spatial_proxy_plot(df)
     map_message = save_lntl_map(df)
     summary_text = build_summary(df, map_message)
-    (OUTPUT_DIR / "summary.md").write_text(summary_text, encoding="utf-8")
+    (OUTPUT_DIR / "夜间灯光检查总结.md").write_text(summary_text, encoding="utf-8")
     print(f"已生成输出目录: {OUTPUT_DIR}")
-    print(f"已导出 ntl 数据: {OUTPUT_DIR / 'ntl.csv'}")
+    print(f"已导出 ntl 数据: {OUTPUT_DIR / '夜间灯光检查数据.csv'}")
     print("已生成图形:")
-    print(f"- {OUTPUT_DIR / '01_distribution.png'}")
-    print(f"- {OUTPUT_DIR / '02_year_mean.png'}")
-    print(f"- {OUTPUT_DIR / '03_province_trend.png'}")
-    print(f"- {OUTPUT_DIR / '04_province_mean_rank.png'}")
+    print(f"- {OUTPUT_DIR / '01_指标分布图.png'}")
+    print(f"- {OUTPUT_DIR / '02_年度均值图.png'}")
+    print(f"- {OUTPUT_DIR / '03_各省变化趋势图.png'}")
+    print(f"- {OUTPUT_DIR / '04_各省均值排序图.png'}")
     print(f"- {map_message}")
-    print(f"已生成摘要: {OUTPUT_DIR / 'summary.md'}")
+    print(f"已生成摘要: {OUTPUT_DIR / '夜间灯光检查总结.md'}")
 
 
 if __name__ == "__main__":

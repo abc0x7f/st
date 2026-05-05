@@ -60,12 +60,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--input-dir",
-        default=r"data\2015-2022各省排放清单(2)",
-        help="排放清单所在目录，默认读取 data\\2015-2022各省排放清单(2)",
+        default=r"data\原始数据\2015_2022各省排放清单",
+        help="排放清单所在目录，默认读取 data\\原始数据\\2015_2022各省排放清单",
     )
     parser.add_argument(
         "--output",
-        default=r"data\排放比例_es近似.csv",
+        default=r"data\中间数据\排放比例_能源结构近似.csv",
         help="输出文件名，支持 .csv 或 .xlsx",
     )
     return parser.parse_args()

@@ -6,9 +6,9 @@ import pandas as pd
 import seaborn as sns
 
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "prcd" / "process1.csv"
-OUTPUT_DIR = BASE_DIR / "prcd" / "stage1_pre"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "数据处理" / "30_投入产出关系预检"
 OUTPUT_PATH = OUTPUT_DIR / "09_投入产出关系散点图.png"
 
 INPUT_COLUMNS = ["Population", "Capital", "energy_total"]

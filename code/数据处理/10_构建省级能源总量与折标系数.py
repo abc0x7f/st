@@ -10,10 +10,10 @@ from openpyxl import load_workbook
 
 STANDARD_COAL_MJ_PER_KG = 29.3076
 
-ROOT = Path(__file__).resolve().parent
-CEADS_DIR = ROOT / "data" / "各省能源清单CEADs"
-FACTOR_OUTPUT = ROOT / "data" / "ceads_standard_coal_factors.csv"
-PANEL_OUTPUT = ROOT / "data" / "ceads_energy_total_es_2015_2022.csv"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CEADS_DIR = PROJECT_ROOT / "data" / "原始数据" / "各省能源清单CEADS"
+FACTOR_OUTPUT = PROJECT_ROOT / "data" / "外部资料" / "省级能源折标准煤系数_ceads.csv"
+PANEL_OUTPUT = PROJECT_ROOT / "data" / "中间数据" / "省级能源energy与es_ceads(暂未启用).csv"
 
 
 PROVINCE_MAP = {
@@ -362,9 +362,11 @@ def build_panel_table(factor_df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     factor_df = build_factor_table()
+    FACTOR_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     factor_df.to_csv(FACTOR_OUTPUT, index=False, encoding="utf-8-sig")
 
     panel_df = build_panel_table(factor_df)
+    PANEL_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     panel_df.to_csv(PANEL_OUTPUT, index=False, encoding="utf-8-sig")
 
     print(f"Wrote {FACTOR_OUTPUT}")

@@ -11,8 +11,8 @@ import pandas as pd
 import seaborn as sns
 
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "prcd" / "chapter4_figures"
+ROOT = Path(__file__).resolve().parents[2]
+OUT_DIR = ROOT / "outputs" / "数据处理" / "50_样本构建流程缺失检查与变量箱线图"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -266,8 +266,8 @@ def create_missing_heatmap() -> None:
 
 
 def create_boxplots() -> None:
-    df1 = pd.read_csv(ROOT / "prcd" / "process1.csv")
-    df2 = pd.read_csv(ROOT / "prcd" / "process2.csv")
+    df1 = pd.read_csv(ROOT / "data" / "最终数据" / "第一阶段_基础.csv")
+    df2 = pd.read_csv(ROOT / "data" / "最终数据" / "第二阶段_基础.csv")
 
     items = [
         ("Population", df1["Population"], "#4C78A8", "第一阶段"),
