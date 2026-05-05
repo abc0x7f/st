@@ -1,0 +1,21 @@
+﻿ceads_field,chinese_name,input_unit,factor_to_tce,factor_unit,source_type,source_detail,note,include_in_coal_total
+Raw_Coal,原煤,10^4 ton,0.7143,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,1
+Cleaned_Coal,洗精煤,10^4 ton,0.9,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,1
+Other_Washed_Coal,其他洗煤,10^4 ton,0.2857,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,Middlings 下限系数,按保守下限重做，采用年鉴图中可见相关子项的最低系数。,1
+Briquettes,煤制品,10^4 ton,0.5,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,Briquettes 参考系数,按保守下限重做，采用煤制品保守参考系数。,1
+Coke,焦炭,10^4 ton,0.9714,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,1
+Coke_Oven_Gas,焦炉煤气,10^8 cu.m,0.5714,10^4 tce / 10^8 cu.m,China Energy Statistical Yearbook 2023,Coke Oven Gas 下限系数,按保守下限重做，采用年鉴图区间下限。,1
+Other_Gas,其他煤气,10^8 cu.m,0.1786,10^4 tce / 10^8 cu.m,China Energy Statistical Yearbook 2023,By Gas Furnace 下限系数,按保守下限重做，采用年鉴图中其他煤气相关子项的最低系数。,1
+Other_Coking_Products,其他焦化产品,10^4 ton,1.4286,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,Coal Tar/Benzene 下限系数,按保守下限重做，采用年鉴图中其他焦化产品相关子项的最低系数。,1
+Crude_Oil,原油,10^4 ton,1.4286,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Gasoline,汽油,10^4 ton,1.4714,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Kerosene,煤油,10^4 ton,1.4714,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Diesel_Oil,柴油,10^4 ton,1.4571,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Fuel_Oil,燃料油,10^4 ton,1.4286,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+LPG,液化石油气,10^4 ton,1.7143,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Refinery_Gas,炼厂干气,10^4 ton,1.5714,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Other_Petroleum_Products,其他石油制品,10^4 ton,1.4286,10^4 tce / 10^4 ton,China Energy Statistical Yearbook 2023,Crude Oil/Fuel Oil 下限系数,按保守下限重做，采用石油类相关已知系数中的保守下限。,0
+Natural_Gas,天然气,10^8 cu.m,1.1,10^4 tce / 10^8 cu.m,China Energy Statistical Yearbook 2023,Natural Gas 下限系数,按保守下限重做，采用年鉴图区间下限。,0
+Heat,热力,10^10 kJ,0.03412,10^4 tce / 10^10 kJ,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Electricity,电力,10^8 kwh,0.1229,10^4 tce / 10^8 kwh,China Energy Statistical Yearbook 2023,各种能源折标准煤参考系数,年鉴图中有直接系数。,0
+Other_Energy,其他能源,10^4 tce,1.0,10^4 tce / 10^4 tce,CEADs workbook unit row,Other_Energy unit = 10^4 tce,原表已是标准煤单位，直接并入能源消费总量。,0

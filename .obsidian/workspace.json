@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "6-codex.md",
-                "mode": "preview",
-                "source": true
+                "file": "prcd/model_spec_tests/model_specification_tests.md",
+                "mode": "source",
+                "source": false
               },
               "icon": "lucide-file",
-              "title": "6-codex"
+              "title": "model_specification_tests"
             }
           }
         ]
@@ -183,36 +183,53 @@
       "bases:新建数据库": false
     }
   },
-  "active": "358c725288169ea4",
+  "active": "e86507f1b2b3bf92",
   "lastOpenFiles": [
+    "memory00更换ceads_es数据（暂时不采用）.md",
+    "~WRL1310.tmp",
+    "~WRD1286.tmp",
+    "~WRL3394.tmp",
+    "~WRD3375.tmp",
+    "~$-3-AI工具使用说明（选用模板）（大数据应用，2026年版）.docx",
+    "~WRL2013.tmp",
+    "~WRD2005.tmp",
+    "~WRD0279.tmp",
+    "~WRL2537.tmp",
+    "~WRD2514.tmp",
+    "AI工具使用说明填写建议.md",
+    "memory00更换ceads_es数据.md",
+    "memory6面板回归稳健性.md",
+    "prcd/spatial_model_tests/spatial_model_tests.md",
     "prcd/heterogeneity_tests/heterogeneity_report.md",
-    "prcd/heterogeneity_tests/heterogeneity_field_explanations.csv",
-    "prcd/heterogeneity_tests/heterogeneity_model_summary.csv",
-    "prcd/heterogeneity_tests/heterogeneity_coefficients.csv",
-    "prcd/heterogeneity_tests/heterogeneity_core_table.csv",
-    "prcd/heterogeneity_tests",
-    "prcd/heterogeneity_panel_tests.py",
+    "prcd/memory1.md",
+    "prcd/memory0.md",
+    "prcd/unit_root_tests/panel_unit_root_report.md",
+    "prcd/stage1_pre/09_投入产出关系散点图.png",
+    "prcd/spatial_plots/global_morans_i_2018_2022_analysis.md",
+    "prcd/spatial_plots/global_morans_i_2015_2022_analysis.md",
+    "prcd/spatial_plots/25_eff_lisa_cluster_2022.png",
+    "prcd/spatial_plots/25_eff_lisa_cluster_2018.png",
+    "prcd/spatial_plots/25_eff_lisa_cluster_2015.png",
+    "prcd/spatial_plots/24_eff_moran_scatter_2015_2018_2022.png",
+    "prcd/spatial_plots/18_global_morans_i_2015_2022.png",
+    "prcd/robustness_tests/robustness_report.md",
+    "prcd/robustness_tests/robustness_core_forest.png",
+    "prcd/ntl_check/summary.md",
+    "prcd/ntl_check/memory.md",
+    "prcd/ntl_check/密度图和分级图.md",
+    "prcd/ntl_check/05_lntl_map_2022.png",
+    "prcd/ntl_check/04_province_mean_rank.png",
+    "prcd/ntl_check/03_province_trend.png",
+    "prcd/model_spec_tests/model_specification_tests.md",
+    "prcd/correlation_plots/correlation_vif_interpretation.md",
+    "prcd/memory6面板回归稳健性.md",
+    "6-codex.md",
     "memory6.md",
     "森林图.md",
-    "prcd/baseline_panel_outputs/06_coefficient_forest.png",
-    "prcd/robustness_tests/robustness_core_forest.png",
-    "prcd/baseline_panel_outputs/08_diagnostics_triptych.png",
-    "prcd/baseline_panel_outputs/07_partial_relationship_lntl_eff.png",
-    "prcd/baseline_panel_outputs/baseline_regression_summary_latest.csv",
-    "prcd/robustness_tests/robustness_report.md",
-    "prcd/robustness_tests/robustness_winsor_thresholds.csv",
-    "prcd/robustness_tests/robustness_core_comparison.csv",
-    "prcd/robustness_tests/robustness_coefficients.csv",
-    "memory6面板回归稳健性.md",
     "灯光聚合度讨论整理.md",
     "5-codex_mod.md",
     "数据清洗.md",
     "4-codex.md",
-    "4-codex_5_5.md",
-    "data/D128 各省资本存量数据集/获取全部数据.jpg",
-    "data/D128 各省资本存量数据集/D128 各省资本存量数据集/获取全部数据.jpg",
-    "3-curor_auto.md",
-    "2.md",
-    "4.md"
+    "4-codex_5_5.md"
   ]
 }
