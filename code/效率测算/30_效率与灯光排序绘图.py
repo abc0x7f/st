@@ -9,9 +9,9 @@ import pandas as pd
 from matplotlib import colors, font_manager
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "eff_plots"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "10_碳排放效率绘图"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 

@@ -6,9 +6,9 @@ import pandas as pd
 import seaborn as sns
 
 
-BASE_DIR = Path(__file__).resolve().parent
-RESULT_DIR = BASE_DIR / "prcd" / "结果_process1" / "分解_超效率SBM Malmquist 指数 -全局参比"
-OUTPUT_DIR = BASE_DIR / "prcd" / "gm_decomp_plots"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RESULT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "模型输出" / "分解_超效率SBM Malmquist 指数 -全局参比"
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "20_GM分解绘图"
 
 REGION_MAP = {
     "北京": "东部", "天津": "东部", "河北": "东部", "上海": "东部", "江苏": "东部",
@@ -22,12 +22,10 @@ REGION_MAP = {
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
-    plt.rcParams["font.sans-serif"] = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Arial Unicode MS",
-        "DejaVu Sans",
+    plt.rcParams["font.family"] = [
+        "Times New Roman",
+        "SimSun",
+        "DejaVu Serif",
     ]
     plt.rcParams["axes.unicode_minus"] = False
 

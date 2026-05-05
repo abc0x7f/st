@@ -13,10 +13,11 @@ from matplotlib.patches import Polygon, Rectangle
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_PATH = BASE_DIR / "prcd" / "process2.csv"
-STAGE1_DATA_PATH = BASE_DIR / "prcd" / "process1.csv"
-MAP_PATH = BASE_DIR / "data" / "china.geojson"
-OUTPUT_DIR = BASE_DIR / "prcd" / "eff_plots"
+PROJECT_ROOT = BASE_DIR.parents[1]
+DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+STAGE1_DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
+MAP_PATH = PROJECT_ROOT / "data" / "外部资料" / "中国省级地图.geojson"
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "10_碳排放效率绘图"
 MAP_YEAR = 2022
 KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]
@@ -75,7 +76,7 @@ def load_stage1_data() -> pd.DataFrame:
     required_columns = {"province", "year", "GDP_constant", "Carbon"}
     missing = required_columns - set(df.columns)
     if missing:
-        raise ValueError(f"process1.csv 缺少必要字段: {sorted(missing)}")
+        raise ValueError(f"{STAGE1_DATA_PATH.name} 缺少必要字段: {sorted(missing)}")
 
     df["province"] = df["province"].astype(str).str.strip()
     df["year"] = pd.to_numeric(df["year"], errors="coerce").astype("Int64")
