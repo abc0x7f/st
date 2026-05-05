@@ -1,7 +1,7 @@
 ﻿test,statistic,pvalue,df,decision_5pct,null_hypothesis,interpretation
-Pooled F,60.651945616994766,0.0,"F(36,197)",Reject H0,All entity/time effects are jointly zero,Effects needed
-Time Effects Wald,25.166512773462443,0.0007089066777310471,chi2(7),Reject H0,Year effects jointly zero,Keep time effects
-Hausman,13.971634143848867,0.029954636219711617,6,Reject H0,RE consistent and efficient,Prefer FE
-Pesaran CD,1.8131053615784383,0.06981557239656055,,Fail to reject H0,No cross-sectional dependence,avg_abs_corr=0.450
-Modified Wald,265.8159706822865,0.0,30,Reject H0,Homoskedasticity across entities,variance_ratio=190.407
-Wooldridge AR(1),15.493497959831158,0.00047563743781287027,"F(1,29)",Reject H0,No first-order serial correlation,"beta=-0.232, se=0.068"
+Pooled F,60.65094428034437,0.0,"F(36,197)",Reject H0,All entity/time effects are jointly zero,Effects needed
+Time Effects Wald,25.16081524370546,0.0007105594765105527,chi2(7),Reject H0,Year effects jointly zero,Keep time effects
+Hausman,13.970215262402888,0.02997065128385712,6,Reject H0,RE consistent and efficient,Prefer FE
+Pesaran CD,1.813440245499921,0.06976394701218624,,Fail to reject H0,No cross-sectional dependence,avg_abs_corr=0.449
+Modified Wald,265.81622374211554,0.0,30,Reject H0,Homoskedasticity across entities,variance_ratio=190.342
+Wooldridge AR(1),15.484830124523706,0.00047705721448731975,"F(1,29)",Reject H0,No first-order serial correlation,"beta=-0.232, se=0.068"

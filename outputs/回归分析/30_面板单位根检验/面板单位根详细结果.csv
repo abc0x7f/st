@@ -3,10 +3,10 @@ eff,LLC,-1.7102107026424063,0.043613458649619345,Reject H0,lags=0
 eff,IPS,0.5176947488477893,0.6976643686984126,Fail to reject H0,mean_lag=0.17
 eff,ADF-Fisher,165.0090563727244,9.638179143678371e-12,Reject H0,statsmodels.adfuller + Fisher combine
 eff,PP-Fisher,1675.8739908778882,0.0,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
-lntl,LLC,-6.399684364019236,7.784923815017342e-11,Reject H0,lags=0
-lntl,IPS,-8.622823941728162,3.2661423654135175e-18,Reject H0,mean_lag=0.43
-lntl,ADF-Fisher,150.6897833251747,9.369990339180845e-10,Reject H0,statsmodels.adfuller + Fisher combine
-lntl,PP-Fisher,92.51217427130841,0.004469185537959386,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
+lntl,LLC,-6.400411461303774,7.747939395352623e-11,Reject H0,lags=0
+lntl,IPS,-8.671368034152803,2.134796291942716e-18,Reject H0,mean_lag=0.43
+lntl,ADF-Fisher,150.69461599992962,9.355898278329278e-10,Reject H0,statsmodels.adfuller + Fisher combine
+lntl,PP-Fisher,92.54146105990462,0.0044429402393743045,Reject H0,arch.unitroot.PhillipsPerron + Fisher combine
 ind,LLC,-8.628611142335577,3.1050717778330004e-18,Reject H0,lags=0
 ind,IPS,-70.00237626832866,0.0,Reject H0,mean_lag=0.13
 ind,ADF-Fisher,205.10665847776008,0.0,Reject H0,statsmodels.adfuller + Fisher combine

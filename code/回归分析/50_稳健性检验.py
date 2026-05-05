@@ -11,10 +11,10 @@ from matplotlib.colors import TwoSlopeNorm
 from linearmodels.panel import PanelOLS
 
 
-ROOT = Path(__file__).resolve().parents[1]
-BASELINE_DATA_PATH = ROOT / "prcd" / "process2.csv"
-LAG_DATA_PATH = ROOT / "prcd" / "process2_lag.csv"
-OUT_DIR = ROOT / "prcd" / "robustness_tests"
+ROOT = Path(__file__).resolve().parents[2]
+BASELINE_DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+LAG_DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_滞后一期.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "50_稳健性检验"
 
 ENTITY_COL = "province"
 TIME_COL = "year"
@@ -118,7 +118,7 @@ def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
         ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", fontsize=9.2, color="black")
 
     fig.tight_layout()
-    out = OUT_DIR / "robustness_core_forest.png"
+    out = OUT_DIR / "稳健性核心森林图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -340,19 +340,19 @@ def main() -> None:
     thresholds_df = pd.concat([win1_thresholds, win5_thresholds], ignore_index=True)
     forest_path = plot_core_robustness_forest(summary_df)
 
-    summary_df.to_csv(OUT_DIR / "robustness_model_summary.csv", index=False, encoding="utf-8-sig")
-    coef_df.to_csv(OUT_DIR / "robustness_coefficients.csv", index=False, encoding="utf-8-sig")
-    core_df.to_csv(OUT_DIR / "robustness_core_comparison.csv", index=False, encoding="utf-8-sig")
-    thresholds_df.to_csv(OUT_DIR / "robustness_winsor_thresholds.csv", index=False, encoding="utf-8-sig")
+    summary_df.to_csv(OUT_DIR / "稳健性模型汇总.csv", index=False, encoding="utf-8-sig")
+    coef_df.to_csv(OUT_DIR / "稳健性系数表.csv", index=False, encoding="utf-8-sig")
+    core_df.to_csv(OUT_DIR / "稳健性核心比较表.csv", index=False, encoding="utf-8-sig")
+    thresholds_df.to_csv(OUT_DIR / "Winsor阈值表.csv", index=False, encoding="utf-8-sig")
 
     md_lines = [
         "# 面板回归稳健性检验结果",
         "",
         "## 检验口径",
         "",
-        "- 基准模型：`process2.csv`，双向固定效应，`Driscoll-Kraay` 稳健标准误。",
+        f"- 基准模型：`{BASELINE_DATA_PATH.relative_to(ROOT).as_posix()}`，双向固定效应，`Driscoll-Kraay` 稳健标准误。",
         "- 缩尾稳健性：对 `eff`、`lntl`、`ind`、`urb`、`rd`、`open`、`es` 分别做 `1%` 与 `5%` 双侧 winsorize。",
-        "- 滞后稳健性：使用 `process2_lag.csv`，将核心解释变量替换为 `lntl_lag1`。",
+        f"- 滞后稳健性：使用 `{LAG_DATA_PATH.relative_to(ROOT).as_posix()}`，将核心解释变量替换为 `lntl_lag1`。",
         "",
         "## 核心结果对比",
         "",
@@ -372,7 +372,7 @@ def main() -> None:
         "",
     ]
     md_lines.extend(build_analysis(summary_df))
-    (OUT_DIR / "robustness_report.md").write_text("\n".join(md_lines), encoding="utf-8")
+    (OUT_DIR / "稳健性检验报告.md").write_text("\n".join(md_lines), encoding="utf-8")
 
     print(core_df.to_string(index=False))
     print(f"\nSaved outputs to: {OUT_DIR}")

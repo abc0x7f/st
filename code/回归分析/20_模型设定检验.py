@@ -9,9 +9,9 @@ from linearmodels.panel import PanelOLS, RandomEffects
 from scipy import stats
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "model_spec_tests"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "20_模型设定检验"
 
 Y_VAR = "eff"
 X_VARS = ["lntl", "ind", "urb", "rd", "open", "es"]
@@ -212,12 +212,12 @@ def main() -> None:
     diag_df = pd.DataFrame(diag_rows)
 
     result_df = pd.concat([f_df, diag_df], ignore_index=True)
-    result_df.to_csv(OUT_DIR / "model_specification_tests.csv", index=False, encoding="utf-8-sig")
+    result_df.to_csv(OUT_DIR / "模型设定检验结果.csv", index=False, encoding="utf-8-sig")
 
     md_lines = [
         "# 模型设定与误差结构检验结果",
         "",
-        "数据文件：`prcd/process2.csv`",
+        f"数据文件：`{DATA_PATH.relative_to(ROOT).as_posix()}`",
         "",
         "- 基准回归变量：`eff ~ lntl + ind + urb + rd + open + es`",
         "- `Pooled F` 基于双固定效应模型的 poolability 检验",
@@ -229,7 +229,7 @@ def main() -> None:
         df_to_md(result_df),
         "",
     ]
-    (OUT_DIR / "model_specification_tests.md").write_text("\n".join(md_lines), encoding="utf-8")
+    (OUT_DIR / "模型设定检验说明.md").write_text("\n".join(md_lines), encoding="utf-8")
 
     print(result_df.to_string(index=False))
     print(f"\nSaved outputs to: {OUT_DIR}")

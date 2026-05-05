@@ -13,9 +13,9 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.tools import add_constant
 
 
-ROOT = Path(__file__).resolve().parent
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "correlation_plots"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "10_相关性与VIF分析"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 CORR_VARS = ["eff", "lntl", "ind", "urb", "rd", "open", "es"]
@@ -33,18 +33,14 @@ LABELS = {
 
 def configure_matplotlib() -> None:
     sns.set_theme(style="white")
-    candidates = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Noto Sans SC",
-        "Source Han Sans SC",
-        "Arial Unicode MS",
-    ]
+    serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
+    chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
     available = {f.name for f in font_manager.fontManager.ttflist}
-    chosen = next((name for name in candidates if name in available), "DejaVu Sans")
-    matplotlib.rcParams["font.family"] = "sans-serif"
-    matplotlib.rcParams["font.sans-serif"] = [chosen]
+    serif = next((name for name in serif_candidates if name in available), "DejaVu Serif")
+    chinese = next((name for name in chinese_candidates if name in available), "DejaVu Sans")
+    matplotlib.rcParams["font.family"] = [serif, chinese]
+    matplotlib.rcParams["font.serif"] = [serif]
+    matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
 
 
@@ -192,7 +188,7 @@ def save_combined_corr_ellipse_matrix(
     note = "注：下三角为相关性椭圆，上三角为相关系数数值；相关性检验仅作描述性分析，图中不再展示显著性标记。"
     fig.text(0.01, 0.003, note, ha="left", va="bottom", fontsize=9, color="#4B5563")
 
-    out_path = OUT_DIR / "correlation_ellipse_matrices_combined.png"
+    out_path = OUT_DIR / "相关椭圆矩阵组合图.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out_path
@@ -205,10 +201,10 @@ def save_corr_tables(
     spearman_pvals: pd.DataFrame,
 ) -> list[Path]:
     outputs = {
-        "pearson_correlation_matrix.csv": pearson_corr,
-        "spearman_correlation_matrix.csv": spearman_corr,
-        "pearson_pvalues.csv": pearson_pvals,
-        "spearman_pvalues.csv": spearman_pvals,
+        "皮尔逊相关系数矩阵.csv": pearson_corr,
+        "斯皮尔曼相关系数矩阵.csv": spearman_corr,
+        "皮尔逊显著性P值.csv": pearson_pvals,
+        "斯皮尔曼显著性P值.csv": spearman_pvals,
     }
     paths: list[Path] = []
     for filename, table in outputs.items():
@@ -243,7 +239,7 @@ def calculate_vif(df: pd.DataFrame, vars_to_use: list[str]) -> pd.DataFrame:
 
 
 def save_vif_table(vif_df: pd.DataFrame) -> Path:
-    out_path = OUT_DIR / "vif_results.csv"
+    out_path = OUT_DIR / "方差膨胀因子结果表.csv"
     vif_df.to_csv(out_path, index=False, encoding="utf-8-sig")
     return out_path
 
@@ -275,7 +271,7 @@ def save_vif_cleveland_plot(vif_df: pd.DataFrame) -> Path:
     ax.spines["bottom"].set_visible(True)
     ax.legend(frameon=False, loc="upper right")
 
-    out_path = OUT_DIR / "vif_cleveland_plot.png"
+    out_path = OUT_DIR / "方差膨胀因子克利夫兰点图.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out_path
@@ -377,7 +373,7 @@ def build_interpretation(
 
 
 def save_interpretation(text: str) -> Path:
-    out_path = OUT_DIR / "correlation_vif_interpretation.md"
+    out_path = OUT_DIR / "相关性与VIF解读.md"
     out_path.write_text(text, encoding="utf-8")
     return out_path
 

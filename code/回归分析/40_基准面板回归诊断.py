@@ -14,9 +14,9 @@ from scipy import stats
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "baseline_panel_outputs"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "40_基准面板回归诊断"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DEP_VAR = "eff"
@@ -215,7 +215,7 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     ax.set_xlim(right=3.0)
     ax.legend(loc="best", ncol=2, fontsize=9)
     fig.tight_layout()
-    out = OUT_DIR / "01_lntl_eff_scatter_fit.png"
+    out = OUT_DIR / "01_夜间灯光与效率散点拟合图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -274,7 +274,7 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
         fontsize=9,
     )
     fig.tight_layout(rect=(0, 0.05, 1, 1))
-    out = OUT_DIR / "02_true_vs_pred_sequence.png"
+    out = OUT_DIR / "02_真实值与预测值对照图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -476,7 +476,7 @@ def plot_coefficient_forest(result) -> Path:
 
     fig.tight_layout()
 
-    out = OUT_DIR / "06_coefficient_forest.png"
+    out = OUT_DIR / "06_系数森林图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -526,7 +526,7 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     ax.legend(loc="best", ncol=2, fontsize=9)
     fig.tight_layout()
 
-    out = OUT_DIR / "07_partial_relationship_lntl_eff.png"
+    out = OUT_DIR / "07_夜间灯光与效率偏回归关系图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -606,7 +606,7 @@ def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
     fig.suptitle("基准回归诊断图组", y=1.02, fontsize=14)
     fig.tight_layout(rect=(0, 0.06, 1, 0.98))
 
-    out = OUT_DIR / "08_diagnostics_triptych.png"
+    out = OUT_DIR / "08_诊断图组三联图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -616,10 +616,10 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
     coef_table = build_regression_table(result)
     summary_table = build_summary_table(result, fitted_df)
 
-    coef_path = resolve_output_path(OUT_DIR / "baseline_regression_coefficients.csv")
-    summary_path = resolve_output_path(OUT_DIR / "baseline_regression_summary.csv")
-    fitted_path = resolve_output_path(OUT_DIR / "baseline_predictions_and_residuals.csv")
-    report_path = resolve_output_path(OUT_DIR / "baseline_panel_report.md")
+    coef_path = resolve_output_path(OUT_DIR / "基准回归系数表.csv")
+    summary_path = resolve_output_path(OUT_DIR / "基准回归结果汇总.csv")
+    fitted_path = resolve_output_path(OUT_DIR / "基准回归预测值与残差.csv")
+    report_path = resolve_output_path(OUT_DIR / "基准面板回归报告.md")
 
     coef_table.to_csv(coef_path, index=False, encoding="utf-8-sig")
     summary_table.to_csv(summary_path, index=False, encoding="utf-8-sig")
@@ -629,6 +629,9 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
         OUT_DIR / "03_pred_vs_actual_scatter.png",
         OUT_DIR / "04_residual_vs_fitted.png",
         OUT_DIR / "05_residual_qq.png",
+        OUT_DIR / "03_预测值与真实值散点图.png",
+        OUT_DIR / "04_拟合值与残差图.png",
+        OUT_DIR / "05_标准化残差QQ图.png",
     ]
     for obsolete in obsolete_paths:
         if obsolete.exists():

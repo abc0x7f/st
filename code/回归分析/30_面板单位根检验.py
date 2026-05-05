@@ -12,9 +12,9 @@ from panelbox.validation.unit_root.llc import LLCTest
 from scipy import stats
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "unit_root_tests"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "30_面板单位根检验"
 VARIABLES = ["eff", "lntl", "ind", "urb", "rd", "open", "es"]
 ENTITY_COL = "province"
 TIME_COL = "year"
@@ -233,7 +233,7 @@ def write_markdown(
     lines = [
         "# 面板单位根检验结果",
         "",
-        "数据文件：`prcd/process2.csv`",
+        f"数据文件：`{DATA_PATH.relative_to(ROOT).as_posix()}`",
         "",
         "- 面板：30 个省份 × 8 年（2015-2022），平衡面板",
         "- 水平值检验设定：常数项 `c`",
@@ -259,7 +259,7 @@ def write_markdown(
         "2. 若结果出现分歧，优先结合短面板 `T=8` 的低检验功效来解释，不机械按单一检验下结论。",
         "3. 对于水平值存在争议但一阶差分稳定拒绝单位根的变量，可表述为“可能处于边界平稳或弱平稳状态，回归时需结合双固定效应与稳健标准误谨慎解释”。",
     ]
-    (OUT_DIR / "panel_unit_root_report.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "面板单位根检验报告.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -270,14 +270,14 @@ def main() -> None:
     diff_df = run_first_difference_checks(df, ["eff", "rd"])
     summary_df = decision_summary(level_df)
 
-    level_df.to_csv(OUT_DIR / "panel_unit_root_results.csv", index=False, encoding="utf-8-sig")
-    pp_detail_df.to_csv(OUT_DIR / "pp_fisher_individual_pvalues.csv", index=False, encoding="utf-8-sig")
+    level_df.to_csv(OUT_DIR / "面板单位根详细结果.csv", index=False, encoding="utf-8-sig")
+    pp_detail_df.to_csv(OUT_DIR / "PP_Fisher个体P值.csv", index=False, encoding="utf-8-sig")
     diff_df.to_csv(
-        OUT_DIR / "panel_unit_root_first_difference_checks.csv",
+        OUT_DIR / "一阶差分平稳性检查.csv",
         index=False,
         encoding="utf-8-sig",
     )
-    summary_df.to_csv(OUT_DIR / "panel_unit_root_summary.csv", index=False, encoding="utf-8-sig")
+    summary_df.to_csv(OUT_DIR / "面板单位根汇总表.csv", index=False, encoding="utf-8-sig")
     write_markdown(level_df, diff_df, summary_df)
 
     print(summary_df.to_string(index=False))

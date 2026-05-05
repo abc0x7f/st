@@ -9,9 +9,9 @@ from matplotlib import font_manager
 from linearmodels.panel import PanelOLS
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "prcd" / "process2.csv"
-OUT_DIR = ROOT / "prcd" / "heterogeneity_tests"
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+OUT_DIR = ROOT / "outputs" / "回归分析" / "60_异质性检验"
 
 ENTITY_COL = "province"
 TIME_COL = "year"
@@ -312,7 +312,7 @@ def save_report(
         "",
     ]
     report_lines.extend(build_analysis(summary_df))
-    (OUT_DIR / "heterogeneity_report.md").write_text("\n".join(report_lines), encoding="utf-8")
+    (OUT_DIR / "异质性检验报告.md").write_text("\n".join(report_lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -334,10 +334,10 @@ def main() -> None:
     core_df = build_core_table(summary_df)
     field_df = build_field_explanations()
 
-    core_df.to_csv(OUT_DIR / "heterogeneity_core_table.csv", index=False, encoding="utf-8-sig")
-    coef_df.to_csv(OUT_DIR / "heterogeneity_coefficients.csv", index=False, encoding="utf-8-sig")
-    summary_df.to_csv(OUT_DIR / "heterogeneity_model_summary.csv", index=False, encoding="utf-8-sig")
-    field_df.to_csv(OUT_DIR / "heterogeneity_field_explanations.csv", index=False, encoding="utf-8-sig")
+    core_df.to_csv(OUT_DIR / "异质性核心结果表.csv", index=False, encoding="utf-8-sig")
+    coef_df.to_csv(OUT_DIR / "异质性系数表.csv", index=False, encoding="utf-8-sig")
+    summary_df.to_csv(OUT_DIR / "异质性模型汇总.csv", index=False, encoding="utf-8-sig")
+    field_df.to_csv(OUT_DIR / "异质性字段解释.csv", index=False, encoding="utf-8-sig")
     save_report(core_df, coef_df, summary_df, field_df)
 
     print(core_df.to_string(index=False))
