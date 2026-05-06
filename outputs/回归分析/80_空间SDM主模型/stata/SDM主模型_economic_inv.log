@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:48
+ opened on:   6 May 2026, 22:09:00
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -64,5 +64,5 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:49
+ closed on:   6 May 2026, 22:09:02
 -------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 21:15:49
+ opened on:   6 May 2026, 22:09:02
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -64,5 +64,5 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 21:15:52
+ closed on:   6 May 2026, 22:09:04
 -------------------------------------------------------------------------------

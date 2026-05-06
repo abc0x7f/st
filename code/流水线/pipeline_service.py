@@ -43,6 +43,21 @@ def _glob_paths(patterns: tuple[str, ...]) -> list[Path]:
     return unique
 
 
+def _expand_image_patterns(patterns: tuple[str, ...]) -> tuple[str, ...]:
+    expanded: list[str] = []
+    for pattern in patterns:
+        expanded.append(pattern)
+        if pattern.endswith(".png"):
+            expanded.append(pattern[:-4] + ".svg")
+        elif pattern.endswith(".jpg"):
+            expanded.append(pattern[:-4] + ".svg")
+        elif pattern.endswith(".jpeg"):
+            expanded.append(pattern[:-5] + ".svg")
+        elif pattern.endswith(".bmp"):
+            expanded.append(pattern[:-4] + ".svg")
+    return tuple(dict.fromkeys(expanded))
+
+
 def _describe_path(path: Path, label: str = "") -> str:
     return label or str(path.relative_to(PROJECT_ROOT))
 
@@ -105,29 +120,41 @@ def discover_artifacts(step_id: str) -> ArtifactBundle:
         csv_candidates.append(step.primary_csv)
 
     expected = _glob_paths(step.expected_outputs)
-    image_paths = [path for path in expected if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".bmp"}]
+    image_paths = [path for path in expected if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".bmp", ".svg"}]
     markdown_paths = [path for path in expected if path.suffix.lower() == ".md"]
     csv_paths = [path for path in expected if path.suffix.lower() == ".csv"]
 
     if step.image_globs:
-        image_paths.extend(_glob_paths(step.image_globs))
+        image_paths.extend(_glob_paths(_expand_image_patterns(step.image_globs)))
     if step.markdown_globs:
         markdown_paths.extend(_glob_paths(step.markdown_globs))
 
     csv_candidates.extend(csv_paths)
     csv_unique = _dedupe_paths(csv_candidates, primary=step.primary_csv)
-    image_unique = _dedupe_paths(image_paths)
+    image_unique = _dedupe_paths(image_paths, prefer_svg=True)
     markdown_unique = _dedupe_paths(markdown_paths)
     return ArtifactBundle(csv_files=csv_unique, image_files=image_unique, markdown_files=markdown_unique)
 
 
-def _dedupe_paths(paths: list[Path], primary: Path | None = None) -> list[Path]:
+def _dedupe_paths(paths: list[Path], primary: Path | None = None, prefer_svg: bool = False) -> list[Path]:
     existing = [path for path in paths if path.exists() and path.is_file()]
     unique = list({path.resolve(): path for path in existing}.values())
     unique.sort(key=lambda path: path.stat().st_mtime, reverse=True)
     if primary and primary.exists():
         resolved_primary = primary.resolve()
         unique.sort(key=lambda path: (0 if path.resolve() == resolved_primary else 1, -path.stat().st_mtime))
+    if prefer_svg:
+        preferred_by_stem: dict[str, Path] = {}
+        for path in unique:
+            key = str(path.with_suffix("")).lower()
+            current = preferred_by_stem.get(key)
+            if current is None:
+                preferred_by_stem[key] = path
+                continue
+            if current.suffix.lower() != ".svg" and path.suffix.lower() == ".svg":
+                preferred_by_stem[key] = path
+        unique = list(preferred_by_stem.values())
+        unique.sort(key=lambda path: (path.stem.lower(), -path.stat().st_mtime))
     return unique
 
 

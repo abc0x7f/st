@@ -5,9 +5,11 @@ from pathlib import Path
 import pandas as pd
 from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPixmap, QTextOption
+from PySide6.QtSvgWidgets import QGraphicsSvgItem
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
+    QGraphicsItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
@@ -277,9 +279,7 @@ class ZoomableImageView(QGraphicsView):
 
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
-        self._pixmap_item = QGraphicsPixmapItem()
-        self._pixmap_item.setTransformationMode(Qt.SmoothTransformation)
-        self._scene.addItem(self._pixmap_item)
+        self._current_item: QGraphicsItem | None = None
         self._dragging = False
         self._drag_origin = QPoint()
         self._current_scale = 1.0
@@ -287,17 +287,26 @@ class ZoomableImageView(QGraphicsView):
     def set_image(self, image_path: Path | None) -> None:
         self.resetTransform()
         self._current_scale = 1.0
+        self._clear_current_item()
         if image_path is None or not image_path.exists():
-            self._pixmap_item.setPixmap(QPixmap())
             self._scene.setSceneRect(0, 0, 1, 1)
             self.viewport().update()
             self.scaleChanged.emit(self._current_scale)
             return
 
-        pixmap = QPixmap(str(image_path))
-        self._pixmap_item.setPixmap(pixmap)
-        self._pixmap_item.setTransformationMode(Qt.SmoothTransformation)
-        self._scene.setSceneRect(pixmap.rect())
+        if image_path.suffix.lower() == ".svg":
+            svg_item = QGraphicsSvgItem(str(image_path))
+            svg_item.setFlags(QGraphicsItem.ItemClipsToShape)
+            self._scene.addItem(svg_item)
+            self._current_item = svg_item
+            self._scene.setSceneRect(svg_item.boundingRect())
+        else:
+            pixmap = QPixmap(str(image_path))
+            pixmap_item = QGraphicsPixmapItem(pixmap)
+            pixmap_item.setTransformationMode(Qt.SmoothTransformation)
+            self._scene.addItem(pixmap_item)
+            self._current_item = pixmap_item
+            self._scene.setSceneRect(pixmap.rect())
         self._fit_with_boost()
         self._current_scale = 1.0
         self.scaleChanged.emit(self._current_scale)
@@ -305,16 +314,23 @@ class ZoomableImageView(QGraphicsView):
     def reset_view(self) -> None:
         self.resetTransform()
         self._current_scale = 1.0
-        if not self._pixmap_item.pixmap().isNull():
+        if self._current_item is not None:
             self._fit_with_boost()
         self.scaleChanged.emit(self._current_scale)
 
     def _fit_with_boost(self) -> None:
-        self.fitInView(self._pixmap_item, Qt.KeepAspectRatio)
+        if self._current_item is None:
+            return
+        self.fitInView(self._current_item, Qt.KeepAspectRatio)
         self.scale(1.18, 1.18)
 
+    def _clear_current_item(self) -> None:
+        if self._current_item is not None:
+            self._scene.removeItem(self._current_item)
+            self._current_item = None
+
     def wheelEvent(self, event) -> None:
-        if self._pixmap_item.pixmap().isNull():
+        if self._current_item is None:
             return
         factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
         self.scale(factor, factor)
@@ -394,7 +410,7 @@ class ImagePanel(ArtifactNavigatorPanel):
 
     def _set_overlay_visible(self, visible: bool) -> None:
         super()._set_overlay_visible(visible)
-        self.reset_button.fade_to(visible and not self.image_view._pixmap_item.pixmap().isNull())
+        self.reset_button.fade_to(visible and self.image_view._current_item is not None)
 
     def set_image_path(self, path: Path | None, index: int, total: int) -> None:
         self.path_label.setText(format_display_path(path) if path else "未发现图片")

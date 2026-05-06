@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import locale
 
-from PySide6.QtCore import QProcess, Qt, QSize
+from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QSize
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -358,6 +358,14 @@ class MainWindow(QMainWindow):
         self._sync_run_button(step)
 
         self.process.setWorkingDirectory(str(preparation.working_dir or PROJECT_ROOT))
+        if step.runner_type == RunnerType.PYTHON:
+            process_env = QProcessEnvironment.systemEnvironment()
+            code_root = str((PROJECT_ROOT / "code" / "流水线").resolve())
+            current_pythonpath = process_env.value("PYTHONPATH", "")
+            merged_pythonpath = code_root if not current_pythonpath else f"{code_root};{current_pythonpath}"
+            process_env.insert("PYTHONPATH", merged_pythonpath)
+            process_env.insert("GUI_EXPORT_SVG", "1")
+            self.process.setProcessEnvironment(process_env)
         self.process.start(preparation.program, preparation.arguments)
         if not self.process.waitForStarted(3000):
             self.console_panel.append_text("进程启动失败。")
