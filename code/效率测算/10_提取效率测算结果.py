@@ -4,7 +4,7 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-RESULT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "模型输出"
+RESULT_DIR = PROJECT_ROOT / "data" / "最终数据" / "结果_第一阶段_基础"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
 
 
@@ -12,7 +12,7 @@ def find_source_file() -> Path:
     candidates = [
         path
         for path in RESULT_DIR.rglob("*规模报酬可变VRS_0.xlsx")
-        if not path.name.startswith("~$")
+        if not path.name.startswith("~$") and path.name.startswith("结果_")
     ]
     if not candidates:
         raise FileNotFoundError("未找到 VRS 结果文件。")

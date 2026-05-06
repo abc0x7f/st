@@ -29,6 +29,22 @@ def open_path_command(target_path: str) -> tuple[str, ...]:
 
 STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
     StepDefinition(
+        id="data_sample",
+        name="样本构建流程与缺失检查",
+        stage="数据处理",
+        runner_type=RunnerType.PYTHON,
+        command=py_command("code/数据处理/50_样本构建流程缺失检查与变量箱线图.py"),
+        working_dir=PROJECT_ROOT,
+        precheck_mode="none",
+        expected_outputs=(
+            "outputs/数据处理/50_样本构建流程缺失检查与变量箱线图/图5_变量缺失热力图.png",
+        ),
+        image_globs=(
+            "outputs/数据处理/50_样本构建流程缺失检查与变量箱线图/图5_变量缺失热力图.png",
+        ),
+        description="输出样本缺失热力图。",
+    ),
+    StepDefinition(
         id="data_energy",
         name="构建省级能源总量与折标系数",
         stage="数据处理",
@@ -91,18 +107,6 @@ STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
         description="在效率测算前检查投入产出变量关系是否异常。",
     ),
     StepDefinition(
-        id="data_sample",
-        name="样本构建流程与缺失检查",
-        stage="数据处理",
-        runner_type=RunnerType.PYTHON,
-        command=py_command("code/数据处理/50_样本构建流程缺失检查与变量箱线图.py"),
-        working_dir=PROJECT_ROOT,
-        precheck_mode="none",
-        expected_outputs=("outputs/数据处理/50_样本构建流程缺失检查与变量箱线图/*",),
-        image_globs=("outputs/数据处理/50_样本构建流程缺失检查与变量箱线图/*.png",),
-        description="输出样本构建流程图、缺失热力图和核心变量箱线图。",
-    ),
-    StepDefinition(
         id="dearun_manual",
         name="Dearun 效率测算结果回填",
         stage="效率测算",
@@ -111,13 +115,13 @@ STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
         working_dir=PROJECT_ROOT,
         precheck_mode="manual_result",
         required_inputs=(
-            InputRequirement(root_path("outputs", "效率测算", "模型输出"), kind="directory", label="Dearun 输出目录"),
+            InputRequirement(root_path("data", "最终数据", "结果_第一阶段_基础"), kind="directory", label="Dearun 输出目录"),
         ),
         expected_outputs=(
-            "outputs/效率测算/模型输出/**/*规模报酬可变VRS_0.xlsx",
-            "outputs/效率测算/模型输出/**/*规模报酬不变CRS_0.xlsx",
+            "data/最终数据/结果_第一阶段_基础/**/*规模报酬可变VRS_0.xlsx",
+            "data/最终数据/结果_第一阶段_基础/**/*规模报酬不变CRS_0.xlsx",
         ),
-        description="该步骤需人工运行 Dearun，并将结果文件放回 outputs/效率测算/模型输出。",
+        description="该步骤需人工运行 Dearun，并将结果文件放回 data/最终数据/结果_第一阶段_基础。",
         notes=(
             "请先在 Dearun 中完成 SBM / GM 测算。",
             "结果文件需保留当前命名约定，后续提取脚本按此定位。",
@@ -134,11 +138,11 @@ STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
         working_dir=PROJECT_ROOT,
         precheck_mode="required_inputs",
         required_inputs=(
-            InputRequirement(root_path("outputs", "效率测算", "模型输出"), kind="directory"),
+            InputRequirement(root_path("data", "最终数据", "结果_第一阶段_基础"), kind="directory"),
         ),
         expected_outputs=("data/中间数据/碳排放效率结果_2015_2022.csv",),
         primary_csv=root_path("data", "中间数据", "碳排放效率结果_2015_2022.csv"),
-        description="从 Dearun 输出表中提取年度省级效率结果。",
+        description="从 data/最终数据/结果_第一阶段_基础 提取年度省级效率结果。",
     ),
     StepDefinition(
         id="eff_plot",
