@@ -16,7 +16,7 @@ import seaborn as sns
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WEIGHT_PATH = ROOT / "data" / "最终数据" / "省际01邻接矩阵.csv"
+WEIGHT_PATH = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
 EFF_PATH = ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
 GEOJSON_PATH = ROOT / "data" / "外部资料" / "中国省级地图.geojson"
 OUT_DIR = ROOT / "outputs" / "空间分析" / "20_莫兰指数与LISA分析"
@@ -432,7 +432,7 @@ def save_plot(result: pd.DataFrame) -> Path:
 
     ax_left.legend(legend_handles, legend_labels, loc="upper right", frameon=True, fontsize=9)
 
-    note = "注：采用 0-1 邻接矩阵并进行行标准化；p 值为单侧置换检验结果（9999 次），z 值基于置换分布的均值与标准差计算。"
+    note = "注：采用经济倒数权重矩阵并进行行标准化；p 值为单侧置换检验结果（9999 次），z 值基于置换分布的均值与标准差计算。"
     fig.text(0.01, 0.01, note, ha="left", va="bottom", fontsize=9, color="#52606D")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
 
@@ -514,7 +514,7 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
     ]
     fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc="upper right", ncol=3, frameon=True, fontsize=9)
     fig.suptitle("图24 eff 的 Moran 散点图（2015、2018、2022）", fontsize=17, y=0.99)
-    fig.text(0.01, 0.02, "注：基于 0-1 邻接矩阵行标准化结果绘制；散点按 Moran 象限着色；局部显著省份按 10%、5%、1% 阈值分别标注 */**/***。",
+    fig.text(0.01, 0.02, "注：基于经济倒数权重矩阵行标准化结果绘制；散点按 Moran 象限着色；局部显著省份按 10%、5%、1% 阈值分别标注 */**/***。",
              ha="left", va="bottom", fontsize=9, color="#52606D")
     fig.tight_layout(rect=(0, 0.06, 1, 0.92))
 
@@ -807,6 +807,9 @@ def save_analysis(result: pd.DataFrame) -> Path:
     strongest_z_row = result.loc[result["z_value"].idxmax()]
     significant_years = result.loc[result["p_value"] < 0.05, "year"].tolist()
     marginal_years = result.loc[(result["p_value"] >= 0.05) & (result["p_value"] < 0.10), "year"].tolist()
+    start_value = float(result.loc[result["year"] == 2015, "moran_i"].iloc[0])
+    end_value = float(result.loc[result["year"] == 2022, "moran_i"].iloc[0])
+    trend_word = "升至" if end_value >= start_value else "降至"
 
     lines = [
         "# 2015-2022 年全局 Moran's I 分析",
@@ -823,8 +826,8 @@ def save_analysis(result: pd.DataFrame) -> Path:
         ),
         (
             f"2. 从变化趋势看，2015 年 Moran's I 为 "
-            f"{result.loc[result['year'] == 2015, 'moran_i'].iloc[0]:.3f}，"
-            f"2022 年升至 {result.loc[result['year'] == 2022, 'moran_i'].iloc[0]:.3f}；"
+            f"{start_value:.3f}，"
+            f"2022 年{trend_word} {end_value:.3f}；"
             f"样本期最低值出现在 {int(low_row['year'])} 年，为 {low_row['moran_i']:.3f}，"
             f"最高值出现在 {int(peak_row['year'])} 年，为 {peak_row['moran_i']:.3f}。"
         ),
@@ -842,8 +845,8 @@ def save_analysis(result: pd.DataFrame) -> Path:
         "",
         (
             "可在正文中表述为：2015-2022 年我国省际碳排放效率的全局 Moran's I 均为正，"
-            "且样本期末的空间集聚信号较强，说明碳排放效率存在一定的正向空间集聚特征，"
-            "邻近省份之间呈现相似效率水平，为后续空间计量分析提供了依据。"
+            "且多数年份通过显著性检验，说明碳排放效率存在一定的正向空间集聚特征，"
+            "经济联系更紧密的省份之间更容易呈现相似效率水平，为后续空间计量分析提供了依据。"
         ),
     ]
 
