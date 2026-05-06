@@ -5,9 +5,11 @@ from collections import OrderedDict
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-INPUT_PATH = ROOT / "prcd" / "dearun_eff.csv"
-OUTPUT_PATH = ROOT / "prcd" / "matrix01.csv"
+ROOT = Path(__file__).resolve().parents[2]
+INPUT_PATH = ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
+ECONOMIC_INPUT_PATH = ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
+ADJ_OUTPUT_PATH = ROOT / "data" / "最终数据" / "省际01邻接矩阵.csv"
+ECONOMIC_OUTPUT_PATH = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
 
 
 def load_province_order(path: Path) -> list[str]:
@@ -77,16 +79,72 @@ def write_matrix(provinces: list[str], adjacency: dict[str, set[str]], path: Pat
             writer.writerow(row)
 
 
+def load_average_gdp(path: Path, provinces: list[str]) -> dict[str, float]:
+    gdp_by_province: dict[str, list[float]] = {}
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        required = {"province", "GDP_constant"}
+        missing = required - set(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"{path.name} 缺少字段: {sorted(missing)}")
+
+        for row in reader:
+            province = row["province"].strip()
+            if province not in provinces:
+                continue
+
+            raw_value = row["GDP_constant"].strip()
+            if not raw_value:
+                continue
+
+            value = float(raw_value)
+            gdp_by_province.setdefault(province, []).append(value)
+
+    missing = [province for province in provinces if province not in gdp_by_province]
+    if missing:
+        raise ValueError(f"未在经济数据中找到这些省份: {missing}")
+
+    return {
+        province: sum(values) / len(values)
+        for province, values in gdp_by_province.items()
+    }
+
+
+def write_economic_distance_matrix(
+    provinces: list[str],
+    avg_gdp: dict[str, float],
+    path: Path,
+) -> None:
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["province", *provinces])
+        for province in provinces:
+            base_gdp = avg_gdp[province]
+            row = [province]
+            for other in provinces:
+                if other == province:
+                    row.append(0.0)
+                    continue
+
+                distance = abs(base_gdp - avg_gdp[other])
+                value = 0.0 if distance == 0 else 1.0 / distance
+                row.append(value)
+            writer.writerow(row)
+
+
 def main() -> None:
     provinces = load_province_order(INPUT_PATH)
     adjacency = build_adjacency_pairs()
+    avg_gdp = load_average_gdp(ECONOMIC_INPUT_PATH, provinces)
 
     missing = [province for province in provinces if province not in adjacency]
     if missing:
         raise ValueError(f"未在邻接字典中找到这些省份: {missing}")
 
-    write_matrix(provinces, adjacency, OUTPUT_PATH)
-    print(f"saved: {OUTPUT_PATH}")
+    write_matrix(provinces, adjacency, ADJ_OUTPUT_PATH)
+    write_economic_distance_matrix(provinces, avg_gdp, ECONOMIC_OUTPUT_PATH)
+    print(f"saved: {ADJ_OUTPUT_PATH}")
+    print(f"saved: {ECONOMIC_OUTPUT_PATH}")
 
 
 if __name__ == "__main__":

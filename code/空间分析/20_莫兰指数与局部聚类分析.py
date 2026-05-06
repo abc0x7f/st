@@ -15,11 +15,11 @@ import pandas as pd
 import seaborn as sns
 
 
-ROOT = Path(__file__).resolve().parent
-WEIGHT_PATH = ROOT / "prcd" / "matrix01.csv"
-EFF_PATH = ROOT / "prcd" / "dearun_eff.csv"
-GEOJSON_PATH = ROOT / "data" / "china.geojson"
-OUT_DIR = ROOT / "prcd" / "spatial_plots"
+ROOT = Path(__file__).resolve().parents[2]
+WEIGHT_PATH = ROOT / "data" / "最终数据" / "省际01邻接矩阵.csv"
+EFF_PATH = ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
+GEOJSON_PATH = ROOT / "data" / "外部资料" / "中国省级地图.geojson"
+OUT_DIR = ROOT / "outputs" / "空间分析" / "20_莫兰指数与LISA分析"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET_YEARS = list(range(2015, 2023))
@@ -107,7 +107,7 @@ def load_efficiency(path: Path) -> pd.DataFrame:
     required = {"year", "province", "eff"}
     missing = required - set(df.columns)
     if missing:
-        raise ValueError(f"dearun_eff.csv 缺少字段: {sorted(missing)}")
+        raise ValueError(f"{path.name} 缺少字段: {sorted(missing)}")
 
     df["year"] = pd.to_numeric(df["year"], errors="coerce")
     df["province"] = df["province"].astype(str).str.strip()
@@ -316,13 +316,13 @@ def significance_marker(p_value: float) -> str:
 
 
 def save_result_table(result: pd.DataFrame) -> Path:
-    out_path = OUT_DIR / "global_morans_i_2015_2022.csv"
+    out_path = OUT_DIR / "全局莫兰指数_2015_2022.csv"
     result.to_csv(out_path, index=False, encoding="utf-8-sig")
     return out_path
 
 
 def save_local_result_table(local_result: pd.DataFrame) -> Path:
-    out_path = OUT_DIR / "local_morans_i_2015_2018_2022.csv"
+    out_path = OUT_DIR / "局部莫兰指数_2015_2018_2022.csv"
     local_result.to_csv(out_path, index=False, encoding="utf-8-sig")
     return out_path
 
@@ -436,7 +436,7 @@ def save_plot(result: pd.DataFrame) -> Path:
     fig.text(0.01, 0.01, note, ha="left", va="bottom", fontsize=9, color="#52606D")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
 
-    out_path = OUT_DIR / "18_global_morans_i_2015_2022.png"
+    out_path = OUT_DIR / "18_全局莫兰指数_2015_2022.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out_path
@@ -518,7 +518,7 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
              ha="left", va="bottom", fontsize=9, color="#52606D")
     fig.tight_layout(rect=(0, 0.06, 1, 0.92))
 
-    out_path = OUT_DIR / "24_eff_moran_scatter_2015_2018_2022.png"
+    out_path = OUT_DIR / "24_效率莫兰散点图_2015_2018_2022.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out_path
@@ -784,11 +784,11 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
             fontsize=9,
             color="#52606D",
         )
-        out_path = OUT_DIR / f"25_eff_lisa_cluster_{year}.png"
+        out_path = OUT_DIR / f"25_效率局部聚类图_{year}.png"
         fig.savefig(out_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-    return OUT_DIR / "25_eff_lisa_cluster_2022.png"
+    return OUT_DIR / "25_效率局部聚类图_2022.png"
 
 
 def build_markdown_table(result: pd.DataFrame) -> str:
@@ -847,7 +847,7 @@ def save_analysis(result: pd.DataFrame) -> Path:
         ),
     ]
 
-    out_path = OUT_DIR / "global_morans_i_2015_2022_analysis.md"
+    out_path = OUT_DIR / "全局莫兰指数_2015_2022分析.md"
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return out_path
 

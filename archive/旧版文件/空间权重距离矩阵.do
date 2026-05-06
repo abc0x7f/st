@@ -1,0 +1,297 @@
+diff --git a/c:\Users\abc0x7f\Desktop\PRO\统计建模\code\空间分析\stata\空间权重矩阵检验.do b/c:\Users\abc0x7f\Desktop\PRO\统计建模\code\空间分析\stata\空间权重矩阵检验.do
+deleted file mode 100644
+--- a/c:\Users\abc0x7f\Desktop\PRO\统计建模\code\空间分析\stata\空间权重矩阵检验.do
++++ /dev/null
+@@ -1,292 +0,0 @@
+-version 17.0
+-clear all
+-set more off
+-
+-* ============================================================
+-* 空间权重矩阵检验
+-* 目的：
+-* 1. 对 0-1 邻接矩阵与经济倒数矩阵进行空间面板检验
+-* 2. 输出 LM / Robust LM / LR / Wald 检验结果
+-* 3. 使用 xsmle 估计 FE-SAR / FE-SEM / FE-SDM
+-*
+-* 说明：
+-* - 建议把工作目录设为项目根目录，而不是本 do 文件所在目录
+-* - 这样 data / code / outputs 都可以使用相对路径
+-* - 本脚本尽量只保留最终输出，临时文件全部用 tempfile
+-* ============================================================
+-
+-* ------------------------------
+-* 1. 项目根目录
+-* ------------------------------
+-global PROJECT_ROOT "C:/Users/abc0x7f/Desktop/PRO/统计建模"
+-cd "${PROJECT_ROOT}"
+-
+-global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
+-global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
+-global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
+-global OUT_DIR     "outputs/回归分析/70_空间权重矩阵检验/stata"
+-
+-cap mkdir "${OUT_DIR}"
+-cap log close _all
+-log using "${OUT_DIR}/空间权重矩阵检验总日志.log", text replace
+-
+-display as text "当前工作目录: `c(pwd)'"
+-display as text "输出目录: ${OUT_DIR}"
+-
+-* ------------------------------
+-* 2. 依赖命令检查
+-* ------------------------------
+-cap which xsmle
+-if _rc {
+-    display as text "未检测到 xsmle，尝试从 SSC 安装..."
+-    ssc install xsmle, replace
+-}
+-
+-cap which spatdiag
+-if _rc {
+-    display as text "未检测到 spatdiag，尝试从 SSC 安装..."
+-    capture ssc install spatdiag, replace
+-}
+-
+-* ------------------------------
+-* 3. Mata：行标准化函数
+-* ------------------------------
+-mata:
+-real matrix row_normalize(real matrix W)
+-{
+-    real scalar i, n, s
+-    real matrix R
+-
+-    n = rows(W)
+-    R = W
+-
+-    for (i = 1; i <= n; i++) {
+-        s = sum(R[i,])
+-        if (s != 0) {
+-            R[i,] = R[i,] :/ s
+-        }
+-    }
+-    return(R)
+-}
+-
+-real matrix panel_blockdiag(real matrix W, real scalar T)
+-{
+-    real scalar n, t, r1, r2, c1, c2
+-    real matrix P
+-
+-    n = rows(W)
+-    P = J(n*T, n*T, 0)
+-
+-    for (t = 1; t <= T; t++) {
+-        r1 = (t - 1) * n + 1
+-        r2 = t * n
+-        c1 = (t - 1) * n + 1
+-        c2 = t * n
+-        P[|r1, c1 \ r2, c2|] = W
+-    }
+-    return(P)
+-}
+-end
+-
+-* ------------------------------
+-* 4. 读取空间矩阵并生成 Stata matrix
+-*    输出：
+-*    - r(wname)    : 生成的矩阵名
+-* ------------------------------
+-capture program drop build_w_matrix
+-program define build_w_matrix, rclass
+-    syntax , WFILE(string) WNAME(name)
+-
+-    preserve
+-        import delimited using "`wfile'", clear varnames(1) encoding(utf8) stringcols(1)
+-        drop province
+-        unab allvars : _all
+-        mkmat `allvars', matrix(`wname'_raw)
+-    restore
+-
+-    mata: st_matrix("`wname'", row_normalize(st_matrix("`wname'_raw")))
+-    matrix drop `wname'_raw
+-
+-    return local wname "`wname'"
+-end
+-
+-* ------------------------------
+-* 5. 准备主面板数据
+-* ------------------------------
+-tempfile panel_raw
+-import delimited using "${DATA_FILE}", clear varnames(1) encoding(utf8)
+-
+-keep province year eff lntl ind urb rd open es
+-drop if missing(province, year, eff, lntl, ind, urb, rd, open, es)
+-
+-gen province_name = trim(province)
+-drop province
+-rename province_name province
+-
+-destring year eff lntl ind urb rd open es, replace force
+-sort province year
+-save "`panel_raw'", replace
+-global TMP_PANEL_RAW "`panel_raw'"
+-
+-* ------------------------------
+-* 6. 结果收集表
+-* ------------------------------
+-tempfile result_table
+-postfile handle str20 weight_type str20 test_type ///
+-    str40 test_name double statistic double pvalue double df ///
+-    using "`result_table'", replace
+-
+-* ------------------------------
+-* 7. 单个矩阵的检验流程
+-* ------------------------------
+-capture program drop run_one_matrix
+-program define run_one_matrix
+-    syntax , TAG(string) WFILE(string)
+-
+-    tempname W WLM
+-    tempfile province_order wdiag_dta
+-
+-    preserve
+-        import delimited using "`wfile'", clear varnames(1) encoding(utf8) stringcols(1)
+-        gen order_id = _n
+-        keep province order_id
+-        save "`province_order'", replace
+-    restore
+-
+-    quietly build_w_matrix, wfile("`wfile'") wname(`W')
+-    local WNAME "`r(wname)'"
+-
+-    use "${TMP_PANEL_RAW}", clear
+-    merge m:1 province using "`province_order'", keep(match) nogen
+-    sort order_id year
+-
+-    gen pid = order_id
+-    xtset pid year
+-
+-    quietly levelsof year, local(year_list)
+-    local T : word count `year_list'
+-
+-    preserve
+-        clear
+-        mata: st_matrix("`WLM'", panel_blockdiag(st_matrix("`WNAME'"), `T'))
+-        svmat `WLM', names(col)
+-        save "`wdiag_dta'", replace
+-    restore
+-
+-    quietly spatwmat using "`wdiag_dta'", name(`WLM') standardize
+-
+-    * ----------------------------------------
+-    * A. LM / Robust LM
+-    * 说明：
+-    * - 采用显式省份与年份虚拟变量的 OLS
+-    * - spatdiag 的不同版本返回值名称可能略有差异
+-    * - 因此这里同时写入专门日志，保证结果可追溯
+-    * ----------------------------------------
+-    capture log close lm_`tag'
+-    log using "${OUT_DIR}/LM_`tag'.log", text replace name(lm_`tag')
+-
+-    display as text "============================================"
+-    display as text "LM / Robust LM 检验：`tag'"
+-    display as text "============================================"
+-
+-    quietly tabulate pid, generate(pid_d_)
+-    quietly tabulate year, generate(year_d_)
+-
+-    regress eff lntl ind urb rd open es pid_d_2-pid_d_30 year_d_2-year_d_8
+-
+-    capture noisily spatdiag, weights(`WLM')
+-    if _rc {
+-        display as error "spatdiag 执行失败。请检查本机 spatdiag 版本的 weights()/wmat() 语法。"
+-        display as error "当前脚本默认写法为：spatdiag, weights(`WLM')"
+-    }
+-    else {
+-        tempname S
+-        matrix `S' = r(stats)
+-        post handle ("`tag'") ("LM") ("LM Error") (`S'[2,1]) (`S'[2,3]) (`S'[2,2])
+-        post handle ("`tag'") ("LM") ("Robust LM Error") (`S'[3,1]) (`S'[3,3]) (`S'[3,2])
+-        post handle ("`tag'") ("LM") ("LM Lag") (`S'[4,1]) (`S'[4,3]) (`S'[4,2])
+-        post handle ("`tag'") ("LM") ("Robust LM Lag") (`S'[5,1]) (`S'[5,3]) (`S'[5,2])
+-    }
+-
+-    log close lm_`tag'
+-
+-    * ----------------------------------------
+-    * B. FE-SAR / FE-SEM / FE-SDM
+-    * ----------------------------------------
+-    display as text "============================================"
+-    display as text "xsmle 估计：`tag'"
+-    display as text "============================================"
+-
+-    quietly xsmle eff lntl ind urb rd open es, ///
+-        wmat(`WNAME') model(sar) fe type(ind) nolog noeffects
+-    estimates store sar_`tag'
+-
+-    quietly xsmle eff lntl ind urb rd open es, ///
+-        emat(`WNAME') model(sem) fe type(ind) nolog noeffects
+-    estimates store sem_`tag'
+-
+-    quietly xsmle eff lntl ind urb rd open es, ///
+-        wmat(`WNAME') model(sdm) fe type(ind) nolog noeffects
+-    estimates store sdm_`tag'
+-
+-    * ----------------------------------------
+-    * C. LR：SAR vs SDM
+-    * 这是标准嵌套关系
+-    * H0: SDM 可退化为 SAR，即所有 Wx 系数同时为 0
+-    * ----------------------------------------
+-    quietly lrtest sar_`tag' sdm_`tag'
+-    post handle ("`tag'") ("LR") ("SAR vs SDM") (r(chi2)) (r(p)) (r(df))
+-
+-    * ----------------------------------------
+-    * D. Wald：SDM -> SAR
+-    * xsmle 中 Wx 系数位于 [Wx] 方程
+-    * ----------------------------------------
+-    quietly estimates restore sdm_`tag'
+-    quietly test ///
+-        ([Wx]lntl = 0) ///
+-        ([Wx]ind  = 0) ///
+-        ([Wx]urb  = 0) ///
+-        ([Wx]rd   = 0) ///
+-        ([Wx]open = 0) ///
+-        ([Wx]es   = 0)
+-
+-    post handle ("`tag'") ("Wald") ("SDM -> SAR") ///
+-        (r(chi2)) (r(p)) (r(df))
+-
+-    * ----------------------------------------
+-    * E. 附加输出：模型摘要写入日志
+-    * ----------------------------------------
+-    capture log close model_`tag'
+-    log using "${OUT_DIR}/模型结果_`tag'.log", text replace name(model_`tag')
+-    estimates restore sar_`tag'
+-    ereturn display
+-    estimates restore sem_`tag'
+-    ereturn display
+-    estimates restore sdm_`tag'
+-    ereturn display
+-    log close model_`tag'
+-end
+-
+-* ------------------------------
+-* 8. 运行两个空间矩阵
+-* ------------------------------
+-run_one_matrix, tag(adjacency_01)   wfile("${W_ADJ_FILE}")
+-run_one_matrix, tag(economic_inv)   wfile("${W_ECO_FILE}")
+-
+-postclose handle
+-
+-use "`result_table'", clear
+-sort weight_type test_type test_name
+-export delimited using "${OUT_DIR}/空间权重矩阵检验结果.csv", replace
+-save "${OUT_DIR}/空间权重矩阵检验结果.dta", replace
+-
+-display as text "============================================"
+-display as text "已输出："
+-display as text "${OUT_DIR}/空间权重矩阵检验结果.csv"
+-display as text "${OUT_DIR}/LM_adjacency_01.log"
+-display as text "${OUT_DIR}/LM_economic_inv.log"
+-display as text "${OUT_DIR}/模型结果_adjacency_01.log"
+-display as text "${OUT_DIR}/模型结果_economic_inv.log"
+-display as text "============================================"
+-
+-log close

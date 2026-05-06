@@ -1,0 +1,3 @@
+﻿weight_type,source_file,n_cross_section,n_periods,n_panel_obs,original_transform,final_transform,row_sum_min,row_sum_max
+adjacency_01,data/最终数据/省际01邻接矩阵.csv,30,8,240,O,R,0.9999999999999999,1.0
+economic_inverse,data/最终数据/省际经济距离矩阵.csv,30,8,240,O,R,0.9999999999999997,1.0000000000000004

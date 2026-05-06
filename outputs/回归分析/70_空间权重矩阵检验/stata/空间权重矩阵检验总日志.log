@@ -1,0 +1,1562 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/空间权重矩阵检验总日志.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:30
+
+. 
+. display as text "当前工作目录: `c(pwd)'"
+当前工作目录: C:\Users\abc0x7f\Desktop\PRO\统计建模
+
+. display as text "数据文件: ${DATA_FILE}"
+数据文件: data/最终数据/第二阶段_基础.csv
+
+. display as text "输出目录: ${OUT_DIR}"
+输出目录: outputs/回归分析/70_空间权重矩阵检验
+
+. 
+. * ------------------------------
+. * 1. 依赖命令检查
+. * ------------------------------
+. cap which xsmle
+
+. if _rc {
+.     display as error "未检测到 xsmle。请先执行：ssc install xsmle, replace"
+.     exit 499
+. }
+
+. 
+. cap which spatdiag
+
+. if _rc {
+.     display as error "未检测到 spatdiag。请先执行：ssc install spatdiag, repl
+> ace"
+.     exit 499
+. }
+
+. 
+. cap which spatwmat
+
+. if _rc {
+.     display as error "未检测到 spatwmat。请先执行：ssc install spatwmat, repl
+> ace"
+.     exit 499
+. }
+
+. 
+. * ------------------------------
+. * 2. Mata 辅助函数
+. * ------------------------------
+. mata:
+------------------------------------------------- mata (type end to exit) -----
+: real matrix row_normalize(real matrix W)
+> {
+>     real scalar i, s
+>     real matrix R
+> 
+>     R = W
+>     for (i = 1; i <= rows(R); i++) {
+>         s = sum(R[i,])
+>         if (s != 0) {
+>             R[i,] = R[i,] :/ s
+>         }
+>     }
+>     return(R)
+> }
+
+: 
+: real matrix panel_blockdiag(real matrix W, real scalar T)
+> {
+>     real scalar t, n, r1, r2, c1, c2
+>     real matrix P
+> 
+>     n = rows(W)
+>     P = J(n*T, n*T, 0)
+>     for (t = 1; t <= T; t++) {
+>         r1 = (t - 1) * n + 1
+>         r2 = t * n
+>         c1 = (t - 1) * n + 1
+>         c2 = t * n
+>         P[|r1, c1 \ r2, c2|] = W
+>     }
+>     return(P)
+> }
+
+: end
+-------------------------------------------------------------------------------
+
+. 
+. * ------------------------------
+. * 3. 读取矩阵
+. * ------------------------------
+. capture program drop build_w_matrix
+
+. program define build_w_matrix, rclass
+  1.     syntax , WFILE(string) WNAME(name)
+  2. 
+.     preserve
+  3.         import delimited using "`wfile'", clear varnames(1) encoding(utf8)
+>  stringcols(1)
+  4.         drop province
+  5.         unab wvars : _all
+  6.         mkmat `wvars', matrix(`wname'_raw)
+  7.     restore
+  8. 
+.     mata: st_matrix("`wname'", row_normalize(st_matrix("`wname'_raw")))
+  9.     matrix drop `wname'_raw
+ 10. 
+.     return local wname "`wname'"
+ 11. end
+
+. 
+. * ------------------------------
+. * 4. 主面板数据
+. * ------------------------------
+. tempfile panel_raw
+
+. import delimited using "${DATA_FILE}", clear varnames(1) encoding(utf8)
+(9 vars, 240 obs)
+
+. 
+. keep province year eff lntl ind urb rd open es
+
+. drop if missing(province, year, eff, lntl, ind, urb, rd, open, es)
+(0 observations deleted)
+
+. 
+. replace province = trim(province)
+(0 real changes made)
+
+. destring year eff lntl ind urb rd open es, replace force
+year already numeric; no replace
+eff already numeric; no replace
+lntl already numeric; no replace
+ind already numeric; no replace
+urb already numeric; no replace
+rd already numeric; no replace
+open already numeric; no replace
+es already numeric; no replace
+
+. sort province year
+
+. save "`panel_raw'", replace
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000001.tmp saved as .dta
+    format
+
+. global TMP_PANEL_RAW "`panel_raw'"
+
+. 
+. quietly levelsof province, local(province_list)
+
+. local N : word count `province_list'
+
+. quietly levelsof year, local(year_list)
+
+. local T : word count `year_list'
+
+. global N_CROSS = `N'
+
+. global T_PERIOD = `T'
+
+. 
+. display as text "截面个数 N = ${N_CROSS}"
+截面个数 N = 30
+
+. display as text "时期个数 T = ${T_PERIOD}"
+时期个数 T = 8
+
+. 
+. * ------------------------------
+. * 5. 结果输出表
+. * ------------------------------
+. tempfile lm_results lr_results wald_results
+
+. postfile lm_handle str32 weight_type str20 test_name ///
+>     double statistic double df double pvalue using "`lm_results'", replace
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000002.tmp not found)
+
+. postfile lr_handle str32 weight_type str30 test_name ///
+>     double statistic double df double pvalue using "`lr_results'", replace
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000003.tmp not found)
+
+. postfile wald_handle str32 weight_type str30 test_name ///
+>     double statistic double df double pvalue using "`wald_results'", replace
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000004.tmp not found)
+
+. 
+. * ------------------------------
+. * 6. 单个矩阵的完整检验流程
+. * ------------------------------
+. capture program drop run_one_matrix
+
+. program define run_one_matrix
+  1.     syntax , TAG(string) LABEL(string) WFILE(string)
+  2. 
+.     tempname W WLM
+  3.     tempfile province_order wdiag_dta
+  4.     local df_time = ${T_PERIOD} - 1
+  5.     local df_ind  = ${N_CROSS} - 1
+  6. 
+.     preserve
+  7.         import delimited using "`wfile'", clear varnames(1) encoding(utf8)
+>  stringcols(1)
+  8.         gen order_id = _n
+  9.         keep province order_id
+ 10.         save "`province_order'", replace
+ 11.     restore
+ 12. 
+.     quietly build_w_matrix, wfile("`wfile'") wname(`W')
+ 13.     local WNAME "`r(wname)'"
+ 14. 
+.     use "${TMP_PANEL_RAW}", clear
+ 15.     merge m:1 province using "`province_order'", keep(match) nogen
+ 16.     sort order_id year
+ 17. 
+.     gen pid = order_id
+ 18.     xtset pid year
+ 19. 
+.     preserve
+ 20.         clear
+ 21.         mata: st_matrix("`WLM'", panel_blockdiag(st_matrix("`WNAME'"), ${T
+> _PERIOD}))
+ 22.         svmat `WLM', names(col)
+ 23.         save "`wdiag_dta'", replace
+ 24.     restore
+ 25. 
+.     capture spatwmat drop `WLM'
+ 26.     quietly spatwmat using "`wdiag_dta'", name(`WLM') standardize
+ 27. 
+.     * ----------------------------------------
+.     * A. LM / Robust LM
+.     * ----------------------------------------
+.     capture log close lm_`tag'
+ 28.     log using "${STATA_DIR}/LM_`tag'.log", text replace name(lm_`tag')
+ 29. 
+.     display as text "============================================"
+ 30.     display as text "矩阵：`label' (`tag')"
+ 31.     display as text "LM / Robust LM 检验"
+ 32.     display as text "============================================"
+ 33. 
+.     quietly tabulate pid, generate(pid_d_)
+ 34.     quietly tabulate year, generate(year_d_)
+ 35. 
+.     regress eff lntl ind urb rd open es pid_d_2-pid_d_${N_CROSS} year_d_2-yea
+> r_d_${T_PERIOD}
+ 36. 
+.     noisily spatdiag, weights(`WLM')
+ 37.     return list
+ 38. 
+.     capture confirm matrix r(stats)
+ 39.     if !_rc {
+ 40.         matrix list r(stats)
+ 41.     }
+ 42. 
+.     capture confirm matrix r(stats)
+ 43.     if !_rc {
+ 44.         tempname LMSTAT
+ 45.         matrix `LMSTAT' = r(stats)
+ 46.         post lm_handle ("`tag'") ("LM Error") (`LMSTAT'[2,1]) (`LMSTAT'[2,
+> 2]) (`LMSTAT'[2,3])
+ 47.         post lm_handle ("`tag'") ("Robust LM Error") (`LMSTAT'[3,1]) (`LMS
+> TAT'[3,2]) (`LMSTAT'[3,3])
+ 48.         post lm_handle ("`tag'") ("LM Lag") (`LMSTAT'[4,1]) (`LMSTAT'[4,2]
+> ) (`LMSTAT'[4,3])
+ 49.         post lm_handle ("`tag'") ("Robust LM Lag") (`LMSTAT'[5,1]) (`LMSTA
+> T'[5,2]) (`LMSTAT'[5,3])
+ 50.     }
+ 51. 
+.     log close lm_`tag'
+ 52. 
+.     * ----------------------------------------
+.     * B. LR：个体 / 时间 / 双固定 SDM
+.     * ----------------------------------------
+.     capture log close sdm_`tag'
+ 53.     log using "${STATA_DIR}/模型结果_`tag'.log", text replace name(sdm_`ta
+> g')
+ 54. 
+.     display as text "============================================"
+ 55.     display as text "矩阵：`label' (`tag')"
+ 56.     display as text "SDM 个体 / 时间 / 双固定估计"
+ 57.     display as text "============================================"
+ 58. 
+.     quietly xsmle eff lntl ind urb rd open es, ///
+>         wmat(`WNAME') model(sdm) fe type(ind) nolog noeffects
+ 59.     estimates store ind_`tag'
+ 60.     estimates restore ind_`tag'
+ 61.     ereturn display
+ 62. 
+.     quietly xsmle eff lntl ind urb rd open es, ///
+>         wmat(`WNAME') model(sdm) fe type(time) nolog noeffects
+ 63.     estimates store time_`tag'
+ 64.     estimates restore time_`tag'
+ 65.     ereturn display
+ 66. 
+.     quietly xsmle eff lntl ind urb rd open es, ///
+>         wmat(`WNAME') model(sdm) fe type(both) nolog noeffects
+ 67.     estimates store both_`tag'
+ 68.     estimates restore both_`tag'
+ 69.     ereturn display
+ 70. 
+.     display as text "--------------------------------------------"
+ 71.     display as text "LR 检验"
+ 72.     display as text "--------------------------------------------"
+ 73. 
+.     quietly lrtest both_`tag' ind_`tag', df(`df_time')
+ 74.     post lr_handle ("`tag'") ("LR: both vs ind") (r(chi2)) (`df_time') (r(
+> p))
+ 75.     noisily lrtest both_`tag' ind_`tag', df(`df_time')
+ 76. 
+.     quietly lrtest both_`tag' time_`tag', df(`df_ind')
+ 77.     post lr_handle ("`tag'") ("LR: both vs time") (r(chi2)) (`df_ind') (r(
+> p))
+ 78.     noisily lrtest both_`tag' time_`tag', df(`df_ind')
+ 79. 
+.     * ----------------------------------------
+.     * C. Wald：SDM -> SAR / SDM -> SEM
+.     * ----------------------------------------
+.     display as text "--------------------------------------------"
+ 80.     display as text "Wald 检验"
+ 81.     display as text "--------------------------------------------"
+ 82. 
+.     quietly estimates restore both_`tag'
+ 83. 
+.     quietly test ///
+>         ([Wx]lntl = 0) ///
+>         ([Wx]ind  = 0) ///
+>         ([Wx]urb  = 0) ///
+>         ([Wx]rd   = 0) ///
+>         ([Wx]open = 0) ///
+>         ([Wx]es   = 0)
+ 84.     post wald_handle ("`tag'") ("Wald: SDM -> SAR") (r(chi2)) (r(df)) (r(p
+> ))
+ 85.     noisily test ///
+>         ([Wx]lntl = 0) ///
+>         ([Wx]ind  = 0) ///
+>         ([Wx]urb  = 0) ///
+>         ([Wx]rd   = 0) ///
+>         ([Wx]open = 0) ///
+>         ([Wx]es   = 0)
+ 86. 
+.     quietly testnl ///
+>         ([Wx]lntl = -[Spatial]rho*[Main]lntl) ///
+>         ([Wx]ind  = -[Spatial]rho*[Main]ind) ///
+>         ([Wx]urb  = -[Spatial]rho*[Main]urb) ///
+>         ([Wx]rd   = -[Spatial]rho*[Main]rd) ///
+>         ([Wx]open = -[Spatial]rho*[Main]open) ///
+>         ([Wx]es   = -[Spatial]rho*[Main]es)
+ 87.     post wald_handle ("`tag'") ("Wald: SDM -> SEM") (r(chi2)) (r(df)) (r(p
+> ))
+ 88.     noisily testnl ///
+>         ([Wx]lntl = -[Spatial]rho*[Main]lntl) ///
+>         ([Wx]ind  = -[Spatial]rho*[Main]ind) ///
+>         ([Wx]urb  = -[Spatial]rho*[Main]urb) ///
+>         ([Wx]rd   = -[Spatial]rho*[Main]rd) ///
+>         ([Wx]open = -[Spatial]rho*[Main]open) ///
+>         ([Wx]es   = -[Spatial]rho*[Main]es)
+ 89. 
+.     log close sdm_`tag'
+ 90. end
+
+. 
+. * ------------------------------
+. * 7. 运行四类矩阵
+. * ------------------------------
+. run_one_matrix, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  
+    -----------------------------------------
+
+Panel variable: pid (strongly balanced)
+ Time variable: year, 2015 to 2022
+         Delta: 1 unit
+number of observations will be reset to 240
+Press any key to continue, or Break to abort
+Number of observations (_N) was 0, now 240.
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp saved as .dta
+    format
+-------------------------------------------------------------------------------
+      name:  lm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_adjacency_01.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:30
+============================================
+矩阵：0-1邻接矩阵 (adjacency_01)
+LM / Robust LM 检验
+============================================
+
+      Source |       SS           df       MS      Number of obs   =       240
+-------------+----------------------------------   F(42, 197)      =    105.39
+       Model |  11.8376949        42  .281849878   Prob > F        =    0.0000
+    Residual |  .526845246       197  .002674341   R-squared       =    0.9574
+-------------+----------------------------------   Adj R-squared   =    0.9483
+       Total |  12.3645401       239  .051734477   Root MSE        =    .05171
+
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        lntl |   .1724667   .0635667     2.71   0.007     .0471081    .2978253
+         ind |   .0828436   .1312893     0.63   0.529    -.1760694    .3417565
+         urb |  -1.928236   .3896291    -4.95   0.000    -2.696616   -1.159857
+          rd |   6.588902   2.817804     2.34   0.020      1.03197    12.14584
+        open |   .4521668   .1059002     4.27   0.000     .2433232    .6610104
+          es |  -.1386371   .1452094    -0.95   0.341    -.4250015    .1477274
+     pid_d_2 |   .0111389    .243586     0.05   0.964    -.4692319    .4915096
+     pid_d_3 |    .421289   .2011387     2.09   0.037     .0246275    .8179504
+     pid_d_4 |   .4619312   .1093337     4.22   0.000     .2463165     .677546
+     pid_d_5 |    .307198   .2056023     1.49   0.137    -.0982659    .7126619
+     pid_d_6 |   .1285033   .2134755     0.60   0.548    -.2924874    .5494939
+     pid_d_7 |   .5063228   .0788646     6.42   0.000     .3507957      .66185
+     pid_d_8 |     .45418   .1930997     2.35   0.020     .0733722    .8349878
+     pid_d_9 |   .0150072   .1906192     0.08   0.937    -.3609089    .3909232
+    pid_d_10 |   .2055008   .1695362     1.21   0.227     -.128838    .5398395
+    pid_d_11 |   .2035269   .1991053     1.02   0.308    -.1891245    .5961782
+    pid_d_12 |   .4843628   .1040995     4.65   0.000     .2790703    .6896552
+    pid_d_13 |   .0629561   .2262011     0.28   0.781    -.3831304    .5090425
+    pid_d_14 |   .0866214   .2243143     0.39   0.700     -.355744    .5289869
+    pid_d_15 |   .4763493   .1154587     4.13   0.000     .2486556     .704043
+    pid_d_16 |   .2353735   .2071932     1.14   0.257    -.1732278    .6439748
+    pid_d_17 |   .0687632   .1959909     0.35   0.726    -.3177464    .4552728
+    pid_d_18 |   .0094923    .206504     0.05   0.963    -.3977498    .4167344
+    pid_d_19 |   .2031696   .1281868     1.58   0.115     -.049625    .4559642
+    pid_d_20 |   .6323679   .1944147     3.25   0.001     .2489668    1.015769
+    pid_d_21 |   .2432772   .1924195     1.26   0.208    -.1361892    .6227437
+    pid_d_22 |   .2354586   .2121977     1.11   0.269     -.183012    .6539293
+    pid_d_23 |   .1305799    .237154     0.55   0.583    -.3371065    .5982663
+    pid_d_24 |   .1432044   .1458899     0.98   0.328     -.144502    .4309107
+    pid_d_25 |   .1089996   .2341625     0.47   0.642    -.3527874    .5707866
+    pid_d_26 |   .2810839   .1630837     1.72   0.086      -.04053    .6026978
+    pid_d_27 |   .3257032   .1785392     1.82   0.070    -.0263903    .6777967
+    pid_d_28 |   .1365025    .193798     0.70   0.482    -.2456825    .5186874
+    pid_d_29 |   .9224873   .2272548     4.06   0.000     .4743229    1.370652
+    pid_d_30 |   .3470445   .2071367     1.68   0.095    -.0614455    .7555344
+    year_d_2 |   .0192955   .0151925     1.27   0.206    -.0106653    .0492562
+    year_d_3 |   .0155856   .0198834     0.78   0.434     -.023626    .0547972
+    year_d_4 |   .0487997   .0240268     2.03   0.044     .0014169    .0961825
+    year_d_5 |   .0843367   .0289586     2.91   0.004      .027228    .1414454
+    year_d_6 |     .10131   .0345135     2.94   0.004     .0332468    .1693733
+    year_d_7 |   .1252799   .0352017     3.56   0.000     .0558594    .1947005
+    year_d_8 |   .1399828   .0375767     3.73   0.000     .0658786     .214087
+       _cons |   1.012556   .4141542     2.44   0.015     .1958108      1.8293
+------------------------------------------------------------------------------
+
+
+Diagnostic tests for spatial dependence in OLS regression
+
+
+Fitted model
+------------------------------------------------------------
+eff = lntl + ind + urb + rd + open + es + pid_d_2 +
+      pid_d_3 + pid_d_4 + pid_d_5 + pid_d_6 + pid_d_7 +
+      pid_d_8 + pid_d_9 + pid_d_10 + pid_d_11 +
+      pid_d_12 + pid_d_13 + pid_d_14 + pid_d_15 +
+      pid_d_16 + pid_d_17 + pid_d_18 + pid_d_19 +
+      pid_d_20 + pid_d_21 + pid_d_22 + pid_d_23 +
+      pid_d_24 + pid_d_25 + pid_d_26 + pid_d_27 +
+      pid_d_28 + pid_d_29 + pid_d_30 + year_d_2 +
+      year_d_3 + year_d_4 + year_d_5 + year_d_6 +
+      year_d_7 + year_d_8
+------------------------------------------------------------
+
+Weights matrix
+------------------------------------------------------------
+Name: __000001
+Type: Imported (non-binary)
+Row-standardized: Yes
+------------------------------------------------------------
+
+Diagnostics
+------------------------------------------------------------
+Test                           |  Statistic    df   p-value
+-------------------------------+----------------------------
+Spatial error:                 |
+  Moran's I                    |     2.499      1    0.012
+  Lagrange multiplier          |     2.980      1    0.084
+  Robust Lagrange multiplier   |     2.293      1    0.130
+                               |
+Spatial lag:                   |
+  Lagrange multiplier          |     0.914      1    0.339
+  Robust Lagrange multiplier   |     0.227      1    0.634
+------------------------------------------------------------
+
+
+
+matrices:
+              r(stats) :  5 x 3
+
+r(stats)[5,3]
+             stat         df    p-value
+ Moran  2.4985686          1   .0124696
+ LMerr  2.9797078          1  .08431449
+RLMerr  2.2927069          1  .12998306
+ LMlag  .91411951          1  .33902375
+RLMlag  .22711853          1  .63366868
+      name:  lm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_adjacency_01.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:31
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+      name:  sdm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_adjacency_01.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:31
+============================================
+矩阵：0-1邻接矩阵 (adjacency_01)
+SDM 个体 / 时间 / 双固定估计
+============================================
+(results ind_adjacency_01 are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .3349215    .074175     4.52   0.000     .1895413    .4803018
+         ind |     .02573   .1064865     0.24   0.809    -.1829798    .2344397
+         urb |  -1.649532   .4290662    -3.84   0.000    -2.490486   -.8085775
+          rd |    6.71168    2.45818     2.73   0.006     1.893736    11.52962
+        open |   .4395455   .0906334     4.85   0.000     .2619073    .6171837
+          es |  -.0155266   .1286423    -0.12   0.904    -.2676609    .2366078
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   -.345572   .0911018    -3.79   0.000    -.5241282   -.1670158
+         ind |  -.3032589   .1951451    -1.55   0.120    -.6857363    .0792185
+         urb |   1.103656   .5677343     1.94   0.052    -.0090833    2.216394
+          rd |   7.941124   4.047719     1.96   0.050     .0077413    15.87451
+        open |   .3881657   .1553732     2.50   0.012     .0836398    .6926916
+          es |   .0179596   .2141121     0.08   0.933    -.4016924    .4376115
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .2411077   .0860815     2.80   0.005     .0723912    .4098243
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0019748   .0001814    10.88   0.000     .0016192    .0023304
+------------------------------------------------------------------------------
+(results time_adjacency_01 are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0516275   .0493561     1.05   0.296    -.0451086    .1483636
+         ind |  -.1883669   .1507388    -1.25   0.211    -.4838094    .1070757
+         urb |   1.277505   .2296373     5.56   0.000     .8274245    1.727586
+          rd |   6.514635   1.635107     3.98   0.000     3.309884    9.719387
+        open |  -.7246068   .1316527    -5.50   0.000    -.9826414   -.4665723
+          es |  -.6923934   .1083195    -6.39   0.000    -.9046958   -.4800911
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .5479986   .0949601     5.77   0.000     .3618803    .7341169
+         ind |  -2.413563   .3443066    -7.01   0.000    -3.088392   -1.738735
+         urb |  -2.338694    .342781    -6.82   0.000    -3.010533   -1.666856
+          rd |  -21.58214    3.86034    -5.59   0.000    -29.14826   -14.01601
+        open |   .4143512   .1976895     2.10   0.036     .0268869    .8018155
+          es |  -.4840303   .2372211    -2.04   0.041    -.9489751   -.0190854
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.2147551   .0981609    -2.19   0.029    -.4071469   -.0223634
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0169836   .0015593    10.89   0.000     .0139274    .0200397
+------------------------------------------------------------------------------
+(results both_adjacency_01 are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .3300765   .0730602     4.52   0.000     .1868811    .4732719
+         ind |   .0862273   .1139731     0.76   0.449    -.1371558    .3096104
+         urb |   -1.74336    .426335    -4.09   0.000    -2.578962   -.9077592
+          rd |   4.740792   2.500646     1.90   0.058    -.1603834    9.641967
+        open |   .5003855   .0930477     5.38   0.000     .3180154    .6827557
+          es |   .0215103   .1299439     0.17   0.869    -.2331751    .2761958
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |  -.3653991   .1073237    -3.40   0.001    -.5757498   -.1550485
+         ind |  -.0514197   .2422525    -0.21   0.832    -.5262258    .4233864
+         urb |  -.5117198   .7619259    -0.67   0.502    -2.005067    .9816276
+          rd |   4.054757   5.577476     0.73   0.467    -6.876895    14.98641
+        open |   .5297721   .1699367     3.12   0.002     .1967023    .8628418
+          es |   .1330203   .2581037     0.52   0.606    -.3728537    .6388943
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .1609587   .0925883     1.74   0.082     -.020511    .3424284
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |    .001891   .0001733    10.91   0.000     .0015514    .0022306
+------------------------------------------------------------------------------
+--------------------------------------------
+LR 检验
+--------------------------------------------
+
+Likelihood-ratio test
+Assumption: ind_adjacen~01 nested within both_adjace~01
+
+ LR chi2(7) =  12.48
+Prob > chi2 = 0.0857
+
+Likelihood-ratio test
+Assumption: time_adjace~01 nested within both_adjace~01
+
+LR chi2(29) = 527.75
+Prob > chi2 = 0.0000
+--------------------------------------------
+Wald 检验
+--------------------------------------------
+
+ ( 1)  [Wx]lntl = 0
+ ( 2)  [Wx]ind = 0
+ ( 3)  [Wx]urb = 0
+ ( 4)  [Wx]rd = 0
+ ( 5)  [Wx]open = 0
+ ( 6)  [Wx]es = 0
+
+           chi2(  6) =   32.36
+         Prob > chi2 =    0.0000
+
+  (1)  [Wx]lntl = -[Spatial]rho*[Main]lntl
+  (2)  [Wx]ind = -[Spatial]rho*[Main]ind
+  (3)  [Wx]urb = -[Spatial]rho*[Main]urb
+  (4)  [Wx]rd = -[Spatial]rho*[Main]rd
+  (5)  [Wx]open = -[Spatial]rho*[Main]open
+  (6)  [Wx]es = -[Spatial]rho*[Main]es
+
+               chi2(6) =       31.28
+           Prob > chi2 =        0.0000
+      name:  sdm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_adjacency_01.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:36
+-------------------------------------------------------------------------------
+
+. run_one_matrix, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FI
+> LE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  
+    -----------------------------------------
+
+Panel variable: pid (strongly balanced)
+ Time variable: year, 2015 to 2022
+         Delta: 1 unit
+number of observations will be reset to 240
+Press any key to continue, or Break to abort
+Number of observations (_N) was 0, now 240.
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp saved as .dta
+    format
+-------------------------------------------------------------------------------
+      name:  lm_economic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_economic_inv.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:36
+============================================
+矩阵：经济倒数权重矩阵 (economic_inv)
+LM / Robust LM 检验
+============================================
+
+      Source |       SS           df       MS      Number of obs   =       240
+-------------+----------------------------------   F(42, 197)      =    105.39
+       Model |  11.8376949        42  .281849878   Prob > F        =    0.0000
+    Residual |  .526845246       197  .002674341   R-squared       =    0.9574
+-------------+----------------------------------   Adj R-squared   =    0.9483
+       Total |  12.3645401       239  .051734477   Root MSE        =    .05171
+
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        lntl |   .1724667   .0635667     2.71   0.007     .0471081    .2978253
+         ind |   .0828436   .1312893     0.63   0.529    -.1760694    .3417565
+         urb |  -1.928236   .3896291    -4.95   0.000    -2.696616   -1.159857
+          rd |   6.588902   2.817804     2.34   0.020      1.03197    12.14584
+        open |   .4521668   .1059002     4.27   0.000     .2433232    .6610104
+          es |  -.1386371   .1452094    -0.95   0.341    -.4250015    .1477274
+     pid_d_2 |   .0111389    .243586     0.05   0.964    -.4692319    .4915096
+     pid_d_3 |    .421289   .2011387     2.09   0.037     .0246275    .8179504
+     pid_d_4 |   .4619312   .1093337     4.22   0.000     .2463165     .677546
+     pid_d_5 |    .307198   .2056023     1.49   0.137    -.0982659    .7126619
+     pid_d_6 |   .1285033   .2134755     0.60   0.548    -.2924874    .5494939
+     pid_d_7 |   .5063228   .0788646     6.42   0.000     .3507957      .66185
+     pid_d_8 |     .45418   .1930997     2.35   0.020     .0733722    .8349878
+     pid_d_9 |   .0150072   .1906192     0.08   0.937    -.3609089    .3909232
+    pid_d_10 |   .2055008   .1695362     1.21   0.227     -.128838    .5398395
+    pid_d_11 |   .2035269   .1991053     1.02   0.308    -.1891245    .5961782
+    pid_d_12 |   .4843628   .1040995     4.65   0.000     .2790703    .6896552
+    pid_d_13 |   .0629561   .2262011     0.28   0.781    -.3831304    .5090425
+    pid_d_14 |   .0866214   .2243143     0.39   0.700     -.355744    .5289869
+    pid_d_15 |   .4763493   .1154587     4.13   0.000     .2486556     .704043
+    pid_d_16 |   .2353735   .2071932     1.14   0.257    -.1732278    .6439748
+    pid_d_17 |   .0687632   .1959909     0.35   0.726    -.3177464    .4552728
+    pid_d_18 |   .0094923    .206504     0.05   0.963    -.3977498    .4167344
+    pid_d_19 |   .2031696   .1281868     1.58   0.115     -.049625    .4559642
+    pid_d_20 |   .6323679   .1944147     3.25   0.001     .2489668    1.015769
+    pid_d_21 |   .2432772   .1924195     1.26   0.208    -.1361892    .6227437
+    pid_d_22 |   .2354586   .2121977     1.11   0.269     -.183012    .6539293
+    pid_d_23 |   .1305799    .237154     0.55   0.583    -.3371065    .5982663
+    pid_d_24 |   .1432044   .1458899     0.98   0.328     -.144502    .4309107
+    pid_d_25 |   .1089996   .2341625     0.47   0.642    -.3527874    .5707866
+    pid_d_26 |   .2810839   .1630837     1.72   0.086      -.04053    .6026978
+    pid_d_27 |   .3257032   .1785392     1.82   0.070    -.0263903    .6777967
+    pid_d_28 |   .1365025    .193798     0.70   0.482    -.2456825    .5186874
+    pid_d_29 |   .9224873   .2272548     4.06   0.000     .4743229    1.370652
+    pid_d_30 |   .3470445   .2071367     1.68   0.095    -.0614455    .7555344
+    year_d_2 |   .0192955   .0151925     1.27   0.206    -.0106653    .0492562
+    year_d_3 |   .0155856   .0198834     0.78   0.434     -.023626    .0547972
+    year_d_4 |   .0487997   .0240268     2.03   0.044     .0014169    .0961825
+    year_d_5 |   .0843367   .0289586     2.91   0.004      .027228    .1414454
+    year_d_6 |     .10131   .0345135     2.94   0.004     .0332468    .1693733
+    year_d_7 |   .1252799   .0352017     3.56   0.000     .0558594    .1947005
+    year_d_8 |   .1399828   .0375767     3.73   0.000     .0658786     .214087
+       _cons |   1.012556   .4141542     2.44   0.015     .1958108      1.8293
+------------------------------------------------------------------------------
+
+
+Diagnostic tests for spatial dependence in OLS regression
+
+
+Fitted model
+------------------------------------------------------------
+eff = lntl + ind + urb + rd + open + es + pid_d_2 +
+      pid_d_3 + pid_d_4 + pid_d_5 + pid_d_6 + pid_d_7 +
+      pid_d_8 + pid_d_9 + pid_d_10 + pid_d_11 +
+      pid_d_12 + pid_d_13 + pid_d_14 + pid_d_15 +
+      pid_d_16 + pid_d_17 + pid_d_18 + pid_d_19 +
+      pid_d_20 + pid_d_21 + pid_d_22 + pid_d_23 +
+      pid_d_24 + pid_d_25 + pid_d_26 + pid_d_27 +
+      pid_d_28 + pid_d_29 + pid_d_30 + year_d_2 +
+      year_d_3 + year_d_4 + year_d_5 + year_d_6 +
+      year_d_7 + year_d_8
+------------------------------------------------------------
+
+Weights matrix
+------------------------------------------------------------
+Name: __000001
+Type: Imported (non-binary)
+Row-standardized: Yes
+------------------------------------------------------------
+
+Diagnostics
+------------------------------------------------------------
+Test                           |  Statistic    df   p-value
+-------------------------------+----------------------------
+Spatial error:                 |
+  Moran's I                    |    -2.326      1    1.980
+  Lagrange multiplier          |     8.461      1    0.004
+  Robust Lagrange multiplier   |     6.365      1    0.012
+                               |
+Spatial lag:                   |
+  Lagrange multiplier          |     2.797      1    0.094
+  Robust Lagrange multiplier   |     0.701      1    0.402
+------------------------------------------------------------
+
+
+
+matrices:
+              r(stats) :  5 x 3
+
+r(stats)[5,3]
+              stat          df     p-value
+ Moran  -2.3264735           1   1.9800067
+ LMerr   8.4609446           1   .00362853
+RLMerr   6.3648628           1   .01164021
+ LMlag   2.7971089           1   .09443445
+RLMlag   .70102715           1   .40243877
+      name:  lm_economic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_economic_inv.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:37
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+      name:  sdm_economic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_economic_inv.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:37
+============================================
+矩阵：经济倒数权重矩阵 (economic_inv)
+SDM 个体 / 时间 / 双固定估计
+============================================
+(results ind_economic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0019359   .0616119     0.03   0.975    -.1188213    .1226931
+         ind |   .1114226   .1112173     1.00   0.316    -.1065593    .3294045
+         urb |  -2.069616   .3305982    -6.26   0.000    -2.717576   -1.421655
+          rd |   8.039277     2.3451     3.43   0.001     3.442966    12.63559
+        open |    .454759   .0907788     5.01   0.000     .2768359    .6326821
+          es |  -.0815755   .1309329    -0.62   0.533    -.3381994    .1750483
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .1710375   .0943205     1.81   0.070    -.0138272    .3559022
+         ind |  -.1379796   .2505918    -0.55   0.582    -.6291305    .3531713
+         urb |   -.262334    .590325    -0.44   0.657     -1.41935    .8946818
+          rd |   15.48359   5.000964     3.10   0.002     5.681876     25.2853
+        open |  -.2668139   .2139765    -1.25   0.212    -.6862002    .1525723
+          es |  -.8912388   .2832189    -3.15   0.002    -1.446338     -.33614
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .0192542   .1120699     0.17   0.864    -.2003988    .2389073
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0020347   .0001857    10.95   0.000     .0016706    .0023987
+------------------------------------------------------------------------------
+(results time_economic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0580732   .0425352     1.37   0.172    -.0252944    .1414407
+         ind |    .066662   .1478679     0.45   0.652    -.2231539    .3564778
+         urb |   .2453024   .2167686     1.13   0.258    -.1795563    .6701612
+          rd |   2.679033   1.596848     1.68   0.093    -.4507325    5.808798
+        open |  -.1298559   .1180107    -1.10   0.271    -.3611525    .1014408
+          es |  -.7877651    .104578    -7.53   0.000    -.9927342    -.582796
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .4338145    .100911     4.30   0.000     .2360326    .6315964
+         ind |   .5843312   .4497423     1.30   0.194    -.2971474     1.46581
+         urb |   .2160365   .5076408     0.43   0.670    -.7789212    1.210994
+          rd |  -11.88202   4.281869    -2.77   0.006    -20.27433   -3.489705
+        open |  -.8353191   .2634423    -3.17   0.002    -1.351657   -.3189817
+          es |   .0387869   .3318373     0.12   0.907    -.6116023    .6891761
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .5593201   .0895444     6.25   0.000     .3838163    .7348239
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0172869   .0016669    10.37   0.000     .0140199    .0205539
+------------------------------------------------------------------------------
+(results both_economic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0349996    .059328     0.59   0.555    -.0812812    .1512803
+         ind |    .031259   .1173608     0.27   0.790    -.1987639    .2612818
+         urb |  -2.031159   .3243241    -6.26   0.000    -2.666822   -1.395495
+          rd |    5.11447   2.395437     2.14   0.033     .4195005     9.80944
+        open |   .4252409    .091386     4.65   0.000     .2461276    .6043542
+          es |  -.0641364   .1253438    -0.51   0.609    -.3098058     .181533
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .7706416   .1553848     4.96   0.000     .4660931     1.07519
+         ind |  -.2093168   .3069699    -0.68   0.495    -.8109668    .3923332
+         urb |   .0833066   .8925418     0.09   0.926    -1.666043    1.832656
+          rd |  -.3072536   6.452132    -0.05   0.962     -12.9532    12.33869
+        open |  -.1215587   .2602951    -0.47   0.640    -.6317277    .3886104
+          es |   -1.20902   .3029009    -3.99   0.000    -1.802695   -.6153447
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.1565313   .1198196    -1.31   0.191    -.3913734    .0783107
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0018223   .0001668    10.93   0.000     .0014955    .0021492
+------------------------------------------------------------------------------
+--------------------------------------------
+LR 检验
+--------------------------------------------
+
+Likelihood-ratio test
+Assumption: ind_economic~v nested within both_economi~v
+
+ LR chi2(7) =  25.48
+Prob > chi2 = 0.0006
+
+Likelihood-ratio test
+Assumption: time_economi~v nested within both_economi~v
+
+LR chi2(29) = 550.42
+Prob > chi2 = 0.0000
+--------------------------------------------
+Wald 检验
+--------------------------------------------
+
+ ( 1)  [Wx]lntl = 0
+ ( 2)  [Wx]ind = 0
+ ( 3)  [Wx]urb = 0
+ ( 4)  [Wx]rd = 0
+ ( 5)  [Wx]open = 0
+ ( 6)  [Wx]es = 0
+
+           chi2(  6) =   47.93
+         Prob > chi2 =    0.0000
+
+  (1)  [Wx]lntl = -[Spatial]rho*[Main]lntl
+  (2)  [Wx]ind = -[Spatial]rho*[Main]ind
+  (3)  [Wx]urb = -[Spatial]rho*[Main]urb
+  (4)  [Wx]rd = -[Spatial]rho*[Main]rd
+  (5)  [Wx]open = -[Spatial]rho*[Main]open
+  (6)  [Wx]es = -[Spatial]rho*[Main]es
+
+               chi2(6) =       45.85
+           Prob > chi2 =        0.0000
+      name:  sdm_economic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_economic_inv.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:38
+-------------------------------------------------------------------------------
+
+. run_one_matrix, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile
+> ("${W_GEO_INV_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  
+    -----------------------------------------
+
+Panel variable: pid (strongly balanced)
+ Time variable: year, 2015 to 2022
+         Delta: 1 unit
+number of observations will be reset to 240
+Press any key to continue, or Break to abort
+Number of observations (_N) was 0, now 240.
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp saved as .dta
+    format
+(file
+    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重矩阵检
+    > 验/stata/LM_geographic_inv.log not found)
+-------------------------------------------------------------------------------
+      name:  lm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_geographic_inv.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:38
+============================================
+矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
+LM / Robust LM 检验
+============================================
+
+      Source |       SS           df       MS      Number of obs   =       240
+-------------+----------------------------------   F(42, 197)      =    105.39
+       Model |  11.8376949        42  .281849878   Prob > F        =    0.0000
+    Residual |  .526845246       197  .002674341   R-squared       =    0.9574
+-------------+----------------------------------   Adj R-squared   =    0.9483
+       Total |  12.3645401       239  .051734477   Root MSE        =    .05171
+
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        lntl |   .1724667   .0635667     2.71   0.007     .0471081    .2978253
+         ind |   .0828436   .1312893     0.63   0.529    -.1760694    .3417565
+         urb |  -1.928236   .3896291    -4.95   0.000    -2.696616   -1.159857
+          rd |   6.588902   2.817804     2.34   0.020      1.03197    12.14584
+        open |   .4521668   .1059002     4.27   0.000     .2433232    .6610104
+          es |  -.1386371   .1452094    -0.95   0.341    -.4250015    .1477274
+     pid_d_2 |   .0111389    .243586     0.05   0.964    -.4692319    .4915096
+     pid_d_3 |    .421289   .2011387     2.09   0.037     .0246275    .8179504
+     pid_d_4 |   .4619312   .1093337     4.22   0.000     .2463165     .677546
+     pid_d_5 |    .307198   .2056023     1.49   0.137    -.0982659    .7126619
+     pid_d_6 |   .1285033   .2134755     0.60   0.548    -.2924874    .5494939
+     pid_d_7 |   .5063228   .0788646     6.42   0.000     .3507957      .66185
+     pid_d_8 |     .45418   .1930997     2.35   0.020     .0733722    .8349878
+     pid_d_9 |   .0150072   .1906192     0.08   0.937    -.3609089    .3909232
+    pid_d_10 |   .2055008   .1695362     1.21   0.227     -.128838    .5398395
+    pid_d_11 |   .2035269   .1991053     1.02   0.308    -.1891245    .5961782
+    pid_d_12 |   .4843628   .1040995     4.65   0.000     .2790703    .6896552
+    pid_d_13 |   .0629561   .2262011     0.28   0.781    -.3831304    .5090425
+    pid_d_14 |   .0866214   .2243143     0.39   0.700     -.355744    .5289869
+    pid_d_15 |   .4763493   .1154587     4.13   0.000     .2486556     .704043
+    pid_d_16 |   .2353735   .2071932     1.14   0.257    -.1732278    .6439748
+    pid_d_17 |   .0687632   .1959909     0.35   0.726    -.3177464    .4552728
+    pid_d_18 |   .0094923    .206504     0.05   0.963    -.3977498    .4167344
+    pid_d_19 |   .2031696   .1281868     1.58   0.115     -.049625    .4559642
+    pid_d_20 |   .6323679   .1944147     3.25   0.001     .2489668    1.015769
+    pid_d_21 |   .2432772   .1924195     1.26   0.208    -.1361892    .6227437
+    pid_d_22 |   .2354586   .2121977     1.11   0.269     -.183012    .6539293
+    pid_d_23 |   .1305799    .237154     0.55   0.583    -.3371065    .5982663
+    pid_d_24 |   .1432044   .1458899     0.98   0.328     -.144502    .4309107
+    pid_d_25 |   .1089996   .2341625     0.47   0.642    -.3527874    .5707866
+    pid_d_26 |   .2810839   .1630837     1.72   0.086      -.04053    .6026978
+    pid_d_27 |   .3257032   .1785392     1.82   0.070    -.0263903    .6777967
+    pid_d_28 |   .1365025    .193798     0.70   0.482    -.2456825    .5186874
+    pid_d_29 |   .9224873   .2272548     4.06   0.000     .4743229    1.370652
+    pid_d_30 |   .3470445   .2071367     1.68   0.095    -.0614455    .7555344
+    year_d_2 |   .0192955   .0151925     1.27   0.206    -.0106653    .0492562
+    year_d_3 |   .0155856   .0198834     0.78   0.434     -.023626    .0547972
+    year_d_4 |   .0487997   .0240268     2.03   0.044     .0014169    .0961825
+    year_d_5 |   .0843367   .0289586     2.91   0.004      .027228    .1414454
+    year_d_6 |     .10131   .0345135     2.94   0.004     .0332468    .1693733
+    year_d_7 |   .1252799   .0352017     3.56   0.000     .0558594    .1947005
+    year_d_8 |   .1399828   .0375767     3.73   0.000     .0658786     .214087
+       _cons |   1.012556   .4141542     2.44   0.015     .1958108      1.8293
+------------------------------------------------------------------------------
+
+
+Diagnostic tests for spatial dependence in OLS regression
+
+
+Fitted model
+------------------------------------------------------------
+eff = lntl + ind + urb + rd + open + es + pid_d_2 +
+      pid_d_3 + pid_d_4 + pid_d_5 + pid_d_6 + pid_d_7 +
+      pid_d_8 + pid_d_9 + pid_d_10 + pid_d_11 +
+      pid_d_12 + pid_d_13 + pid_d_14 + pid_d_15 +
+      pid_d_16 + pid_d_17 + pid_d_18 + pid_d_19 +
+      pid_d_20 + pid_d_21 + pid_d_22 + pid_d_23 +
+      pid_d_24 + pid_d_25 + pid_d_26 + pid_d_27 +
+      pid_d_28 + pid_d_29 + pid_d_30 + year_d_2 +
+      year_d_3 + year_d_4 + year_d_5 + year_d_6 +
+      year_d_7 + year_d_8
+------------------------------------------------------------
+
+Weights matrix
+------------------------------------------------------------
+Name: __000001
+Type: Imported (non-binary)
+Row-standardized: Yes
+------------------------------------------------------------
+
+Diagnostics
+------------------------------------------------------------
+Test                           |  Statistic    df   p-value
+-------------------------------+----------------------------
+Spatial error:                 |
+  Moran's I                    |     0.852      1    0.394
+  Lagrange multiplier          |     1.022      1    0.312
+  Robust Lagrange multiplier   |     0.695      1    0.404
+                               |
+Spatial lag:                   |
+  Lagrange multiplier          |     0.441      1    0.506
+  Robust Lagrange multiplier   |     0.115      1    0.735
+------------------------------------------------------------
+
+
+
+matrices:
+              r(stats) :  5 x 3
+
+r(stats)[5,3]
+             stat         df    p-value
+ Moran  .85159589          1  .39443842
+ LMerr  1.0217014          1  .31211578
+RLMerr  .69493756          1  .40448999
+ LMlag  .44142474          1  .50643559
+RLMlag  .11466093          1  .73489888
+      name:  lm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_geographic_inv.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:39
+-------------------------------------------------------------------------------
+(file
+    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重矩阵检
+    > 验/stata/模型结果_geographic_inv.log not found)
+-------------------------------------------------------------------------------
+      name:  sdm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_geographic_inv.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:39
+============================================
+矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
+SDM 个体 / 时间 / 双固定估计
+============================================
+(results ind_geographic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .1494747   .0639796     2.34   0.019      .024077    .2748724
+         ind |   .0224255   .1177458     0.19   0.849    -.2083521     .253203
+         urb |  -1.530496   .4395178    -3.48   0.000    -2.391935   -.6690565
+          rd |   6.835003   2.527626     2.70   0.007     1.880947    11.78906
+        open |   .4117418   .1035683     3.98   0.000     .2087517     .614732
+          es |  -.1121505   .1316743    -0.85   0.394    -.3702273    .1459264
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |  -.0071551   .1413046    -0.05   0.960     -.284107    .2697967
+         ind |  -.1627817   .4799345    -0.34   0.734    -1.103436    .7778727
+         urb |  -.5258022   1.589049    -0.33   0.741    -3.640281    2.588676
+          rd |   20.45849   9.128144     2.24   0.025     2.567652    38.34932
+        open |   .2130047   .4381358     0.49   0.627    -.6457256    1.071735
+          es |  -.2910847   .6719347    -0.43   0.665    -1.608052    1.025883
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .0600027   .1987476     0.30   0.763    -.3295354    .4495408
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0022096   .0002017    10.95   0.000     .0018142     .002605
+------------------------------------------------------------------------------
+(results time_geographic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .2164941   .0502747     4.31   0.000     .1179575    .3150308
+         ind |  -.3601228   .1683774    -2.14   0.032    -.6901364   -.0301093
+         urb |    .447346   .2209569     2.02   0.043     .0142783    .8804136
+          rd |    3.15923   1.691879     1.87   0.062    -.1567911    6.475252
+        open |  -.5709844   .1618081    -3.53   0.000    -.8881225   -.2538463
+          es |   -.869999   .1181312    -7.36   0.000    -1.101532   -.6384661
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   1.381852   .3243501     4.26   0.000     .7461373    2.017566
+         ind |  -5.609917   1.154886    -4.86   0.000    -7.873452   -3.346382
+         urb |  -6.797132    1.04533    -6.50   0.000    -8.845942   -4.748323
+          rd |    5.80048   13.24118     0.44   0.661    -20.15175    31.75271
+        open |    -2.0954   .9563382    -2.19   0.028    -3.969789   -.2210119
+          es |   1.491163    1.35509     1.10   0.271    -1.164765    4.147091
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.7046979   .2888273    -2.44   0.015    -1.270789   -.1386068
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |    .018737   .0017338    10.81   0.000     .0153388    .0221352
+------------------------------------------------------------------------------
+(results both_geographic_inv are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .1252878   .0655478     1.91   0.056    -.0031836    .2537592
+         ind |   .0949448   .1290427     0.74   0.462    -.1579742    .3478639
+         urb |  -1.206387   .4543283    -2.66   0.008    -2.096854   -.3159199
+          rd |    6.25439   2.505554     2.50   0.013     1.343594    11.16519
+        open |   .4370164   .1057128     4.13   0.000     .2298231    .6442097
+          es |  -.0247131    .137557    -0.18   0.857    -.2943198    .2448936
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .3062948   .3755663     0.82   0.415    -.4298015    1.042391
+         ind |   .6389671   .7732877     0.83   0.409     -.876649    2.154583
+         urb |  -4.451071    2.25922    -1.97   0.049     -8.87906   -.0230816
+          rd |    8.63656   15.85655     0.54   0.586     -22.4417    39.71483
+        open |    1.23476   .6230055     1.98   0.047     .0136918    2.455828
+          es |   1.075685   1.196504     0.90   0.369     -1.26942    3.420789
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.3062686   .2616045    -1.17   0.242    -.8190039    .2064668
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0020695   .0001885    10.98   0.000        .0017    .0024391
+------------------------------------------------------------------------------
+--------------------------------------------
+LR 检验
+--------------------------------------------
+
+Likelihood-ratio test
+Assumption: ind_geograph~v nested within both_geograp~v
+
+ LR chi2(7) =  13.53
+Prob > chi2 = 0.0602
+
+Likelihood-ratio test
+Assumption: time_geograp~v nested within both_geograp~v
+
+LR chi2(29) = 531.72
+Prob > chi2 = 0.0000
+--------------------------------------------
+Wald 检验
+--------------------------------------------
+
+ ( 1)  [Wx]lntl = 0
+ ( 2)  [Wx]ind = 0
+ ( 3)  [Wx]urb = 0
+ ( 4)  [Wx]rd = 0
+ ( 5)  [Wx]open = 0
+ ( 6)  [Wx]es = 0
+
+           chi2(  6) =   12.19
+         Prob > chi2 =    0.0580
+
+  (1)  [Wx]lntl = -[Spatial]rho*[Main]lntl
+  (2)  [Wx]ind = -[Spatial]rho*[Main]ind
+  (3)  [Wx]urb = -[Spatial]rho*[Main]urb
+  (4)  [Wx]rd = -[Spatial]rho*[Main]rd
+  (5)  [Wx]open = -[Spatial]rho*[Main]open
+  (6)  [Wx]es = -[Spatial]rho*[Main]es
+
+               chi2(6) =       11.44
+           Prob > chi2 =        0.0757
+      name:  sdm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_geographic_inv.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:41
+-------------------------------------------------------------------------------
+
+. run_one_matrix, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") 
+> wfile("${W_ECO_GEO_NEST_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000005.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  
+    -----------------------------------------
+
+Panel variable: pid (strongly balanced)
+ Time variable: year, 2015 to 2022
+         Delta: 1 unit
+number of observations will be reset to 240
+Press any key to continue, or Break to abort
+Number of observations (_N) was 0, now 240.
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_2d1c_000006.tmp saved as .dta
+    format
+(file
+    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重矩阵检
+    > 验/stata/LM_economic_geo_nested.log not found)
+-------------------------------------------------------------------------------
+      name:  lm_economic_geo_nested
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_economic_geo_nested.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:42
+============================================
+矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
+LM / Robust LM 检验
+============================================
+
+      Source |       SS           df       MS      Number of obs   =       240
+-------------+----------------------------------   F(42, 197)      =    105.39
+       Model |  11.8376949        42  .281849878   Prob > F        =    0.0000
+    Residual |  .526845246       197  .002674341   R-squared       =    0.9574
+-------------+----------------------------------   Adj R-squared   =    0.9483
+       Total |  12.3645401       239  .051734477   Root MSE        =    .05171
+
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        lntl |   .1724667   .0635667     2.71   0.007     .0471081    .2978253
+         ind |   .0828436   .1312893     0.63   0.529    -.1760694    .3417565
+         urb |  -1.928236   .3896291    -4.95   0.000    -2.696616   -1.159857
+          rd |   6.588902   2.817804     2.34   0.020      1.03197    12.14584
+        open |   .4521668   .1059002     4.27   0.000     .2433232    .6610104
+          es |  -.1386371   .1452094    -0.95   0.341    -.4250015    .1477274
+     pid_d_2 |   .0111389    .243586     0.05   0.964    -.4692319    .4915096
+     pid_d_3 |    .421289   .2011387     2.09   0.037     .0246275    .8179504
+     pid_d_4 |   .4619312   .1093337     4.22   0.000     .2463165     .677546
+     pid_d_5 |    .307198   .2056023     1.49   0.137    -.0982659    .7126619
+     pid_d_6 |   .1285033   .2134755     0.60   0.548    -.2924874    .5494939
+     pid_d_7 |   .5063228   .0788646     6.42   0.000     .3507957      .66185
+     pid_d_8 |     .45418   .1930997     2.35   0.020     .0733722    .8349878
+     pid_d_9 |   .0150072   .1906192     0.08   0.937    -.3609089    .3909232
+    pid_d_10 |   .2055008   .1695362     1.21   0.227     -.128838    .5398395
+    pid_d_11 |   .2035269   .1991053     1.02   0.308    -.1891245    .5961782
+    pid_d_12 |   .4843628   .1040995     4.65   0.000     .2790703    .6896552
+    pid_d_13 |   .0629561   .2262011     0.28   0.781    -.3831304    .5090425
+    pid_d_14 |   .0866214   .2243143     0.39   0.700     -.355744    .5289869
+    pid_d_15 |   .4763493   .1154587     4.13   0.000     .2486556     .704043
+    pid_d_16 |   .2353735   .2071932     1.14   0.257    -.1732278    .6439748
+    pid_d_17 |   .0687632   .1959909     0.35   0.726    -.3177464    .4552728
+    pid_d_18 |   .0094923    .206504     0.05   0.963    -.3977498    .4167344
+    pid_d_19 |   .2031696   .1281868     1.58   0.115     -.049625    .4559642
+    pid_d_20 |   .6323679   .1944147     3.25   0.001     .2489668    1.015769
+    pid_d_21 |   .2432772   .1924195     1.26   0.208    -.1361892    .6227437
+    pid_d_22 |   .2354586   .2121977     1.11   0.269     -.183012    .6539293
+    pid_d_23 |   .1305799    .237154     0.55   0.583    -.3371065    .5982663
+    pid_d_24 |   .1432044   .1458899     0.98   0.328     -.144502    .4309107
+    pid_d_25 |   .1089996   .2341625     0.47   0.642    -.3527874    .5707866
+    pid_d_26 |   .2810839   .1630837     1.72   0.086      -.04053    .6026978
+    pid_d_27 |   .3257032   .1785392     1.82   0.070    -.0263903    .6777967
+    pid_d_28 |   .1365025    .193798     0.70   0.482    -.2456825    .5186874
+    pid_d_29 |   .9224873   .2272548     4.06   0.000     .4743229    1.370652
+    pid_d_30 |   .3470445   .2071367     1.68   0.095    -.0614455    .7555344
+    year_d_2 |   .0192955   .0151925     1.27   0.206    -.0106653    .0492562
+    year_d_3 |   .0155856   .0198834     0.78   0.434     -.023626    .0547972
+    year_d_4 |   .0487997   .0240268     2.03   0.044     .0014169    .0961825
+    year_d_5 |   .0843367   .0289586     2.91   0.004      .027228    .1414454
+    year_d_6 |     .10131   .0345135     2.94   0.004     .0332468    .1693733
+    year_d_7 |   .1252799   .0352017     3.56   0.000     .0558594    .1947005
+    year_d_8 |   .1399828   .0375767     3.73   0.000     .0658786     .214087
+       _cons |   1.012556   .4141542     2.44   0.015     .1958108      1.8293
+------------------------------------------------------------------------------
+
+
+Diagnostic tests for spatial dependence in OLS regression
+
+
+Fitted model
+------------------------------------------------------------
+eff = lntl + ind + urb + rd + open + es + pid_d_2 +
+      pid_d_3 + pid_d_4 + pid_d_5 + pid_d_6 + pid_d_7 +
+      pid_d_8 + pid_d_9 + pid_d_10 + pid_d_11 +
+      pid_d_12 + pid_d_13 + pid_d_14 + pid_d_15 +
+      pid_d_16 + pid_d_17 + pid_d_18 + pid_d_19 +
+      pid_d_20 + pid_d_21 + pid_d_22 + pid_d_23 +
+      pid_d_24 + pid_d_25 + pid_d_26 + pid_d_27 +
+      pid_d_28 + pid_d_29 + pid_d_30 + year_d_2 +
+      year_d_3 + year_d_4 + year_d_5 + year_d_6 +
+      year_d_7 + year_d_8
+------------------------------------------------------------
+
+Weights matrix
+------------------------------------------------------------
+Name: __000001
+Type: Imported (non-binary)
+Row-standardized: Yes
+------------------------------------------------------------
+
+Diagnostics
+------------------------------------------------------------
+Test                           |  Statistic    df   p-value
+-------------------------------+----------------------------
+Spatial error:                 |
+  Moran's I                    |    -0.326      1    1.255
+  Lagrange multiplier          |     2.812      1    0.094
+  Robust Lagrange multiplier   |     2.025      1    0.155
+                               |
+Spatial lag:                   |
+  Lagrange multiplier          |     1.004      1    0.316
+  Robust Lagrange multiplier   |     0.217      1    0.641
+------------------------------------------------------------
+
+
+
+matrices:
+              r(stats) :  5 x 3
+
+r(stats)[5,3]
+              stat          df     p-value
+ Moran  -.32571151           1   1.2553574
+ LMerr   2.8117873           1   .09357407
+RLMerr   2.0250225           1   .15472663
+ LMlag   1.0041663           1   .31630448
+RLMlag   .21740152           1     .641027
+      name:  lm_economic_geo_nested
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/LM_economic_geo_nested.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:42
+-------------------------------------------------------------------------------
+(file
+    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重矩阵检
+    > 验/stata/模型结果_economic_geo_nested.log not found)
+-------------------------------------------------------------------------------
+      name:  sdm_economic_geo_nested
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_economic_geo_nested.log
+  log type:  text
+ opened on:   6 May 2026, 09:42:42
+============================================
+矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
+SDM 个体 / 时间 / 双固定估计
+============================================
+(results ind_economic_geo_nested are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .1020922   .0655637     1.56   0.119    -.0264102    .2305947
+         ind |   .0448848   .1162643     0.39   0.699     -.182989    .2727587
+         urb |  -1.508941   .4103672    -3.68   0.000    -2.313246   -.7046357
+          rd |    6.44023   2.499344     2.58   0.010     1.541607    11.33885
+        open |   .4049254   .0984784     4.11   0.000     .2119112    .5979396
+          es |   -.095775   .1312889    -0.73   0.466    -.3530965    .1615465
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .0726703   .1402187     0.52   0.604    -.2021533     .347494
+         ind |  -.3299055   .4911929    -0.67   0.502    -1.292626    .6328149
+         urb |  -1.684479   1.430868    -1.18   0.239    -4.488928    1.119969
+          rd |   26.33044   9.158529     2.87   0.004     8.380057    44.28083
+        open |   .0743278   .4269394     0.17   0.862     -.762458    .9111137
+          es |  -.7351153   .6156258    -1.19   0.232     -1.94172    .4714892
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |   .0411044   .2041115     0.20   0.840    -.3589467    .4411555
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0021659   .0001977    10.95   0.000     .0017784    .0025534
+------------------------------------------------------------------------------
+(results time_economic_geo_nested are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .1573562   .0508015     3.10   0.002     .0577872    .2569253
+         ind |   -.306393   .1722852    -1.78   0.075    -.6440658    .0312798
+         urb |    .320848   .1880028     1.71   0.088    -.0476308    .6893268
+          rd |   1.477596   1.762532     0.84   0.402    -1.976903    4.932095
+        open |  -.4092602   .1376479    -2.97   0.003    -.6790451   -.1394753
+          es |  -.9305385   .1077383    -8.64   0.000    -1.141702   -.7193753
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   2.036366   .2888926     7.05   0.000     1.470147    2.602585
+         ind |  -5.480198   1.085112    -5.05   0.000    -7.606978   -3.353418
+         urb |  -8.374944   1.182671    -7.08   0.000    -10.69294   -6.056951
+          rd |   9.820868   12.19234     0.81   0.421    -14.07568    33.71741
+        open |  -4.386476   .7591972    -5.78   0.000    -5.874475   -2.898477
+          es |  -2.951614   .8719633    -3.39   0.001    -4.660631   -1.242598
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.2149447   .2524414    -0.85   0.395    -.7097208    .2798313
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0178441   .0016353    10.91   0.000      .014639    .0210493
+------------------------------------------------------------------------------
+(results both_economic_geo_nested are active now)
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0562412   .0677937     0.83   0.407     -.076632    .1891145
+         ind |   .1028987   .1286728     0.80   0.424    -.1492954    .3550927
+         urb |  -1.156307   .4347764    -2.66   0.008    -2.008453   -.3041605
+          rd |   5.991797   2.523106     2.37   0.018     1.046599    10.93699
+        open |   .4539916   .1004099     4.52   0.000     .2571919    .6507914
+          es |  -.0363003   .1336721    -0.27   0.786    -.2982928    .2256921
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |    .680401   .3612896     1.88   0.060    -.0277137    1.388516
+         ind |   .3716517   .7863604     0.47   0.636    -1.169586     1.91289
+         urb |   -4.16651   2.191539    -1.90   0.057    -8.461846     .128827
+          rd |   22.79767   16.41192     1.39   0.165    -9.369096    54.96445
+        open |   1.295131   .6254214     2.07   0.038     .0693276    2.520935
+          es |  -.2420239   .9093404    -0.27   0.790    -2.024298    1.540251
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.2092664   .2497115    -0.84   0.402    -.6986919    .2801591
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0020598   .0001888    10.91   0.000     .0016898    .0024299
+------------------------------------------------------------------------------
+--------------------------------------------
+LR 检验
+--------------------------------------------
+
+Likelihood-ratio test
+Assumption: ind_economic~d nested within both_economi~d
+
+ LR chi2(7) =  12.07
+Prob > chi2 = 0.0982
+
+Likelihood-ratio test
+Assumption: time_economi~d nested within both_economi~d
+
+LR chi2(29) = 518.28
+Prob > chi2 = 0.0000
+--------------------------------------------
+Wald 检验
+--------------------------------------------
+
+ ( 1)  [Wx]lntl = 0
+ ( 2)  [Wx]ind = 0
+ ( 3)  [Wx]urb = 0
+ ( 4)  [Wx]rd = 0
+ ( 5)  [Wx]open = 0
+ ( 6)  [Wx]es = 0
+
+           chi2(  6) =   15.09
+         Prob > chi2 =    0.0196
+
+  (1)  [Wx]lntl = -[Spatial]rho*[Main]lntl
+  (2)  [Wx]ind = -[Spatial]rho*[Main]ind
+  (3)  [Wx]urb = -[Spatial]rho*[Main]urb
+  (4)  [Wx]rd = -[Spatial]rho*[Main]rd
+  (5)  [Wx]open = -[Spatial]rho*[Main]open
+  (6)  [Wx]es = -[Spatial]rho*[Main]es
+
+               chi2(6) =       15.09
+           Prob > chi2 =        0.0196
+      name:  sdm_economic_geo_nested
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/模型结果_economic_geo_nested.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:45
+-------------------------------------------------------------------------------
+
+. 
+. postclose lm_handle
+
+. postclose lr_handle
+
+. postclose wald_handle
+
+. 
+. use "`lm_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/LM与RobustLM检验结果.csv", replace
+file outputs/回归分析/70_空间权重矩阵检验/LM与RobustLM检验结果.csv saved
+
+. save "${STATA_DIR}/LM与RobustLM检验结果.dta", replace
+file outputs/回归分析/70_空间权重矩阵检验/stata/LM与RobustLM检验结果.dta
+    saved
+
+. 
+. use "`lr_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/LR检验结果.csv", replace
+file outputs/回归分析/70_空间权重矩阵检验/LR检验结果.csv saved
+
+. save "${STATA_DIR}/LR检验结果.dta", replace
+file outputs/回归分析/70_空间权重矩阵检验/stata/LR检验结果.dta saved
+
+. 
+. use "`wald_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/Wald检验结果.csv", replace
+file outputs/回归分析/70_空间权重矩阵检验/Wald检验结果.csv saved
+
+. save "${STATA_DIR}/Wald检验结果.dta", replace
+file outputs/回归分析/70_空间权重矩阵检验/stata/Wald检验结果.dta saved
+
+. 
+. display as text "============================================"
+============================================
+
+. display as text "结果文件已输出："
+结果文件已输出：
+
+. display as text "${OUT_DIR}/LM与RobustLM检验结果.csv"
+outputs/回归分析/70_空间权重矩阵检验/LM与RobustLM检验结果.csv
+
+. display as text "${OUT_DIR}/LR检验结果.csv"
+outputs/回归分析/70_空间权重矩阵检验/LR检验结果.csv
+
+. display as text "${OUT_DIR}/Wald检验结果.csv"
+outputs/回归分析/70_空间权重矩阵检验/Wald检验结果.csv
+
+. display as text "${STATA_DIR}/LM_*.log"
+outputs/回归分析/70_空间权重矩阵检验/stata/LM_*.log
+
+. display as text "${STATA_DIR}/模型结果_*.log"
+outputs/回归分析/70_空间权重矩阵检验/stata/模型结果_*.log
+
+. display as text "============================================"
+============================================
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
+> 矩阵检验/stata/空间权重矩阵检验总日志.log
+  log type:  text
+ closed on:   6 May 2026, 09:42:45
+-------------------------------------------------------------------------------

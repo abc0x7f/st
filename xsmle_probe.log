@@ -1,0 +1,259 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: abc0xff
+               HP
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do C:\Users\abc0x7f\Desktop\PRO\统计建模\archive\临时文件\xsmle_probe.do 
+
+. clear all
+
+. set more off
+
+. cd "C:/Users/abc0x7f/Desktop/PRO/统计建模"
+C:\Users\abc0x7f\Desktop\PRO\统计建模
+
+. 
+. import delimited using "data/最终数据/省际经济距离矩阵.csv", clear varnames(1) 
+> encoding(utf8) stringcols(1)
+(31 vars, 30 obs)
+
+. drop province
+
+. mkmat _all, matrix(Wraw)
+
+. 
+. mata:
+------------------------------------------------- mata (type end to exit) -------
+: real matrix row_normalize(real matrix W)
+> {
+>     real scalar i, s
+>     real matrix R
+>     R = W
+>     for (i=1; i<=rows(R); i++) {
+>         s = sum(R[i,])
+>         if (s != 0) R[i,] = R[i,] :/ s
+>     }
+>     return(R)
+> }
+
+: end
+---------------------------------------------------------------------------------
+
+. 
+. mata: st_matrix("W", row_normalize(st_matrix("Wraw")))
+
+. matrix drop Wraw
+
+. 
+. import delimited using "data/最终数据/第二阶段_基础.csv", clear varnames(1) enc
+> oding(utf8)
+(9 vars, 240 obs)
+
+. keep province year eff lntl ind urb rd open es
+
+. drop if missing(province, year, eff, lntl, ind, urb, rd, open, es)
+(0 observations deleted)
+
+. replace province = trim(province)
+(0 real changes made)
+
+. destring year eff lntl ind urb rd open es, replace force
+year already numeric; no replace
+eff already numeric; no replace
+lntl already numeric; no replace
+ind already numeric; no replace
+urb already numeric; no replace
+rd already numeric; no replace
+open already numeric; no replace
+es already numeric; no replace
+
+. encode province, gen(pid)
+
+. xtset pid year
+
+Panel variable: pid (strongly balanced)
+ Time variable: year, 2015 to 2022
+         Delta: 1 unit
+
+. 
+. xsmle eff lntl ind urb rd open es, wmat(W) model(sdm) fe type(both) effect nolo
+> g
+Warning: All regressors will be spatially lagged 
+
+Computing marginal effects standard errors using MC simulation...
+
+SDM with spatial and time fixed-effects              Number of obs =       240
+
+Group variable: pid                               Number of groups =        30
+Time variable: year                                   Panel length =         8
+
+R-sq:    within  = 0.3356
+         between = 0.0154
+         overall = 0.0235
+
+Mean of fixed-effects =  1.4914
+
+Log-likelihood =   415.8769
+------------------------------------------------------------------------------
+         eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+Main         |
+        lntl |   .0349996    .059328     0.59   0.555    -.0812812    .1512803
+         ind |    .031259   .1173608     0.27   0.790    -.1987639    .2612818
+         urb |  -2.031159   .3243241    -6.26   0.000    -2.666822   -1.395495
+          rd |    5.11447   2.395437     2.14   0.033     .4195005     9.80944
+        open |   .4252409    .091386     4.65   0.000     .2461276    .6043542
+          es |  -.0641364   .1253438    -0.51   0.609    -.3098058     .181533
+-------------+----------------------------------------------------------------
+Wx           |
+        lntl |   .7706416   .1553848     4.96   0.000     .4660931     1.07519
+         ind |  -.2093168   .3069699    -0.68   0.495    -.8109668    .3923332
+         urb |   .0833066   .8925418     0.09   0.926    -1.666043    1.832656
+          rd |  -.3072536   6.452132    -0.05   0.962     -12.9532    12.33869
+        open |  -.1215587   .2602951    -0.47   0.640    -.6317277    .3886104
+          es |   -1.20902   .3029009    -3.99   0.000    -1.802695   -.6153447
+-------------+----------------------------------------------------------------
+Spatial      |
+         rho |  -.1565313   .1198196    -1.31   0.191    -.3913734    .0783107
+-------------+----------------------------------------------------------------
+Variance     |
+    sigma2_e |   .0018223   .0001668    10.93   0.000     .0014955    .0021492
+-------------+----------------------------------------------------------------
+LR_Direct    |
+        lntl |   .0160702    .062113     0.26   0.796     -.105669    .1378095
+         ind |   .0322882   .1117857     0.29   0.773    -.1868077    .2513841
+         urb |  -2.008343   .3148485    -6.38   0.000    -2.625434   -1.391251
+          rd |   5.123056   2.404834     2.13   0.033     .4096686    9.836443
+        open |   .4290979   .0883613     4.86   0.000      .255913    .6022828
+          es |  -.0221213   .1239595    -0.18   0.858    -.2650775    .2208348
+-------------+----------------------------------------------------------------
+LR_Indirect  |
+        lntl |    .682951   .1443712     4.73   0.000     .3999886    .9659135
+         ind |  -.2037961   .2631729    -0.77   0.439    -.7196054    .3120132
+         urb |   .4177176   .7580011     0.55   0.582    -1.067937    1.903372
+          rd |  -.9132119   5.714106    -0.16   0.873    -12.11265    10.28623
+        open |   -.182775   .2260969    -0.81   0.419    -.6259168    .2603667
+          es |  -1.056587   .2773942    -3.81   0.000    -1.600269   -.5129038
+-------------+----------------------------------------------------------------
+LR_Total     |
+        lntl |   .6990213   .1370962     5.10   0.000     .4303177    .9677248
+         ind |  -.1715079   .3063646    -0.56   0.576    -.7719715    .4289558
+         urb |  -1.590625   .7695948    -2.07   0.039    -3.099003   -.0822469
+          rd |   4.209844   6.091346     0.69   0.489    -7.728974    16.14866
+        open |   .2463229   .2453143     1.00   0.315    -.2344843      .72713
+          es |  -1.078708   .2794115    -3.86   0.000    -1.626344   -.5310714
+------------------------------------------------------------------------------
+
+. return list
+
+matrices:
+              r(table) :  9 x 32
+
+. ereturn list
+
+scalars:
+                  e(N) =  240
+               e(rank) =  14
+            e(sigma_e) =  .0426885332731797
+              e(a_avg) =  1.491353429901948
+              e(t_max) =  8
+                e(N_g) =  30
+            e(N_clust) =  30
+                 e(ll) =  415.8768930028461
+          e(converged) =  1
+                 e(ic) =  5
+               e(df_m) =  42
+              e(k_exp) =  2
+               e(k_eq) =  7
+                 e(r2) =  .0235494115903918
+               e(r2_b) =  .0154154581435866
+               e(r2_w) =  .335580176562507
+
+macros:
+              e(title) : "SDM with spatial and time fixed-effects"
+        e(w_spmat_obj) : "0"
+            e(wmatrix) : "W"
+        e(transf_type) : "demean"
+                e(vce) : "oim"
+           e(crittype) : "Log-likelihood"
+               e(dlag) : "no"
+               e(tvar) : "year"
+               e(ivar) : "pid"
+               e(type) : "both"
+               e(user) : "_xsmle_vlfun_fesar"
+          e(ml_method) : "v1"
+          e(technique) : "nr"
+            e(cmdline) : "eff lntl ind urb rd open es, wmat(W) model(sdm) fe .."
+            e(effects) : "fe"
+              e(model) : "sdm"
+            e(noconst) : "1"
+                e(cmd) : "xsmle"
+            e(predict) : "xsmle_p"
+            e(drhsvar) : "lntl ind urb rd open es"
+          e(marginsok) : "xb rform naive limited full"
+         e(covariates) : "lntl ind urb rd open es"
+             e(rhsvar) : "lntl ind urb rd open es"
+             e(depvar) : "eff"
+         e(properties) : "b V"
+
+matrices:
+                  e(b) :  1 x 32
+                  e(V) :  32 x 32
+           e(gradient) :  1 x 14
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. matrix list e(b)
+
+e(b)[1,32]
+            Main:         Main:         Main:         Main:         Main:
+            lntl           ind           urb            rd          open
+y1     .03499955     .03125895    -2.0311585       5.11447     .42524089
+
+            Main:           Wx:           Wx:           Wx:           Wx:
+              es          lntl           ind           urb            rd
+y1    -.06413641     .77064163    -.20931682     .08330662    -.30725362
+
+              Wx:           Wx:      Spatial:     Variance:    LR_Direct:
+            open            es           rho      sigma2_e          lntl
+y1    -.12155865    -1.2090196    -.15653132     .00182231     .01607025
+
+       LR_Direct:    LR_Direct:    LR_Direct:    LR_Direct:    LR_Direct:
+             ind           urb            rd          open            es
+y1     .03228822    -2.0083426     5.1230556     .42909789    -.02212134
+
+     LR_Indirect:  LR_Indirect:  LR_Indirect:  LR_Indirect:  LR_Indirect:
+            lntl           ind           urb            rd          open
+y1     .68295103    -.20379608      .4177176    -.91321191    -.18277501
+
+     LR_Indirect:     LR_Total:     LR_Total:     LR_Total:     LR_Total:
+              es          lntl           ind           urb            rd
+y1    -1.0565865     .69902127    -.17150787     -1.590625     4.2098437
+
+        LR_Total:     LR_Total:
+            open            es
+y1     .24632288    -1.0787079
+
+. 
+end of do-file
