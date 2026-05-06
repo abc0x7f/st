@@ -83,6 +83,37 @@ QUADRANT_LABELS = {
     "HL": "高-低",
     "NS": "不显著",
 }
+SCATTER_LABEL_OFFSETS = {
+    2015: {
+        "山西": ((6, -8), "left", "top"),
+        "宁夏": ((-8, 6), "right", "bottom"),
+        "上海": ((6, 6), "left", "bottom"),
+        "江苏": ((6, -8), "left", "top"),
+        "浙江": ((6, 8), "left", "bottom"),
+    },
+    2018: {
+        "海南": ((6, -8), "left", "top"),
+        "宁夏": ((-8, 6), "right", "bottom"),
+        "上海": ((6, 6), "left", "bottom"),
+        "江苏": ((6, -8), "left", "top"),
+        "浙江": ((6, 8), "left", "bottom"),
+    },
+    2022: {
+        "宁夏": ((-8, 6), "right", "bottom"),
+        "上海": ((6, 6), "left", "bottom"),
+        "江苏": ((10, 10), "left", "bottom"),
+        "浙江": ((6, 8), "left", "bottom"),
+    },
+}
+MAP_LABEL_OFFSETS = {
+    "宁夏": (-0.9, 0.5),
+    "上海": (0.8, 0.25),
+    "江苏": (1.2, 0.15),
+    "安徽": (-1.1, -1.0),
+    "浙江": (0.9, 0.45),
+    "天津": (0.8, 0.35),
+    "北京": (0.9, 0.7),
+}
 
 
 def configure_matplotlib() -> None:
@@ -371,12 +402,14 @@ def save_plot(result: pd.DataFrame) -> Path:
     ]
     legend_labels = ["p 值", "z 值", "Moran's I", z_sig[0], p_sig[0]]
 
-    ax_left.set_title("2015-2022 年 Global Moran's I、p 值与 z 值", fontsize=15, pad=14)
-    ax_left.set_xlabel("年份")
-    ax_left.set_ylabel("p 值 / Global Moran's I")
-    ax_right.set_ylabel("z 值")
+    ax_left.set_title("2015-2022 年 Global Moran's I、p 值与 z 值", fontsize=18, pad=16)
+    ax_left.set_xlabel("年份", fontsize=14)
+    ax_left.set_ylabel("p 值 / Global Moran's I", fontsize=14)
+    ax_right.set_ylabel("z 值", fontsize=14)
     ax_left.set_xticks(x)
-    ax_left.set_xticklabels(result["year"])
+    ax_left.set_xticklabels(result["year"], fontsize=12)
+    ax_left.tick_params(axis="y", labelsize=12)
+    ax_right.tick_params(axis="y", labelsize=12)
 
     left_step = 0.05
     left_upper = max(float(result["p_value"].max()), float(result["moran_i"].max()), p_sig[1])
@@ -402,7 +435,7 @@ def save_plot(result: pd.DataFrame) -> Path:
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=9,
+            fontsize=11,
             color="#1F2933",
         )
 
@@ -414,7 +447,7 @@ def save_plot(result: pd.DataFrame) -> Path:
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=9,
+            fontsize=11,
             color=i_color,
         )
 
@@ -426,14 +459,14 @@ def save_plot(result: pd.DataFrame) -> Path:
             textcoords="offset points",
             ha="center",
             va="bottom",
-            fontsize=9,
+            fontsize=11,
             color="#1F2933",
         )
 
-    ax_left.legend(legend_handles, legend_labels, loc="upper right", frameon=True, fontsize=9)
+    ax_left.legend(legend_handles, legend_labels, loc="upper right", frameon=True, fontsize=11)
 
     note = "注：采用经济倒数权重矩阵并进行行标准化；p 值为单侧置换检验结果（9999 次），z 值基于置换分布的均值与标准差计算。"
-    fig.text(0.01, 0.01, note, ha="left", va="bottom", fontsize=9, color="#52606D")
+    fig.text(0.99, 0.015, note, ha="right", va="bottom", fontsize=11, color="black")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
 
     out_path = OUT_DIR / "18_全局莫兰指数_2015_2022.png"
@@ -443,7 +476,23 @@ def save_plot(result: pd.DataFrame) -> Path:
 
 
 def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFrame) -> Path:
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5.8), sharex=True, sharey=True)
+    fig = plt.figure(figsize=(16, 11))
+    gs = fig.add_gridspec(2, 2, left=0.07, right=0.95, bottom=0.10, top=0.92, wspace=0.18, hspace=0.22)
+    axes = [
+        fig.add_subplot(gs[0, 0]),
+        fig.add_subplot(gs[0, 1]),
+        fig.add_subplot(gs[1, 0]),
+    ]
+    legend_ax = fig.add_subplot(gs[1, 1])
+    legend_ax.axis("off")
+    x_limits: list[float] = []
+    y_limits: list[float] = []
+    for year in LOCAL_PLOT_YEARS:
+        subset = local_result.loc[local_result["year"] == year]
+        x_limits.extend([subset["z_score"].min(), subset["z_score"].max()])
+        y_limits.extend([subset["spatial_lag"].min(), subset["spatial_lag"].max()])
+    xlim = (min(x_limits) - 0.35, max(x_limits) + 0.35)
+    ylim = (min(y_limits) - 0.35, max(y_limits) + 0.35)
     year_to_global = global_result.set_index("year")["moran_i"].to_dict()
     for ax, year in zip(axes, LOCAL_PLOT_YEARS):
         subset = local_result.loc[local_result["year"] == year].copy()
@@ -464,17 +513,7 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
         ax.axvline(0, color="#666666", linewidth=1.0, linestyle="--", zorder=1)
         significant_subset = subset.loc[subset["is_significant"] == 1].copy()
         for row in significant_subset.itertuples(index=False):
-            xytext = (5, 5)
-            ha = "left"
-            va = "bottom"
-            if year == 2015 and row.province == "山西":
-                xytext = (5, -6)
-                ha = "left"
-                va = "top"
-            if year == 2018 and row.province == "海南":
-                xytext = (5, -6)
-                ha = "left"
-                va = "top"
+            xytext, ha, va = SCATTER_LABEL_OFFSETS.get(year, {}).get(row.province, ((6, 6), "left", "bottom"))
             ax.annotate(
                 f"{row.province}{significance_marker(row.local_p_value)}",
                 xy=(row.z_score, row.spatial_lag),
@@ -482,41 +521,70 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
                 textcoords="offset points",
                 ha=ha,
                 va=va,
-                fontsize=9,
+                fontsize=11,
                 color="#111827",
                 zorder=5,
+                bbox={
+                    "boxstyle": "round,pad=0.12",
+                    "facecolor": "white",
+                    "edgecolor": "none",
+                    "alpha": 0.8,
+                },
             )
-        ax.text(0.98, 0.96, f"I = {year_to_global[year]:.3f}", transform=ax.transAxes, ha="right", va="top", fontsize=10)
+        ax.text(0.97, 0.95, f"I = {year_to_global[year]:.3f}", transform=ax.transAxes, ha="right", va="top", fontsize=12)
         ax.text(
-            0.98,
-            0.88,
+            0.97,
+            0.87,
             f"显著省份:{len(significant_subset)}",
             transform=ax.transAxes,
             ha="right",
             va="top",
-            fontsize=9,
+            fontsize=11,
             color="#4B5563",
         )
-        ax.set_title(f"{year} 年", fontsize=13, pad=10)
+        ax.set_title(f"{year} 年", fontsize=16, pad=10)
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
+        ax.tick_params(axis="both", labelsize=12)
         ax.grid(True, linestyle=":", alpha=0.35)
 
-    axes[0].set_ylabel("空间滞后值")
+    axes[0].set_ylabel("空间滞后值", fontsize=14)
+    axes[2].set_ylabel("空间滞后值", fontsize=14)
     for ax in axes:
-        ax.set_xlabel("标准化 eff")
+        ax.set_xlabel("标准化 eff", fontsize=14)
 
     legend_handles = [
-        Line2D([0], [0], marker="o", color="w", label="高-高", markerfacecolor=SCATTER_COLORS["HH"], markersize=8),
-        Line2D([0], [0], marker="o", color="w", label="低-低", markerfacecolor=SCATTER_COLORS["LL"], markersize=8),
-        Line2D([0], [0], marker="o", color="w", label="高-低", markerfacecolor=SCATTER_COLORS["HL"], markersize=8),
-        Line2D([0], [0], marker="o", color="w", label="低-高", markerfacecolor=SCATTER_COLORS["LH"], markersize=8),
+        Line2D([0], [0], marker="o", color="w", label="高-高", markerfacecolor=SCATTER_COLORS["HH"], markersize=10),
+        Line2D([0], [0], marker="o", color="w", label="低-低", markerfacecolor=SCATTER_COLORS["LL"], markersize=10),
+        Line2D([0], [0], marker="o", color="w", label="高-低", markerfacecolor=SCATTER_COLORS["HL"], markersize=10),
+        Line2D([0], [0], marker="o", color="w", label="低-高", markerfacecolor=SCATTER_COLORS["LH"], markersize=10),
         Line2D([0], [0], color="#333333", linewidth=1.8, label="Moran 回归线"),
-        Line2D([0], [0], marker="o", color="w", label="显著省份标注*/**/***", markerfacecolor="#9CA3AF", markersize=8),
+        Line2D([0], [0], marker="o", color="w", label="显著省份标注*/**/***", markerfacecolor="#9CA3AF", markersize=10),
     ]
-    fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc="upper right", ncol=3, frameon=True, fontsize=9)
-    fig.suptitle("图24 eff 的 Moran 散点图（2015、2018、2022）", fontsize=17, y=0.99)
-    fig.text(0.01, 0.02, "注：基于经济倒数权重矩阵行标准化结果绘制；散点按 Moran 象限着色；局部显著省份按 10%、5%、1% 阈值分别标注 */**/***。",
-             ha="left", va="bottom", fontsize=9, color="#52606D")
-    fig.tight_layout(rect=(0, 0.06, 1, 0.92))
+    legend_ax.legend(
+        legend_handles,
+        [h.get_label() for h in legend_handles],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.92),
+        ncol=1,
+        frameon=True,
+        fontsize=13,
+        borderpad=0.9,
+        labelspacing=1.0,
+        handlelength=2.2,
+        handletextpad=0.9,
+    )
+    legend_ax.text(
+        0.50,
+        0.05,
+        "注：基于经济倒数权重矩阵行标准化结果绘制；散点按 Moran 象限着色；局部显著省份按 10%、5%、1% 阈值分别标注 */**/***。",
+        ha="center",
+        va="bottom",
+        fontsize=11,
+        color="black",
+        wrap=True,
+    )
+    fig.suptitle("图24 eff 的 Moran 散点图（2015、2018、2022）", fontsize=20, y=0.97)
 
     out_path = OUT_DIR / "24_效率莫兰散点图_2015_2018_2022.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
@@ -607,8 +675,12 @@ def draw_north_arrow(ax: plt.Axes, lon_min: float, lat_max: float) -> None:
     ax.text(compass_x, compass_y + 2.55, "N", ha="center", va="bottom", fontsize=13, fontweight="bold", zorder=6)
 
 
-def draw_scale_and_legend(fig: plt.Figure, cmap_labels: list[tuple[str, str]]) -> None:
-    ax_leg = fig.add_axes([0.09, 0.10, 0.18, 0.36])
+def draw_scale_and_legend(fig: plt.Figure, ref_ax: plt.Axes, cmap_labels: list[tuple[str, str]]) -> None:
+    leg_left = 0.60
+    leg_bottom = 0.13
+    leg_width = 0.24
+    leg_height = 0.33
+    ax_leg = fig.add_axes([leg_left, leg_bottom, leg_width, leg_height])
     ax_leg.set_xlim(0, 10)
     ax_leg.set_ylim(0, 20)
     ax_leg.axis("off")
@@ -616,28 +688,31 @@ def draw_scale_and_legend(fig: plt.Figure, cmap_labels: list[tuple[str, str]]) -
     lon_min, lon_max = 73, 136
     lat_ref = 25.0
     km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
-    bar_km = 500
+    bar_km = 2000
     bar_deg = bar_km / km_per_deg
-    main_ax_w_in = 0.78 * 14
-    leg_ax_w_in = 0.18 * 14
+    fig_width_in = fig.get_size_inches()[0]
+    main_ax_w_in = ref_ax.get_position().width * fig_width_in
+    leg_ax_w_in = leg_width * fig_width_in
     map_deg_per_in = (lon_max - lon_min) / main_ax_w_in
     bar_in = bar_deg / map_deg_per_in
     bar_leg = bar_in / leg_ax_w_in * 10
-    sx, sy = 1.0, 13.2
+    sx = (10 - bar_leg) / 2
+    sy = 17.2
     half_bar = bar_leg / 2
     ax_leg.add_patch(Rectangle((sx, sy), half_bar, 0.40, fc="black", ec="black", lw=0.8))
     ax_leg.add_patch(Rectangle((sx + half_bar, sy), half_bar, 0.40, fc="white", ec="black", lw=0.8))
-    ax_leg.text(sx, sy - 0.45, "0", ha="center", fontsize=6.5)
-    ax_leg.text(sx + half_bar, sy - 0.45, f"{bar_km // 2}", ha="center", fontsize=6.5)
-    ax_leg.text(sx + bar_leg, sy - 0.45, f"{bar_km} km", ha="center", fontsize=6.5)
+    ax_leg.text(sx, sy - 0.60, "0", ha="center", fontsize=11)
+    ax_leg.text(sx + half_bar, sy - 0.60, f"{bar_km // 2}", ha="center", fontsize=11)
+    ax_leg.text(sx + bar_leg, sy - 0.60, f"{bar_km} km", ha="center", fontsize=11)
 
-    box_w, box_h = 2.0, 1.1
-    lx, ly_start = 1.0, 11.0
+    box_w, box_h = 3.0, 1.60
+    lx = 1.9
+    ly_start = 13.6
     for idx, (label, color) in enumerate(cmap_labels):
-        y_pos = ly_start - idx * (box_h + 0.25)
+        y_pos = ly_start - idx * (box_h + 0.55)
         ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.8))
-        ax_leg.text(lx + box_w + 0.35, y_pos + box_h / 2, label, va="center", ha="left", fontsize=8)
-    ax_leg.text(lx + box_w / 2 + 1.0, 3.0, "LISA 聚类类型", ha="center", va="center", fontsize=10, fontweight="bold")
+        ax_leg.text(lx + box_w + 0.75, y_pos + box_h / 2, label, va="center", ha="left", fontsize=15)
+    ax_leg.text(5.0, 0.95, "LISA 聚类类型", ha="center", va="center", fontsize=17, fontweight="bold")
 
 
 def add_map_frame(ax: plt.Axes, title: str) -> None:
@@ -657,26 +732,26 @@ def add_map_frame(ax: plt.Axes, title: str) -> None:
     ax.set_yticks(lat_ticks)
     ax.set_xticks(lon_minor, minor=True)
     ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=8)
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=8)
+    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=10)
+    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=10)
     ax.tick_params(which="major", direction="in", length=6, width=1.2, top=True, bottom=True, left=True, right=True)
     ax.tick_params(which="minor", direction="in", length=3, width=0.8, top=True, bottom=True, left=True, right=True)
     for spine in ax.spines.values():
         spine.set_linewidth(2.5)
         spine.set_color("black")
-    ax.set_title(title, fontsize=16, fontweight="bold", pad=12)
+    ax.set_title(title, fontsize=18, fontweight="bold", pad=12)
     draw_north_arrow(ax, lon_min, lat_max)
 
 
 def draw_scs_inset(
-    fig: plt.Figure,
+    ax: plt.Axes,
     scs_features: list[dict],
     hainan_feature: dict | None,
     guangdong_feature: dict | None,
     guangxi_feature: dict | None,
     color_lookup: dict[str, str],
 ) -> None:
-    ax_scs = fig.add_axes([0.71, 0.14, 0.14, 0.22])
+    ax_scs = ax.inset_axes([0.03, 0.03, 0.17, 0.22])
     scs_patches: list[Polygon] = []
     scs_colors: list[str] = []
 
@@ -708,16 +783,23 @@ def draw_scs_inset(
     for spine in ax_scs.spines.values():
         spine.set_linewidth(1.8)
         spine.set_color("black")
-    ax_scs.set_title("南海诸岛", fontsize=8, pad=2)
+    ax_scs.set_title("南海诸岛", fontsize=9, pad=2)
 
 
 def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
     geojson = load_geojson(GEOJSON_PATH)
     main_features, scs_features, hainan_feature, guangdong_feature, guangxi_feature = split_geo_features(geojson)
+    fig = plt.figure(figsize=(16, 11))
+    gs = fig.add_gridspec(2, 2, left=0.06, right=0.95, bottom=0.08, top=0.93, wspace=0.10, hspace=0.16)
+    axes = [
+        fig.add_subplot(gs[0, 0]),
+        fig.add_subplot(gs[0, 1]),
+        fig.add_subplot(gs[1, 0]),
+    ]
+    note_ax = fig.add_subplot(gs[1, 1])
+    note_ax.axis("off")
 
-    for year in LOCAL_PLOT_YEARS:
-        fig = plt.figure(figsize=(14, 11))
-        ax = fig.add_axes([0.09, 0.10, 0.78, 0.82])
+    for ax, year in zip(axes, LOCAL_PLOT_YEARS):
         subset = local_result.loc[local_result["year"] == year].set_index("province")
         color_lookup: dict[str, str] = {}
 
@@ -744,11 +826,12 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
             if cluster not in {"NS", "MISSING"}:
                 centroid = feature["properties"].get("centroid") or feature["properties"].get("center")
                 if centroid and len(centroid) == 2:
+                    dx, dy = MAP_LABEL_OFFSETS.get(simple_name, (0.0, 0.0))
                     ax.text(
-                        centroid[0],
-                        centroid[1],
+                        centroid[0] + dx,
+                        centroid[1] + dy,
                         f"{simple_name}{significance_marker(float(subset.at[simple_name, 'local_p_value']))}",
-                        fontsize=8.5,
+                        fontsize=10.5,
                         ha="center",
                         va="center",
                         color="#111827",
@@ -762,33 +845,36 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
                     )
         collection = PatchCollection(patches, facecolor=facecolors, edgecolor="black", linewidths=1.2)
         ax.add_collection(collection)
-        add_map_frame(ax, f"{year} 年 eff 的 LISA 聚类图")
-        draw_scs_inset(fig, scs_features, hainan_feature, guangdong_feature, guangxi_feature, color_lookup)
-        draw_scale_and_legend(
-            fig,
-            [
-                ("高-高", LISA_COLORS["HH"]),
-                ("低-低", LISA_COLORS["LL"]),
-                ("高-低", LISA_COLORS["HL"]),
-                ("低-高", LISA_COLORS["LH"]),
-                ("不显著", LISA_COLORS["NS"]),
-                ("数据缺失", MISSING_COLOR),
-            ],
-        )
-        fig.text(
-            0.09,
-            0.04,
-            "注：局部 Moran's I 采用 9999 次置换检验，10%、5%、1% 水平分别标注 */**/***；未达阈值省份填灰。",
-            ha="left",
-            va="bottom",
-            fontsize=9,
-            color="#52606D",
-        )
-        out_path = OUT_DIR / f"25_效率局部聚类图_{year}.png"
-        fig.savefig(out_path, dpi=300, bbox_inches="tight")
-        plt.close(fig)
+        add_map_frame(ax, f"{year} 年")
+        draw_scs_inset(ax, scs_features, hainan_feature, guangdong_feature, guangxi_feature, color_lookup)
+    draw_scale_and_legend(
+        fig,
+        axes[2],
+        [
+            ("高-高", LISA_COLORS["HH"]),
+            ("低-低", LISA_COLORS["LL"]),
+            ("高-低", LISA_COLORS["HL"]),
+            ("低-高", LISA_COLORS["LH"]),
+            ("不显著", LISA_COLORS["NS"]),
+            ("数据缺失", MISSING_COLOR),
+        ],
+    )
+    note_ax.text(
+        0.50,
+        0.05,
+        "注：局部 Moran's I 采用 9999 次置换检验，10%、5%、1% 水平分别标注 */**/***；未达阈值省份填灰。",
+        ha="center",
+        va="bottom",
+        fontsize=11,
+        color="black",
+        wrap=True,
+    )
+    fig.suptitle("图25 eff 的 LISA 聚类图（2015、2018、2022）", fontsize=20, y=0.99)
 
-    return OUT_DIR / "25_效率局部聚类图_2022.png"
+    combined_out_path = OUT_DIR / "25_效率局部聚类图_2015_2018_2022.png"
+    fig.savefig(combined_out_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return combined_out_path
 
 
 def build_markdown_table(result: pd.DataFrame) -> str:
