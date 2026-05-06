@@ -25,10 +25,10 @@ from pipeline_service import (
     check_step,
     detect_status,
     discover_artifacts,
-    executable_summary,
     list_steps,
     load_markdown,
     load_primary_table,
+    open_external_path,
     run_step,
 )
 from step_types import ArtifactBundle, RunnerType, StepDefinition, StepStatus
@@ -131,17 +131,25 @@ class MainWindow(QMainWindow):
         logo_label.setAlignment(Qt.AlignCenter)
         logo_label.setStyleSheet("border: none;")
 
+        title_block = QWidget()
+        title_block.setStyleSheet("border: none;")
+        title_block_layout = QVBoxLayout(title_block)
+        title_block_layout.setContentsMargins(0, 0, 0, 0)
+        title_block_layout.setSpacing(4)
+
         title_label = QLabel("光碳智绘：省域碳排放效率可视分析")
         title_label.setStyleSheet("border: none; font-size: 32px; font-weight: 800; color: #18212b;")
         title_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
 
-        self.env_label = QLabel()
-        self.env_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.env_label.setStyleSheet("border: none; color: #5b6b7a; font-size: 12px;")
+        self.version_label = QLabel("GUI v0.2")
+        self.version_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.version_label.setStyleSheet("border: none; color: #6b7785; font-size: 12px; font-weight: 600;")
+
+        title_block_layout.addWidget(title_label)
+        title_block_layout.addWidget(self.version_label)
 
         layout.addWidget(logo_label, 0)
-        layout.addWidget(title_label, 1)
-        layout.addWidget(self.env_label, 0)
+        layout.addWidget(title_block, 1)
         return frame
 
     def _build_left_column(self) -> QWidget:
@@ -254,7 +262,7 @@ class MainWindow(QMainWindow):
         item.setBackground(status_color(status.value))
 
     def _refresh_executable_summary(self) -> None:
-        self.env_label.setText(executable_summary().replace("\n", "    "))
+        self.version_label.setText("GUI v0.2 | PySide6")
 
     def _on_step_changed(self, row: int) -> None:
         if row < 0 or row >= len(self.steps):
@@ -272,8 +280,8 @@ class MainWindow(QMainWindow):
     def _sync_run_button(self, step: StepDefinition) -> None:
         status = self.statuses.get(step.id, StepStatus.IDLE)
         if step.runner_type == RunnerType.MANUAL:
-            self.run_button.setText("等待人工处理")
-            self.run_button.setEnabled(False)
+            self.run_button.setText("打开 Dearun")
+            self.run_button.setEnabled(bool(step.command))
         elif step.runner_type == RunnerType.HYBRID and status == StepStatus.MANUAL_PENDING:
             self.run_button.setText("引导执行")
             self.run_button.setEnabled(True)
@@ -328,6 +336,19 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "人工步骤提示", preparation.message)
             else:
                 QMessageBox.warning(self, "无法执行", preparation.message)
+            self._refresh_detail_views()
+            return
+
+        if preparation.program == "__shell_open__":
+            try:
+                open_external_path(preparation.arguments[0])
+                self.statuses[step.id] = StepStatus.MANUAL_PENDING
+                self.console_panel.append_text("已打开 Dearun 安装目录，请完成人工操作后点击“检查”。")
+            except OSError as exc:
+                self.statuses[step.id] = StepStatus.FAILED
+                self.console_panel.append_text(f"[失败] 打开 Dearun 路径失败：{exc}")
+            self._refresh_step_item(self.current_step_index)
+            self._sync_run_button(step)
             self._refresh_detail_views()
             return
 
@@ -392,10 +413,23 @@ class MainWindow(QMainWindow):
 
     def _refresh_detail_views(self) -> None:
         step = self.steps[self.current_step_index]
+        current_status = self.statuses.get(step.id, StepStatus.IDLE)
+        if not self._should_render_outputs(current_status):
+            self.current_artifacts = ArtifactBundle()
+            self.table_panel.set_table(None, None, 0, 0)
+            self.image_panel.set_image_path(None, 0, 0)
+            self.markdown_panel.set_markdown_text(
+                f"# {step.name}\n\n当前步骤状态：{self._status_text(current_status)}\n\n该步骤尚未完成"
+            )
+            return
+
         self.current_artifacts = discover_artifacts(step.id)
         self._render_table()
         self._render_image()
-        self.markdown_panel.set_markdown_text(load_markdown(step.id, self.statuses.get(step.id, StepStatus.IDLE)))
+        self.markdown_panel.set_markdown_text(load_markdown(step.id, current_status))
+
+    def _should_render_outputs(self, status: StepStatus) -> bool:
+        return status == StepStatus.SUCCESS
 
     def _render_table(self) -> None:
         total = len(self.current_artifacts.csv_files)
@@ -442,5 +476,8 @@ def build_application() -> QApplication:
     app = QApplication.instance() or QApplication([])
     font = QFont("Times New Roman", 11)
     font.setFamilies(["Times New Roman", "SimHei"])
+    font.setHintingPreference(QFont.PreferFullHinting)
+    font.setStyleStrategy(QFont.PreferAntialias)
+    font.setWeight(QFont.Medium)
     app.setFont(font)
     return app

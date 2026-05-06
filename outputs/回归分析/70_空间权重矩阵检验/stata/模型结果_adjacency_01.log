@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 09:42:31
+ opened on:   6 May 2026, 21:15:15
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 SDM 个体 / 时间 / 双固定估计
@@ -128,5 +128,5 @@ Wald 检验
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 09:42:36
+ closed on:   6 May 2026, 21:15:19
 -------------------------------------------------------------------------------

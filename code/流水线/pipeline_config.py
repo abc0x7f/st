@@ -23,6 +23,10 @@ def stata_command(script_relative_path: str) -> tuple[str, ...]:
     return ("stata-do", script_relative_path)
 
 
+def open_path_command(target_path: str) -> tuple[str, ...]:
+    return ("open-path", target_path)
+
+
 STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
     StepDefinition(
         id="data_energy",
@@ -103,7 +107,7 @@ STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
         name="Dearun 效率测算结果回填",
         stage="效率测算",
         runner_type=RunnerType.MANUAL,
-        command=(),
+        command=open_path_command(r"C:\Program Files (x86)\Dearun"),
         working_dir=PROJECT_ROOT,
         precheck_mode="manual_result",
         required_inputs=(
@@ -117,6 +121,7 @@ STEP_DEFINITIONS: tuple[StepDefinition, ...] = (
         notes=(
             "请先在 Dearun 中完成 SBM / GM 测算。",
             "结果文件需保留当前命名约定，后续提取脚本按此定位。",
+            "点击“执行”可自动打开 Dearun 安装目录。",
             "人工完成后点击“检查”确认结果文件已回填。",
         ),
     ),

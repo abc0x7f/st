@@ -75,7 +75,7 @@ C:\Users\abc0x7f\Desktop\PRO\统计建模
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/空间SDM主模型总日志.log
   log type:  text
- opened on:   6 May 2026, 09:43:07
+ opened on:   6 May 2026, 21:15:48
 
 . 
 . cap which xsmle
@@ -161,8 +161,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5f48_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5f48_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_8404_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_8404_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -176,12 +176,12 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5f48_000001.tmp saved as .dta
 . postfile coef_handle str32 weight_type str20 section str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`coef_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5f48_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_8404_000002.tmp not found)
 
 . postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`effect_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5f48_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_8404_000003.tmp not found)
 
 . 
 . * ------------------------------
@@ -263,7 +263,7 @@ Panel variable: pid (strongly balanced)
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:   6 May 2026, 09:43:07
+ opened on:   6 May 2026, 21:15:48
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -324,7 +324,7 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:   6 May 2026, 09:43:09
+ closed on:   6 May 2026, 21:15:49
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
@@ -337,7 +337,7 @@ Panel variable: pid (strongly balanced)
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 09:43:09
+ opened on:   6 May 2026, 21:15:49
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -398,7 +398,7 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 09:43:11
+ closed on:   6 May 2026, 21:15:52
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile(
@@ -407,15 +407,12 @@ matrices:
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
          Delta: 1 unit
-(file
-    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM主模型/s
-    > tata/SDM主模型_geographic_inv.log not found)
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 09:43:11
+ opened on:   6 May 2026, 21:15:52
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 双固定效应 SDM 主模型
@@ -476,7 +473,7 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 09:43:12
+ closed on:   6 May 2026, 21:15:53
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") w
@@ -485,15 +482,12 @@ matrices:
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
          Delta: 1 unit
-(file
-    C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM主模型/s
-    > tata/SDM主模型_economic_geo_nested.log not found)
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 09:43:12
+ opened on:   6 May 2026, 21:15:53
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -554,7 +548,7 @@ matrices:
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 09:43:13
+ closed on:   6 May 2026, 21:15:54
 -------------------------------------------------------------------------------
 
 . 
@@ -609,7 +603,7 @@ outputs/回归分析/80_空间SDM主模型/stata/SDM主模型_*.log
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
 > 主模型/stata/空间SDM主模型总日志.log
   log type:  text
- closed on:   6 May 2026, 09:43:13
+ closed on:   6 May 2026, 21:15:54
 -------------------------------------------------------------------------------
 
 . 

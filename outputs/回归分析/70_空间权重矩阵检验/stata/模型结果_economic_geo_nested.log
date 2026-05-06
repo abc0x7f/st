@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 09:42:42
+ opened on:   6 May 2026, 21:15:25
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 SDM 个体 / 时间 / 双固定估计
@@ -128,5 +128,5 @@ Wald 检验
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 09:42:45
+ closed on:   6 May 2026, 21:15:28
 -------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 09:42:30
+ opened on:   6 May 2026, 21:15:14
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 LM / Robust LM 检验
@@ -119,5 +119,5 @@ RLMlag  .22711853          1  .63366868
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 09:42:31
+ closed on:   6 May 2026, 21:15:15
 -------------------------------------------------------------------------------

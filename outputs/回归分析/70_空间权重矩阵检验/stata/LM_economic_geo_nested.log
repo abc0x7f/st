@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 09:42:42
+ opened on:   6 May 2026, 21:15:25
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 LM / Robust LM 检验
@@ -119,5 +119,5 @@ RLMlag   .21740152           1     .641027
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 09:42:42
+ closed on:   6 May 2026, 21:15:25
 -------------------------------------------------------------------------------

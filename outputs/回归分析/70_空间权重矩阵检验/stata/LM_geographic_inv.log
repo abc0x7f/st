@@ -3,7 +3,7 @@
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 09:42:38
+ opened on:   6 May 2026, 21:15:21
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 LM / Robust LM 检验
@@ -119,5 +119,5 @@ RLMlag  .11466093          1  .73489888
        log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
 > 矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 09:42:39
+ closed on:   6 May 2026, 21:15:22
 -------------------------------------------------------------------------------

@@ -25,20 +25,30 @@ from PySide6.QtWidgets import (
 from table_model import DataFrameTableModel
 
 
+def format_display_path(path: Path | None) -> str:
+    if path is None:
+        return ""
+    try:
+        project_root = Path(__file__).resolve().parents[2]
+        return str(path.resolve().relative_to(project_root.resolve()))
+    except ValueError:
+        return str(path)
+
+
 class FadeButton(QToolButton):
     def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setText(text)
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedSize(44, 44)
+        self.setFixedSize(58, 58)
         self.setStyleSheet(
             """
             QToolButton {
                 border: 1px solid rgba(56, 69, 82, 0.18);
-                border-radius: 22px;
+                border-radius: 29px;
                 background: rgba(251, 252, 253, 0.9);
                 color: #18212b;
-                font-size: 22px;
+                font-size: 26px;
                 font-weight: 700;
             }
             QToolButton:hover {
@@ -185,9 +195,6 @@ class ArtifactNavigatorPanel(PanelFrame):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        button_y = self.height() - 56
-        self.prev_button.move(18, button_y)
-        self.next_button.move(self.width() - self.next_button.width() - 18, button_y)
 
     def _set_overlay_visible(self, visible: bool) -> None:
         self.prev_button.fade_to(visible and self.prev_button.isEnabled())
@@ -254,17 +261,24 @@ class ZoomableImageView(QGraphicsView):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        self.setRenderHints(
+            QPainter.Antialiasing
+            | QPainter.SmoothPixmapTransform
+            | QPainter.TextAntialiasing
+        )
+        self.setOptimizationFlags(QGraphicsView.DontAdjustForAntialiasing | QGraphicsView.DontSavePainterState)
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setCacheMode(QGraphicsView.CacheNone)
         self.setDragMode(QGraphicsView.NoDrag)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
         self.setFrameShape(QFrame.NoFrame)
-        self.setStyleSheet("background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px;")
         self.setStyleSheet("background: #f6f8fa; border: 1px solid #d4dce5; border-radius: 4px;")
 
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
         self._pixmap_item = QGraphicsPixmapItem()
+        self._pixmap_item.setTransformationMode(Qt.SmoothTransformation)
         self._scene.addItem(self._pixmap_item)
         self._dragging = False
         self._drag_origin = QPoint()
@@ -282,8 +296,9 @@ class ZoomableImageView(QGraphicsView):
 
         pixmap = QPixmap(str(image_path))
         self._pixmap_item.setPixmap(pixmap)
+        self._pixmap_item.setTransformationMode(Qt.SmoothTransformation)
         self._scene.setSceneRect(pixmap.rect())
-        self.fitInView(self._pixmap_item, Qt.KeepAspectRatio)
+        self._fit_with_boost()
         self._current_scale = 1.0
         self.scaleChanged.emit(self._current_scale)
 
@@ -291,8 +306,12 @@ class ZoomableImageView(QGraphicsView):
         self.resetTransform()
         self._current_scale = 1.0
         if not self._pixmap_item.pixmap().isNull():
-            self.fitInView(self._pixmap_item, Qt.KeepAspectRatio)
+            self._fit_with_boost()
         self.scaleChanged.emit(self._current_scale)
+
+    def _fit_with_boost(self) -> None:
+        self.fitInView(self._pixmap_item, Qt.KeepAspectRatio)
+        self.scale(1.18, 1.18)
 
     def wheelEvent(self, event) -> None:
         if self._pixmap_item.pixmap().isNull():
@@ -346,22 +365,39 @@ class ImagePanel(ArtifactNavigatorPanel):
         footer.addStretch(1)
         self.outer_layout.addLayout(footer)
 
+        self.prev_button.setParent(self)
+        self.next_button.setParent(self)
         self.reset_button = FadeButton("⟳", self)
         self.reset_button.clicked.connect(self.reset_requested.emit)
+        self.prev_button.raise_()
+        self.next_button.raise_()
         self.reset_button.raise_()
 
         self.register_hover_target(self.image_view.viewport())
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self.reset_button.move((self.width() - self.reset_button.width()) // 2, self.height() - 56)
+        image_geom = self.image_view.geometry()
+        center_y = max(18, (image_geom.height() - self.prev_button.height()) // 2)
+        self.prev_button.move(image_geom.left() + 14, image_geom.top() + center_y)
+        self.next_button.move(
+            image_geom.left() + max(14, image_geom.width() - self.next_button.width() - 14),
+            image_geom.top() + center_y,
+        )
+        self.reset_button.move(
+            image_geom.left() + (image_geom.width() - self.reset_button.width()) // 2,
+            image_geom.top() + max(14, image_geom.height() - self.reset_button.height() - 14),
+        )
+        self.prev_button.raise_()
+        self.next_button.raise_()
+        self.reset_button.raise_()
 
     def _set_overlay_visible(self, visible: bool) -> None:
         super()._set_overlay_visible(visible)
         self.reset_button.fade_to(visible and not self.image_view._pixmap_item.pixmap().isNull())
 
     def set_image_path(self, path: Path | None, index: int, total: int) -> None:
-        self.path_label.setText(str(path) if path else "未发现图片")
+        self.path_label.setText(format_display_path(path) if path else "未发现图片")
         self.image_view.set_image(path)
         self.update_pager(index, total)
 

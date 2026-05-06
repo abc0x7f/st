@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -85,8 +86,8 @@ def check_step(step_id: str) -> CheckResult:
         messages.extend(_check_requirement(requirement))
 
     if step.precheck_mode == "manual_result":
-        artifacts = discover_artifacts(step_id)
-        if artifacts.csv_files or artifacts.image_files or artifacts.markdown_files:
+        matched_outputs = _glob_paths(step.expected_outputs)
+        if matched_outputs:
             messages.append("[通过] 已发现人工步骤产物。")
         else:
             messages.append("[待处理] 尚未发现 Dearun 回填结果，请手动完成后再检查。")
@@ -186,6 +187,19 @@ def load_markdown(step_id: str, latest_status: StepStatus = StepStatus.IDLE) -> 
 def run_step(step_id: str) -> RunPreparation:
     step = get_step(step_id)
     if step.runner_type == RunnerType.MANUAL:
+        if step.command and step.command[0] == "open-path":
+            target_path = Path(step.command[1])
+            if target_path.exists():
+                return RunPreparation(
+                    allowed=True,
+                    status=StepStatus.MANUAL_PENDING,
+                    program="__shell_open__",
+                    arguments=[str(target_path)],
+                    working_dir=step.working_dir,
+                    message=f"已准备打开 Dearun 路径：{target_path}",
+                )
+            message = f"未找到 Dearun 路径：{target_path}"
+            return RunPreparation(allowed=False, status=StepStatus.MANUAL_PENDING, message=message)
         message = "该步骤需在外部软件中手动完成，完成后请点击“检查”回收结果。"
         return RunPreparation(allowed=False, status=StepStatus.MANUAL_PENDING, message=message)
 
@@ -248,3 +262,7 @@ def executable_summary() -> str:
     stata_exe = resolve_stata_executable()
     stata_text = str(stata_exe) if stata_exe else "未找到"
     return f"Python: {sys.executable}\nStata: {stata_text}"
+
+
+def open_external_path(path_text: str) -> None:
+    os.startfile(path_text)
