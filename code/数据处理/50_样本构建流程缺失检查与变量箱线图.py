@@ -14,6 +14,11 @@ import seaborn as sns
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs" / "数据处理" / "50_样本构建流程缺失检查与变量箱线图"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+FONT_SIZE_DELTA = 4
+
+
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
 
 
 def configure_matplotlib() -> None:
@@ -32,6 +37,12 @@ def configure_matplotlib() -> None:
         chosen = ["DejaVu Serif"]
     matplotlib.rcParams["font.family"] = chosen
     matplotlib.rcParams["axes.unicode_minus"] = False
+    matplotlib.rcParams["font.size"] = fs(10)
+    matplotlib.rcParams["axes.titlesize"] = fs(12)
+    matplotlib.rcParams["axes.labelsize"] = fs(10)
+    matplotlib.rcParams["xtick.labelsize"] = fs(9)
+    matplotlib.rcParams["ytick.labelsize"] = fs(9)
+    matplotlib.rcParams["legend.fontsize"] = fs(9)
 
 
 def draw_box(ax, x: float, y: float, w: float, h: float, title: str, lines: list[str], fc: str) -> None:
@@ -52,8 +63,8 @@ def draw_box(ax, x: float, y: float, w: float, h: float, title: str, lines: list
         text,
         ha="center",
         va="center",
-        fontsize=10,
-        color="#102A43",
+        fontsize=fs(10),
+        color="black",
         linespacing=1.35,
     )
 
@@ -71,7 +82,7 @@ def draw_arrow(ax, start: tuple[float, float], end: tuple[float, float]) -> None
 
 
 def create_flowchart() -> None:
-    fig, ax = plt.subplots(figsize=(14, 9))
+    fig, ax = plt.subplots(figsize=(16.5, 10.8))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -185,7 +196,7 @@ def create_flowchart() -> None:
     draw_arrow(ax, (0.27, 0.2), (0.43, 0.13))
     draw_arrow(ax, (0.73, 0.2), (0.57, 0.13))
 
-    ax.set_title("图4 样本构建流程图", fontsize=18, pad=18, color="#102A43")
+    ax.set_title("图4 样本构建流程图", fontsize=fs(18), pad=20, color="black")
     fig.tight_layout()
     fig.savefig(OUT_DIR / "图4_样本构建流程图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -221,7 +232,7 @@ def create_missing_heatmap() -> None:
     cmap = plt.get_cmap("YlOrRd", levels)
     norm = BoundaryNorm(boundaries, cmap.N)
 
-    fig, ax = plt.subplots(figsize=(11, 8.5))
+    fig, ax = plt.subplots(figsize=(13.5, 10.2))
     sns.heatmap(
         heatmap_df,
         cmap=cmap,
@@ -242,15 +253,17 @@ def create_missing_heatmap() -> None:
     )
     colorbar = ax.collections[0].colorbar
     colorbar.set_ticks(list(range(levels)))
-    colorbar.set_label("缺失项个数", rotation=90, labelpad=12)
+    colorbar.set_label("缺失项个数", rotation=90, labelpad=14, fontsize=fs(10), color="black")
+    colorbar.ax.tick_params(labelsize=fs(9), colors="black")
 
-    ax.set_title("图5 各省能源结构原始数据缺失项计数热力图", fontsize=17, pad=14)
+    ax.set_title("图5 各省能源结构原始数据缺失项计数热力图", fontsize=fs(17), pad=16)
     ax.set_xlabel("年份")
     ax.set_ylabel("省份")
     years = list(heatmap_df.columns)
     ax.set_xticks([i + 0.5 for i in range(len(years))])
     ax.set_xticklabels([str(y) for y in years], rotation=0)
-    ax.tick_params(axis="y", rotation=0)
+    ax.tick_params(axis="x", labelsize=fs(9), pad=6)
+    ax.tick_params(axis="y", labelsize=fs(9), rotation=0, pad=6)
 
     flagged_rows = (
         pd.DataFrame({"province": df["province"], "year": df["year"], "missing_count": missing_count})
@@ -258,9 +271,9 @@ def create_missing_heatmap() -> None:
         .drop_duplicates()
     )
     note = "注：0 值和空值均视为缺失；色阶表示该省份-年份样本的缺失项个数。"
-    fig.text(0.01, 0.02, note, ha="left", va="bottom", fontsize=9.5, color="#52606D")
+    fig.text(0.01, 0.02, note, ha="left", va="bottom", fontsize=fs(9.5), color="black")
 
-    fig.tight_layout(rect=(0, 0.06, 0.96, 1))
+    fig.tight_layout(rect=(0, 0.08, 0.95, 1))
     fig.savefig(OUT_DIR / "图5_变量缺失热力图.png", dpi=300)
     plt.close(fig)
 
@@ -284,22 +297,23 @@ def create_boxplots() -> None:
         ("eff", df2["eff"], "#2CA02C", "第二阶段"),
     ]
 
-    fig, axes = plt.subplots(3, 4, figsize=(16, 10))
+    fig, axes = plt.subplots(3, 4, figsize=(18.5, 12.2))
     axes = axes.flatten()
 
     for ax, (name, series, color, source) in zip(axes, items):
-        sns.boxplot(y=series, ax=ax, color=color, width=0.42, linewidth=1.2, fliersize=3)
-        ax.set_title(f"{name}\n({source})", fontsize=11)
+        sns.boxplot(y=series, ax=ax, color=color, width=0.42, linewidth=1.2, fliersize=4)
+        ax.set_title(f"{name}\n({source})", fontsize=fs(11), pad=8, color="black")
         ax.set_xlabel("")
         ax.set_ylabel("")
         ax.tick_params(axis="x", length=0)
+        ax.tick_params(axis="y", labelsize=fs(9), pad=5)
         ax.grid(axis="y", linestyle="--", alpha=0.35)
 
     for ax in axes[len(items):]:
         ax.axis("off")
 
-    fig.suptitle("图6 核心变量箱线图", fontsize=18, y=0.98)
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.suptitle("图6 核心变量箱线图", fontsize=fs(18), y=0.985, color="black")
+    fig.tight_layout(rect=(0, 0, 1, 0.955))
     fig.savefig(OUT_DIR / "图6_核心变量箱线图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 

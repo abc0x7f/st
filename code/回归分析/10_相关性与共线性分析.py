@@ -29,6 +29,11 @@ LABELS = {
     "open": "对外开放度\nopen",
     "es": "能源结构\nes",
 }
+FONT_SIZE_DELTA = 2
+
+
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
 
 
 def configure_matplotlib() -> None:
@@ -42,6 +47,12 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
+    matplotlib.rcParams["font.size"] = fs(10)
+    matplotlib.rcParams["axes.titlesize"] = fs(12)
+    matplotlib.rcParams["axes.labelsize"] = fs(10)
+    matplotlib.rcParams["xtick.labelsize"] = fs(10)
+    matplotlib.rcParams["ytick.labelsize"] = fs(10)
+    matplotlib.rcParams["legend.fontsize"] = fs(10)
 
 
 def load_data(path: Path) -> pd.DataFrame:
@@ -139,7 +150,7 @@ def draw_corr_ellipse_matrix_on_ax(
                     text,
                     ha="center",
                     va="center",
-                    fontsize=10,
+                    fontsize=fs(10),
                     color=text_color_for_value(value, cmap, norm),
                     fontweight="normal",
                 )
@@ -150,30 +161,30 @@ def draw_corr_ellipse_matrix_on_ax(
                     corr.index[i],
                     ha="center",
                     va="center",
-                    fontsize=10,
+                    fontsize=fs(10),
                     color="#111827",
                     fontweight="bold",
                 )
 
     ax.set_xticks(np.arange(n) + 0.5)
     ax.set_yticks(np.arange(n) + 0.5)
-    ax.set_xticklabels(corr.columns, fontsize=10)
-    ax.set_yticklabels(corr.index, fontsize=10)
+    ax.set_xticklabels(corr.columns, fontsize=fs(10))
+    ax.set_yticklabels(corr.index, fontsize=fs(10))
     ax.xaxis.tick_top()
     plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
-    ax.tick_params(length=0)
+    ax.tick_params(length=0, pad=8)
 
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    ax.set_title(title, fontsize=15, pad=24)
+    ax.set_title(title, fontsize=fs(15), pad=28)
 
 
 def save_combined_corr_ellipse_matrix(
     pearson_corr: pd.DataFrame,
     spearman_corr: pd.DataFrame,
 ) -> Path:
-    fig, axes = plt.subplots(1, 2, figsize=(24, 10), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(26, 11.5), constrained_layout=True)
     draw_corr_ellipse_matrix_on_ax(axes[0], pearson_corr, "Pearson 相关性椭圆矩阵")
     draw_corr_ellipse_matrix_on_ax(axes[1], spearman_corr, "Spearman 相关性椭圆矩阵")
 
@@ -182,11 +193,12 @@ def save_combined_corr_ellipse_matrix(
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=axes, fraction=0.03, pad=0.02)
-    cbar.set_label("相关系数", fontsize=10)
+    cbar.set_label("相关系数", fontsize=fs(10))
+    cbar.ax.tick_params(labelsize=fs(9))
 
-    fig.suptitle("第二阶段变量相关性椭圆矩阵", fontsize=17)
+    fig.suptitle("第二阶段变量相关性椭圆矩阵", fontsize=fs(17))
     note = "注：下三角为相关性椭圆，上三角为相关系数数值；相关性检验仅作描述性分析，图中不再展示显著性标记。"
-    fig.text(0.01, 0.003, note, ha="left", va="bottom", fontsize=9, color="#4B5563")
+    fig.text(0.01, 0.003, note, ha="left", va="bottom", fontsize=fs(9), color="#4B5563")
 
     out_path = OUT_DIR / "相关椭圆矩阵组合图.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
@@ -245,7 +257,7 @@ def save_vif_table(vif_df: pd.DataFrame) -> Path:
 
 
 def save_vif_cleveland_plot(vif_df: pd.DataFrame) -> Path:
-    fig, ax = plt.subplots(figsize=(10.5, 6.2), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(11.6, 6.9), constrained_layout=True)
     y = np.arange(len(vif_df))
     colors_map = vif_df["vif"].map(lambda v: "#C0392B" if v >= 10 else "#F39C12" if v >= 5 else "#2E86AB")
 
@@ -256,12 +268,14 @@ def save_vif_cleveland_plot(vif_df: pd.DataFrame) -> Path:
     ax.axvline(10, color="#C0392B", linestyle="--", linewidth=1.3, label="VIF=10")
 
     for yi, value in zip(y, vif_df["vif"]):
-        ax.text(value + 0.08, yi, f"{value:.2f}", va="center", ha="left", fontsize=10, color="#111827")
+        ax.text(value + 0.12, yi, f"{value:.2f}", va="center", ha="left", fontsize=fs(10), color="#111827")
 
     ax.set_yticks(y)
-    ax.set_yticklabels(vif_df["label"], fontsize=10)
-    ax.set_xlabel("VIF")
-    ax.set_title("VIF 检验克利夫兰图", fontsize=15, pad=12)
+    ax.set_yticklabels(vif_df["label"], fontsize=fs(10))
+    ax.set_xlabel("VIF", fontsize=fs(10))
+    ax.set_title("VIF 检验克利夫兰图", fontsize=fs(15), pad=14)
+    ax.tick_params(axis="x", labelsize=fs(10), pad=6)
+    ax.tick_params(axis="y", pad=8)
     ax.grid(axis="x", color="#E5E7EB", linewidth=0.8)
     ax.grid(axis="y", visible=False)
     ax.set_axisbelow(True)
@@ -269,7 +283,7 @@ def save_vif_cleveland_plot(vif_df: pd.DataFrame) -> Path:
     ax.set_xlim(0, x_max)
     ax.spines["left"].set_visible(True)
     ax.spines["bottom"].set_visible(True)
-    ax.legend(frameon=False, loc="upper right")
+    ax.legend(frameon=False, loc="upper right", borderaxespad=0.8)
 
     out_path = OUT_DIR / "方差膨胀因子克利夫兰点图.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")

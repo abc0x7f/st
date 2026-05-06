@@ -23,6 +23,11 @@ BASE_CORE_VAR = "lntl"
 LAG_CORE_VAR = "lntl_lag1"
 CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
 WINSOR_VARS = [DEP_VAR, BASE_CORE_VAR, *CONTROL_VARS]
+FONT_SIZE_DELTA = 2
+
+
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
 
 
 def configure_matplotlib() -> None:
@@ -35,6 +40,12 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
+    matplotlib.rcParams["font.size"] = fs(10)
+    matplotlib.rcParams["axes.titlesize"] = fs(12)
+    matplotlib.rcParams["axes.labelsize"] = fs(10)
+    matplotlib.rcParams["xtick.labelsize"] = fs(10)
+    matplotlib.rcParams["ytick.labelsize"] = fs(10)
+    matplotlib.rcParams["legend.fontsize"] = fs(9)
 
 
 def format_decimal(value: float, digits: int = 4) -> str:
@@ -56,8 +67,8 @@ def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
     plot_df = plot_df.iloc[::-1].reset_index(drop=True)
     y_pos = np.arange(len(plot_df))
 
-    fig = plt.figure(figsize=(10.8, 5.6))
-    gs = fig.add_gridspec(1, 3, width_ratios=[1.4, 2.15, 1.75], wspace=0.04)
+    fig = plt.figure(figsize=(12.0, 6.4))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.6, 2.3, 2.0], wspace=0.05)
     ax_left = fig.add_subplot(gs[0, 0])
     ax = fig.add_subplot(gs[0, 1])
     ax_right = fig.add_subplot(gs[0, 2], sharey=ax)
@@ -90,34 +101,35 @@ def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
     xticks = [x for x in xticks if x <= xmax]
     ax.set_xticks(xticks)
     ax.set_xticklabels([f"{x:.2f}" for x in xticks])
-    ax.set_xlabel("系数估计值")
-    ax.set_title("稳健性检验核心系数森林图")
+    ax.set_xlabel("系数估计值", fontsize=fs(10))
+    ax.set_title("稳健性检验核心系数森林图", fontsize=fs(12))
     ax.grid(axis="y", linestyle=":", alpha=0.22)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="x", labelsize=fs(9), pad=6)
 
     ax_left.set_xlim(0, 1)
     ax_left.set_ylim(ax.get_ylim())
     ax_left.axis("off")
-    ax_left.text(0.00, len(plot_df) - 0.1, "模型", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
+    ax_left.text(0.00, len(plot_df) - 0.1, "模型", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
     for idx, row in plot_df.iterrows():
-        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=9.6, color="black")
+        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=fs(9.6), color="black")
 
     ax_right.set_xlim(0, 1)
     ax_right.set_ylim(ax.get_ylim())
     ax_right.axis("off")
-    ax_right.text(0.02, len(plot_df) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
-    ax_right.text(0.98, len(plot_df) - 0.1, "p", ha="right", va="bottom", fontsize=10, color="black", fontweight="bold")
+    ax_right.text(0.02, len(plot_df) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_right.text(0.98, len(plot_df) - 0.1, "p", ha="right", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
     for idx, row in plot_df.iterrows():
         coef_text = (
             f"{format_decimal(row['coef_core'])} "
             f"({format_decimal(row['ci_lower'])}, {format_decimal(row['ci_upper'])})"
         )
-        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=9.2, color="black")
-        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", fontsize=9.2, color="black")
+        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=fs(9.2), color="black")
+        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", fontsize=fs(9.2), color="black")
 
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "稳健性核心森林图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)

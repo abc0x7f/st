@@ -21,6 +21,7 @@ OUTPUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "10_碳排放效率绘�
 MAP_YEAR = 2022
 KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]
+MAP_FONT_SIZE_DELTA = 8
 
 PROVINCE_NAME_MAP = {
     "北京市": "北京", "天津市": "天津", "上海市": "上海", "重庆市": "重庆",
@@ -53,6 +54,10 @@ def configure_style() -> None:
         "DejaVu Serif",
     ]
     plt.rcParams["axes.unicode_minus"] = False
+
+
+def map_fs(size: float) -> float:
+    return size + MAP_FONT_SIZE_DELTA
 
 
 def load_data() -> pd.DataFrame:
@@ -319,8 +324,8 @@ def save_eff_map(df: pd.DataFrame) -> Path:
         if "广西" in str(raw_name):
             guangxi_feature = feat
 
-    fig = plt.figure(figsize=(14, 11))
-    ax = fig.add_axes([0.09, 0.10, 0.78, 0.82])
+    fig = plt.figure(figsize=(18, 14))
+    ax = fig.add_axes([0.08, 0.09, 0.77, 0.84])
 
     patches = []
     facecolors = []
@@ -364,16 +369,16 @@ def save_eff_map(df: pd.DataFrame) -> Path:
     ax.set_yticks(lat_ticks)
     ax.set_xticks(lon_minor, minor=True)
     ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=8)
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=8)
+    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=map_fs(8))
+    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=map_fs(8))
     ax.tick_params(which="major", direction="in", length=6, width=1.2, top=True, bottom=True, left=True, right=True)
     ax.tick_params(which="minor", direction="in", length=3, width=0.8, top=True, bottom=True, left=True, right=True)
     for spine in ax.spines.values():
         spine.set_linewidth(2.5)
         spine.set_color("black")
-    ax.set_title(f"{MAP_YEAR} 年省际碳排放效率分级地图", fontsize=16, fontweight="bold", pad=12)
+    ax.set_title(f"{MAP_YEAR} 年省际碳排放效率分级地图", fontsize=map_fs(16), fontweight="bold", pad=16)
 
-    ax_scs = fig.add_axes([0.71, 0.14, 0.14, 0.22])
+    ax_scs = fig.add_axes([0.69, 0.13, 0.16, 0.24])
     scs_patches = []
     scs_colors = []
     if guangdong_feature is not None:
@@ -415,7 +420,7 @@ def save_eff_map(df: pd.DataFrame) -> Path:
     for spine in ax_scs.spines.values():
         spine.set_linewidth(1.8)
         spine.set_color("black")
-    ax_scs.set_title("南海诸岛", fontsize=8, pad=2)
+    ax_scs.set_title("南海诸岛", fontsize=map_fs(8), pad=4)
 
     compass_x = lon_min + 3.2
     compass_y = lat_max - 5.3
@@ -432,43 +437,63 @@ def save_eff_map(df: pd.DataFrame) -> Path:
         "N",
         ha="center",
         va="bottom",
-        fontsize=13,
+        fontsize=map_fs(13),
         fontweight="bold",
         zorder=6,
     )
 
-    ax_leg = fig.add_axes([0.09, 0.10, 0.18, 0.36])
+    ax_leg = fig.add_axes([0.07, 0.07, 0.24, 0.46])
     ax_leg.set_xlim(0, 10)
-    ax_leg.set_ylim(0, 20)
+    ax_leg.set_ylim(0, 26)
     ax_leg.axis("off")
 
+    fig_width_in, _ = fig.get_size_inches()
+    main_ax_w_in = fig_width_in * ax.get_position().width
+    leg_ax_w_in = fig_width_in * ax_leg.get_position().width
     lat_ref = 25.0
     km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
     bar_km = 500
     bar_deg = bar_km / km_per_deg
-    main_ax_w_in = 0.78 * 14
-    leg_ax_w_in = 0.18 * 14
     map_deg_per_in = (lon_max - lon_min) / main_ax_w_in
     bar_in = bar_deg / map_deg_per_in
     bar_leg = bar_in / leg_ax_w_in * 10
-    sx, sy = 1.0, 13.2
+    sx, sy = 1.0, 18.8
     half_bar = bar_leg / 2
-    ax_leg.add_patch(Rectangle((sx, sy), half_bar, 0.40, fc="black", ec="black", lw=0.8))
-    ax_leg.add_patch(Rectangle((sx + half_bar, sy), half_bar, 0.40, fc="white", ec="black", lw=0.8))
-    ax_leg.text(sx, sy - 0.45, "0", ha="center", fontsize=6.5)
-    ax_leg.text(sx + half_bar, sy - 0.45, f"{bar_km // 2}", ha="center", fontsize=6.5)
-    ax_leg.text(sx + bar_leg, sy - 0.45, f"{bar_km} km", ha="center", fontsize=6.5)
+    bar_h = 0.55
+    ax_leg.add_patch(Rectangle((sx, sy), half_bar, bar_h, fc="black", ec="black", lw=0.8))
+    ax_leg.add_patch(Rectangle((sx + half_bar, sy), half_bar, bar_h, fc="white", ec="black", lw=0.8))
+    label_y = sy - 1.0
+    ax_leg.text(sx, label_y, "0", ha="center", va="top", fontsize=map_fs(6.5), color="black")
+    ax_leg.text(sx + half_bar, label_y, f"{bar_km // 2}", ha="center", va="top", fontsize=map_fs(6.5), color="black")
+    ax_leg.text(sx + bar_leg, label_y, f"{bar_km} km", ha="center", va="top", fontsize=map_fs(6.5), color="black")
 
-    box_w, box_h = 2.0, 1.1
-    lx, ly_start = 1.0, 11.0
+    box_w, box_h = 2.2, 1.35
+    lx, ly_start = 1.0, 15
     for idx in range(len(seg_bounds) - 1):
         lo, hi = seg_bounds[idx], seg_bounds[idx + 1]
         mid_val = (lo + hi) / 2
         color = cmap(norm(mid_val))
-        y_pos = ly_start - idx * (box_h + 0.25)
+        y_pos = ly_start - idx * (box_h + 0.4)
         ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.8))
-        ax_leg.text(lx + box_w + 0.35, y_pos + box_h / 2, f"{lo:.2f} – {hi:.2f}", va="center", ha="left", fontsize=8)
-    ax_leg.text(lx + box_w / 2 + 1.0, 3.0, "碳排放效率", ha="center", va="center", fontsize=10, fontweight="bold")
+        ax_leg.text(
+            lx + box_w + 0.45,
+            y_pos + box_h / 2,
+            f"{lo:.2f} – {hi:.2f}",
+            va="center",
+            ha="left",
+            fontsize=map_fs(8),
+            color="black",
+        )
+    ax_leg.text(
+        lx + box_w / 2 + 1.2,
+        4,
+        "碳排放效率",
+        ha="center",
+        va="bottom",
+        fontsize=map_fs(10),
+        fontweight="bold",
+        color="black",
+    )
 
     out = OUTPUT_DIR / "12_省际碳排放效率分级地图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")

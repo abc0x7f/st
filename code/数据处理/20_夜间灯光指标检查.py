@@ -22,6 +22,7 @@ MAP_PATHS = [
     PROJECT_ROOT / "data" / "中国省级.geojson",
 ]
 MAP_YEAR = 2022
+FONT_SIZE_DELTA = 4
 
 PROVINCE_NAME_MAP = {
     "北京市": "北京", "天津市": "天津", "上海市": "上海", "重庆市": "重庆",
@@ -35,6 +36,10 @@ PROVINCE_NAME_MAP = {
     "宁夏回族自治区": "宁夏", "新疆维吾尔自治区": "新疆",
     "香港特别行政区": "香港", "澳门特别行政区": "澳门",
 }
+
+
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
 
 
 def load_data() -> pd.DataFrame:
@@ -51,11 +56,16 @@ def load_data() -> pd.DataFrame:
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
-    plt.rcParams["font.sans-serif"] = [
-        "Microsoft YaHei", "SimHei", "Noto Sans CJK SC",
-        "Arial Unicode MS", "DejaVu Sans",
-    ]
+    plt.rcParams["font.family"] = ["Times New Roman", "SimSun", "DejaVu Serif"]
+    plt.rcParams["font.serif"] = ["Times New Roman", "DejaVu Serif"]
+    plt.rcParams["font.sans-serif"] = ["SimSun", "SimHei", "Microsoft YaHei", "DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams["font.size"] = fs(10)
+    plt.rcParams["axes.titlesize"] = fs(12)
+    plt.rcParams["axes.labelsize"] = fs(10)
+    plt.rcParams["xtick.labelsize"] = fs(9)
+    plt.rcParams["ytick.labelsize"] = fs(9)
+    plt.rcParams["legend.fontsize"] = fs(9)
 
 
 def gradient_colors(name: str, n: int, start: float = 0.35, end: float = 0.9) -> list:
@@ -109,17 +119,17 @@ def draw_gradient_histogram(
 
     h1, l1 = ax.get_legend_handles_labels()
     h2, l2 = ax_density.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, loc="upper right")
+    ax.legend(h1 + h2, l1 + l2, loc="upper right", fontsize=fs(9), frameon=True, borderaxespad=0.8)
 
 
 def save_distribution_plot(df):
-    fig, axes = plt.subplots(1, 2, figsize=(13, 4.8))
+    fig, axes = plt.subplots(1, 2, figsize=(15.5, 6.2))
     draw_gradient_histogram(axes[0], df["ntl"], "ntl 分布", "ntl",
                             "Blues", "#1F4E79", clip_negative=True)
     draw_gradient_histogram(axes[1], df["lntl"], "lntl 分布", "lntl",
                             "Oranges", "#C65D00", force_xlim_left=0)
-    fig.suptitle("夜间灯光指标分布检验", fontsize=14)
-    fig.tight_layout()
+    fig.suptitle("夜间灯光指标分布检验", fontsize=fs(14))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(OUTPUT_DIR / "01_指标分布图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
@@ -130,23 +140,25 @@ def save_distribution_plot(df):
 
 def save_time_series_plots(df):
     year_mean = df.groupby("year", as_index=False)["ntl"].mean()
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    fig, ax = plt.subplots(figsize=(8.8, 5.4))
     sns.lineplot(data=year_mean, x="year", y="ntl",
                  marker="o", linewidth=2, label="全国年度均值", ax=ax)
     ax.set_title("ntl 年度均值"); ax.set_xlabel("year"); ax.set_ylabel("mean ntl")
-    ax.legend(); fig.tight_layout()
+    ax.legend(fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "02_年度均值图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=(12, 6.5))
+    fig, ax = plt.subplots(figsize=(15.5, 8.2))
     sns.lineplot(data=df, x="year", y="ntl", hue="province",
                  legend="full", linewidth=1.2, alpha=0.8, ax=ax)
     ax.set_title("各省 ntl 年际变化"); ax.set_xlabel("year"); ax.set_ylabel("ntl")
     h, l = ax.get_legend_handles_labels()
     if h:
         ax.legend(handles=h, labels=l, title="province",
-                  bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8, title_fontsize=9)
-    fig.tight_layout()
+                  bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=fs(8), title_fontsize=fs(9),
+                  frameon=True, borderaxespad=0.8, ncol=1)
+    fig.tight_layout(rect=(0, 0, 0.83, 1))
     fig.savefig(OUTPUT_DIR / "03_各省变化趋势图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
@@ -164,7 +176,7 @@ def save_spatial_proxy_plot(df):
     blue_c  = gradient_colors("Blues",   n, start=0.85, end=0.25)
     orange_c = gradient_colors("Oranges", n, start=0.85, end=0.25)
 
-    fig, ax = plt.subplots(figsize=(9.5, 10))
+    fig, ax = plt.subplots(figsize=(11.5, 12.0))
     y_pos = np.arange(n)
     ax.barh(y_pos, ps["ntl"].values, color=blue_c,
             edgecolor="none", linewidth=0, label="ntl 均值")
@@ -174,7 +186,8 @@ def save_spatial_proxy_plot(df):
     ax.set_yticklabels(ps["province"].values)
     ax.invert_yaxis()
     ax.set_title("各省 ntl / lntl 均值排序")
-    ax.set_xlabel("value"); ax.set_ylabel("province"); ax.legend()
+    ax.set_xlabel("value"); ax.set_ylabel("province")
+    ax.legend(fontsize=fs(9), frameon=True, borderaxespad=0.8)
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "04_各省均值排序图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -213,7 +226,7 @@ def _draw_compass(ax, x, y, size):
     ax.annotate("", xy=(x, y + arrow_len), xytext=(x, y),
                 arrowprops=dict(arrowstyle="-|>", color="black", lw=2))
     ax.text(x, y + arrow_len + size * 0.18, "N",
-            ha="center", va="bottom", fontsize=11, fontweight="bold")
+            ha="center", va="bottom", fontsize=fs(11), fontweight="bold", color="black")
 
 
 def _draw_scale_bar(ax, x, y, bar_km, lat_ref):
@@ -224,9 +237,9 @@ def _draw_scale_bar(ax, x, y, bar_km, lat_ref):
     half = bar_deg / 2
     ax.add_patch(Rectangle((x, y), half, 0.35, fc="black", ec="black", lw=0.8))
     ax.add_patch(Rectangle((x + half, y), half, 0.35, fc="white", ec="black", lw=0.8))
-    ax.text(x, y - 0.3, "0", ha="center", va="top", fontsize=7)
-    ax.text(x + half, y - 0.3, f"{bar_km // 2:.0f}", ha="center", va="top", fontsize=7)
-    ax.text(x + bar_deg, y - 0.3, f"{bar_km:.0f} km", ha="center", va="top", fontsize=7)
+    ax.text(x, y - 0.3, "0", ha="center", va="top", fontsize=fs(7), color="black")
+    ax.text(x + half, y - 0.3, f"{bar_km // 2:.0f}", ha="center", va="top", fontsize=fs(7), color="black")
+    ax.text(x + bar_deg, y - 0.3, f"{bar_km:.0f} km", ha="center", va="top", fontsize=fs(7), color="black")
 
 
 def save_lntl_map(df):
@@ -260,7 +273,7 @@ def save_lntl_map(df):
                 hainan_feature = feat
 
     # ── figure layout ──
-    fig = plt.figure(figsize=(14, 11))
+    fig = plt.figure(figsize=(16.5, 12.8))
     # main axes with room for ticks
     ax = fig.add_axes([0.09, 0.10, 0.78, 0.82])
 
@@ -301,8 +314,8 @@ def save_lntl_map(df):
     ax.set_yticks(lat_ticks)
     ax.set_xticks(lon_minor, minor=True)
     ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=8)
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=8)
+    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=fs(8))
+    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=fs(8))
     ax.tick_params(which="major", direction="in", length=6, width=1.2,
                    top=True, bottom=True, left=True, right=True)
     ax.tick_params(which="minor", direction="in", length=3, width=0.8,
@@ -310,7 +323,7 @@ def save_lntl_map(df):
     for sp in ax.spines.values():
         sp.set_linewidth(2.5)
         sp.set_color("black")
-    ax.set_title(f"{MAP_YEAR} 年各省 lntl 分级图", fontsize=16,
+    ax.set_title(f"{MAP_YEAR} 年各省 lntl 分级图", fontsize=fs(16),
                  fontweight="bold", pad=12)
 
     # ══════════════ South China Sea inset (右下角) ══════════════
@@ -336,11 +349,11 @@ def save_lntl_map(df):
     ax_scs.grid(False)
     for sp in ax_scs.spines.values():
         sp.set_linewidth(1.8); sp.set_color("black")
-    ax_scs.set_title("南海诸岛", fontsize=8, pad=2)
+    ax_scs.set_title("南海诸岛", fontsize=fs(8), pad=4)
 
     # ══════════════ Legend area (左下角) ══════════════
     # Use a dedicated axes for legend elements
-    ax_leg = fig.add_axes([0.09, 0.10, 0.18, 0.36])
+    ax_leg = fig.add_axes([0.08, 0.09, 0.22, 0.40])
     ax_leg.set_xlim(0, 10); ax_leg.set_ylim(0, 20)
     ax_leg.axis("off")
 
@@ -351,7 +364,7 @@ def save_lntl_map(df):
                     arrowprops=dict(arrowstyle="-|>", color="black", lw=2.5,
                                    mutation_scale=15))
     ax_leg.text(cx, cy_base + arr_len + 0.3, "N", ha="center", va="bottom",
-                fontsize=13, fontweight="bold")
+                fontsize=fs(13), fontweight="bold", color="black")
 
     # ── 2) Scale bar (比例尺) — middle ──
     # At lat_ref ~ 25°N (bottom of main map area), 1° lon ≈ 100.9 km
@@ -380,9 +393,9 @@ def save_lntl_map(df):
                                fc="black", ec="black", lw=0.8))
     ax_leg.add_patch(Rectangle((sx + half_b, sy), half_b, 0.40,
                                fc="white", ec="black", lw=0.8))
-    ax_leg.text(sx, sy - 0.45, "0", ha="center", fontsize=6.5)
-    ax_leg.text(sx + half_b, sy - 0.45, f"{bar_km // 2}", ha="center", fontsize=6.5)
-    ax_leg.text(sx + bar_leg, sy - 0.45, f"{bar_km} km", ha="center", fontsize=6.5)
+    ax_leg.text(sx, sy - 0.45, "0", ha="center", fontsize=fs(6.5), color="black")
+    ax_leg.text(sx + half_b, sy - 0.45, f"{bar_km // 2}", ha="center", fontsize=fs(6.5), color="black")
+    ax_leg.text(sx + bar_leg, sy - 0.45, f"{bar_km} km", ha="center", fontsize=fs(6.5), color="black")
 
     # ── 3) Segmented colour legend ──
     box_w, box_h = 2.0, 1.1
@@ -397,12 +410,12 @@ def save_lntl_map(df):
                                    fc=c, ec="black", lw=0.8))
         ax_leg.text(lx + box_w + 0.35, y_pos + box_h / 2,
                     f"{lo:.1f} – {hi:.1f}",
-                    va="center", ha="left", fontsize=8)
+                    va="center", ha="left", fontsize=fs(8), color="black")
     # ── legend title below segments ──
     bottom_y = ly_start - (len(seg_bounds) - 2) * (box_h + 0.25)
     ax_leg.text(lx + box_w, bottom_y - 0.6,
                 "夜间灯光聚合度对数", ha="center", va="top",
-                fontsize=8, fontweight="bold")
+                fontsize=fs(8), fontweight="bold", color="black")
 
     fig.savefig(OUTPUT_DIR / f"05_夜间灯光对数分级地图_{MAP_YEAR}.png",
                 dpi=300, bbox_inches="tight")

@@ -23,6 +23,11 @@ DEP_VAR = "eff"
 CORE_VAR = "lntl"
 CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
 MODEL_FORMULA = "eff ~ lntl + ind + urb + rd + open + es + C(province) + C(year)"
+FONT_SIZE_DELTA = 2
+
+
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
 
 
 def resolve_output_path(path: Path) -> Path:
@@ -54,6 +59,12 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
+    matplotlib.rcParams["font.size"] = fs(10)
+    matplotlib.rcParams["axes.titlesize"] = fs(12)
+    matplotlib.rcParams["axes.labelsize"] = fs(10)
+    matplotlib.rcParams["xtick.labelsize"] = fs(10)
+    matplotlib.rcParams["ytick.labelsize"] = fs(10)
+    matplotlib.rcParams["legend.fontsize"] = fs(9)
 
 
 def get_year_color_map(years: list[int]) -> dict[int, tuple[float, float, float, float]]:
@@ -188,7 +199,7 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique())
     year_color_map = get_year_color_map(years)
 
-    fig, ax = plt.subplots(figsize=(8.6, 6.2))
+    fig, ax = plt.subplots(figsize=(9.6, 7.0))
     for year in years:
         part = df.loc[df["year"] == year]
         ax.scatter(
@@ -213,8 +224,8 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     ax.set_xlabel("lntl")
     ax.set_ylabel("eff")
     ax.set_xlim(right=3.0)
-    ax.legend(loc="best", ncol=2, fontsize=9)
-    fig.tight_layout()
+    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "01_夜间灯光与效率散点拟合图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -225,7 +236,7 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
     ordered, _, years = prepare_ordered_frame(df)
     cmap = plt.get_cmap("RdYlGn", 450)
 
-    fig, ax = plt.subplots(figsize=(14.5, 6.8))
+    fig, ax = plt.subplots(figsize=(15.8, 7.8))
     for year_idx, year in enumerate(years):
         part = ordered.loc[ordered["year"] == year].sort_values("sample_index")
         x = part["sample_index"].to_numpy()
@@ -263,17 +274,18 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
     ax.set_xticklabels([str(v) for v in major_ticks])
     for idx, year in enumerate(years):
         center = idx * 30 + 15.5
-        ax.text(center, -0.11, str(year), ha="center", va="top", transform=ax.get_xaxis_transform(), fontsize=9)
-    ax.legend(loc="upper left", fontsize=9, frameon=True)
+        ax.text(center, -0.13, str(year), ha="center", va="top", transform=ax.get_xaxis_transform(), fontsize=fs(9))
+    ax.legend(loc="upper left", fontsize=fs(9), frameon=True, borderaxespad=0.8)
     fig.text(
         0.5,
-        0.012,
+        0.01,
         "注：先按 2015 年 eff 从小到大确定省份顺序；其后各年份均保持该顺序，且同一年份样本相邻排列。",
         ha="center",
         va="bottom",
-        fontsize=9,
+        fontsize=fs(9),
     )
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    ax.tick_params(axis="x", pad=8)
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
     out = OUT_DIR / "02_真实值与预测值对照图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -284,7 +296,7 @@ def plot_pred_vs_actual(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique())
     year_color_map = get_year_color_map(years)
 
-    fig, ax = plt.subplots(figsize=(7.2, 6.6))
+    fig, ax = plt.subplots(figsize=(8.2, 7.2))
     for year in years:
         part = df.loc[df["year"] == year]
         ax.scatter(
@@ -305,8 +317,8 @@ def plot_pred_vs_actual(df: pd.DataFrame) -> Path:
     ax.set_title("预测值-真实值散点图")
     ax.set_xlabel("真实值 eff")
     ax.set_ylabel("预测值 eff")
-    ax.legend(loc="best", ncol=2, fontsize=9)
-    fig.tight_layout()
+    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "03_pred_vs_actual_scatter.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -317,7 +329,7 @@ def plot_residual_vs_fitted(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique())
     year_color_map = get_year_color_map(years)
 
-    fig, ax = plt.subplots(figsize=(7.4, 6.4))
+    fig, ax = plt.subplots(figsize=(8.3, 7.0))
     for year in years:
         part = df.loc[df["year"] == year]
         ax.scatter(
@@ -336,8 +348,8 @@ def plot_residual_vs_fitted(df: pd.DataFrame) -> Path:
     ax.set_xlabel("拟合值")
     ax.set_ylabel("残差")
     ax.set_ylim(-0.3, 0.3)
-    ax.legend(loc="best", ncol=2, fontsize=9)
-    fig.tight_layout()
+    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "04_residual_vs_fitted.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -357,7 +369,7 @@ def plot_residual_qq(df: pd.DataFrame) -> Path:
 
     slope, intercept, r = stats.probplot(qq_df["std_resid"].to_numpy(), dist="norm", fit=True)[1]
 
-    fig, ax = plt.subplots(figsize=(7.2, 6.4))
+    fig, ax = plt.subplots(figsize=(8.2, 7.1))
     for year in years:
         part = qq_df.loc[qq_df["year"] == year]
         ax.scatter(
@@ -379,8 +391,8 @@ def plot_residual_qq(df: pd.DataFrame) -> Path:
     ax.set_ylim(bottom=-6)
 #    ax.axhline(0, color="black", linewidth=1.0, linestyle="--", zorder=1)
 #    ax.axvline(0, color="black", linewidth=1.0, linestyle="--", zorder=1)
-    ax.legend(loc="upper left", ncol=2, fontsize=9, frameon=True)
-    ax.text(0.03, 0.74, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=10, color="#334E68")
+    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    ax.text(0.03, 0.72, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=fs(10), color="#334E68")
     fig.tight_layout()
     out = OUT_DIR / "05_residual_qq.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -403,8 +415,8 @@ def plot_coefficient_forest(result) -> Path:
     coef_table = coef_table.iloc[::-1].reset_index(drop=True)
     y_pos = np.arange(len(coef_table))
 
-    fig = plt.figure(figsize=(11.8, 6.4))
-    gs = fig.add_gridspec(1, 3, width_ratios=[1.55, 2.35, 1.8], wspace=0.04)
+    fig = plt.figure(figsize=(13.2, 7.1))
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.75, 2.45, 2.1], wspace=0.05)
     ax_left = fig.add_subplot(gs[0, 0])
     ax = fig.add_subplot(gs[0, 1])
     ax_right = fig.add_subplot(gs[0, 2], sharey=ax)
@@ -440,31 +452,32 @@ def plot_coefficient_forest(result) -> Path:
     ax.set_yticklabels([])
     ax.set_xticks(tick_values)
     ax.set_xticklabels([f"{v:.1f}" if abs(v) < 1 else f"{v:.0f}" for v in tick_values])
-    ax.set_xlabel("系数估计值")
-    ax.set_title("基准回归系数森林图")
+    ax.set_xlabel("系数估计值", fontsize=fs(10))
+    ax.set_title("基准回归系数森林图", fontsize=fs(12))
     ax.grid(axis="y", linestyle=":", alpha=0.22)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="x", labelsize=fs(9), pad=6)
 
     ax_left.set_xlim(0, 1)
     ax_left.set_ylim(ax.get_ylim())
     ax_left.axis("off")
-    ax_left.text(0.00, len(coef_table) - 0.1, "变量", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
+    ax_left.text(0.00, len(coef_table) - 0.1, "变量", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
     for idx, row in coef_table.iterrows():
-        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=9.6, color="black")
+        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=fs(9.6), color="black")
 
     ax_right.set_xlim(0, 1)
     ax_right.set_ylim(ax.get_ylim())
     ax_right.axis("off")
-    ax_right.text(0.02, len(coef_table) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=10, color="black", fontweight="bold")
-    ax_right.text(0.98, len(coef_table) - 0.1, "p", ha="right", va="bottom", fontsize=10, color="black", fontweight="bold")
+    ax_right.text(0.02, len(coef_table) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_right.text(0.98, len(coef_table) - 0.1, "p", ha="right", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
     for idx, row in coef_table.iterrows():
         coef_text = (
             f"{format_decimal(row['coef'])} "
             f"({format_decimal(row['ci_lower'])}, {format_decimal(row['ci_upper'])})"
         )
-        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=9.2, color="black")
+        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=fs(9.2), color="black")
         stars = ""
         if row["p_value"] < 0.01:
             stars = "***"
@@ -472,9 +485,9 @@ def plot_coefficient_forest(result) -> Path:
             stars = "**"
         elif row["p_value"] < 0.1:
             stars = "*"
-        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_value'])}{stars}", ha="right", va="center", fontsize=9.2, color="black")
+        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_value'])}{stars}", ha="right", va="center", fontsize=fs(9.2), color="black")
 
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
 
     out = OUT_DIR / "06_系数森林图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -497,7 +510,7 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     years = sorted(partial_df["year"].unique())
     year_color_map = get_year_color_map(years)
 
-    fig, ax = plt.subplots(figsize=(8.4, 6.2))
+    fig, ax = plt.subplots(figsize=(9.3, 7.0))
     for year in years:
         part = partial_df.loc[partial_df["year"] == year]
         ax.scatter(
@@ -523,7 +536,7 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     ax.set_title("控制双固定效应后的 lntl 净关系图")
     ax.set_xlabel("lntl 残差")
     ax.set_ylabel("eff 残差")
-    ax.legend(loc="best", ncol=2, fontsize=9)
+    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
     fig.tight_layout()
 
     out = OUT_DIR / "07_夜间灯光与效率偏回归关系图.png"
@@ -535,7 +548,7 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
 def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique())
     year_color_map = get_year_color_map(years)
-    fig, axes = plt.subplots(1, 3, figsize=(18.0, 5.8))
+    fig, axes = plt.subplots(1, 3, figsize=(20.0, 6.9))
 
     ax = axes[0]
     for year in years:
@@ -596,15 +609,15 @@ def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
     ax.set_title("标准化残差 Q-Q")
     ax.set_xlabel("理论分位数")
     ax.set_ylabel("样本分位数")
-    ax.text(0.04, 0.94, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=9)
+    ax.text(0.04, 0.94, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=fs(9))
 
     handles = [
-        plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=year_color_map[year], markersize=6, label=str(year))
+        plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=year_color_map[year], markersize=7, label=str(year))
         for year in years
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=8, frameon=False, bbox_to_anchor=(0.5, -0.01))
-    fig.suptitle("基准回归诊断图组", y=1.02, fontsize=14)
-    fig.tight_layout(rect=(0, 0.06, 1, 0.98))
+    fig.legend(handles=handles, loc="lower center", ncol=8, frameon=False, bbox_to_anchor=(0.5, -0.02), fontsize=fs(9), columnspacing=1.1, handletextpad=0.5)
+    fig.suptitle("基准回归诊断图组", y=1.02, fontsize=fs(14))
+    fig.tight_layout(rect=(0, 0.1, 1, 0.97))
 
     out = OUT_DIR / "08_诊断图组三联图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")

@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "数据处理" / "30_投入产出关系预检"
 OUTPUT_PATH = OUTPUT_DIR / "09_投入产出关系散点图.png"
+FONT_SIZE_DELTA = 4
 
 INPUT_COLUMNS = ["Population", "Capital", "energy_total"]
 OUTPUT_COLUMNS = ["GDP_constant", "Carbon"]
@@ -22,16 +23,22 @@ COLUMN_LABELS = {
 }
 
 
+def fs(size: float) -> float:
+    return size + FONT_SIZE_DELTA
+
+
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
-    plt.rcParams["font.sans-serif"] = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Arial Unicode MS",
-        "DejaVu Sans",
-    ]
+    plt.rcParams["font.family"] = ["Times New Roman", "SimSun", "DejaVu Serif"]
+    plt.rcParams["font.serif"] = ["Times New Roman", "DejaVu Serif"]
+    plt.rcParams["font.sans-serif"] = ["SimSun", "SimHei", "Microsoft YaHei", "DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
+    plt.rcParams["font.size"] = fs(10)
+    plt.rcParams["axes.titlesize"] = fs(12)
+    plt.rcParams["axes.labelsize"] = fs(10)
+    plt.rcParams["xtick.labelsize"] = fs(9)
+    plt.rcParams["ytick.labelsize"] = fs(9)
+    plt.rcParams["legend.fontsize"] = fs(8)
 
 
 def load_data() -> pd.DataFrame:
@@ -74,7 +81,7 @@ def draw_input_output_scatter(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique().tolist())
     palette = build_year_palette(years)
 
-    fig, axes = plt.subplots(3, 2, figsize=(15, 18))
+    fig, axes = plt.subplots(3, 2, figsize=(18.5, 21.5))
     subplot_pairs = [
         ("Population", "GDP_constant"),
         ("Capital", "GDP_constant"),
@@ -92,21 +99,22 @@ def draw_input_output_scatter(df: pd.DataFrame) -> Path:
             hue="year",
             hue_order=years,
             palette=palette,
-            s=55,
+            s=70,
             alpha=0.85,
             edgecolor="white",
             linewidth=0.4,
             ax=ax,
         )
         add_fit_curve(ax, df[x_col], df[y_col])
-        ax.set_title(f"{COLUMN_LABELS[x_col]} 与 {COLUMN_LABELS[y_col]}", fontsize=12)
-        ax.set_xlabel(COLUMN_LABELS[x_col], fontsize=10)
-        ax.set_ylabel(COLUMN_LABELS[y_col], fontsize=10)
+        ax.set_title(f"{COLUMN_LABELS[x_col]} 与 {COLUMN_LABELS[y_col]}", fontsize=fs(12), pad=10)
+        ax.set_xlabel(COLUMN_LABELS[x_col], fontsize=fs(10))
+        ax.set_ylabel(COLUMN_LABELS[y_col], fontsize=fs(10))
         ax.ticklabel_format(style="plain", axis="both", useOffset=False)
-        ax.legend(title="年份", fontsize=8, title_fontsize=9, loc="best", ncol=2)
+        ax.tick_params(axis="both", pad=6)
+        ax.legend(title="年份", fontsize=fs(8), title_fontsize=fs(9), loc="best", ncol=2, frameon=True, borderaxespad=0.8)
 
-    fig.suptitle("投入-产出关系散点图", fontsize=16, y=0.995)
-    fig.tight_layout(rect=(0, 0, 1, 0.985))
+    fig.suptitle("投入-产出关系散点图", fontsize=fs(16), y=0.995)
+    fig.tight_layout(rect=(0, 0, 1, 0.982))
     fig.savefig(OUTPUT_PATH, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return OUTPUT_PATH
