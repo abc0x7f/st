@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 21:15:15
+ opened on:   7 May 2026, 19:02:05
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 SDM 个体 / 时间 / 双固定估计
@@ -125,8 +125,8 @@ Wald 检验
                chi2(6) =       31.28
            Prob > chi2 =        0.0000
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 21:15:19
+ closed on:   7 May 2026, 19:02:08
 -------------------------------------------------------------------------------

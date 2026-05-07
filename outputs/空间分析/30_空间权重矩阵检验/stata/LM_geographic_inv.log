@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
-      name:  lm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_inv.log
+      name:  lm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:19
+ opened on:   7 May 2026, 19:02:10
 ============================================
-矩阵：经济倒数权重矩阵 (economic_inv)
+矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 LM / Robust LM 检验
 ============================================
 
@@ -94,13 +94,13 @@ Diagnostics
 Test                           |  Statistic    df   p-value
 -------------------------------+----------------------------
 Spatial error:                 |
-  Moran's I                    |    -2.326      1    1.980
-  Lagrange multiplier          |     8.461      1    0.004
-  Robust Lagrange multiplier   |     6.365      1    0.012
+  Moran's I                    |     0.852      1    0.394
+  Lagrange multiplier          |     1.022      1    0.312
+  Robust Lagrange multiplier   |     0.695      1    0.404
                                |
 Spatial lag:                   |
-  Lagrange multiplier          |     2.797      1    0.094
-  Robust Lagrange multiplier   |     0.701      1    0.402
+  Lagrange multiplier          |     0.441      1    0.506
+  Robust Lagrange multiplier   |     0.115      1    0.735
 ------------------------------------------------------------
 
 
@@ -109,15 +109,15 @@ matrices:
               r(stats) :  5 x 3
 
 r(stats)[5,3]
-              stat          df     p-value
- Moran  -2.3264735           1   1.9800067
- LMerr   8.4609446           1   .00362853
-RLMerr   6.3648628           1   .01164021
- LMlag   2.7971089           1   .09443445
-RLMlag   .70102715           1   .40243877
-      name:  lm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_inv.log
+             stat         df    p-value
+ Moran  .85159589          1  .39443842
+ LMerr  1.0217014          1  .31211578
+RLMerr  .69493756          1  .40448999
+ LMlag  .44142474          1  .50643559
+RLMlag  .11466093          1  .73489888
+      name:  lm_geographic_inv
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:19
+ closed on:   7 May 2026, 19:02:10
 -------------------------------------------------------------------------------

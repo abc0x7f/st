@@ -1,9 +1,81 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: abc0xff
+               HP
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\code\空间分析\40_空间SDM主模型
+> .do 
+
+. version 17.0
+
+. clear all
+
+. set more off
+
+. 
+. * ============================================================
+. * 空间 SDM 主模型估计与效应分解
+. * 主模型：经济倒数权重矩阵 + 双固定效应 SDM
+. * 对照模型：0-1 邻接矩阵 + 双固定效应 SDM
+. * 输出：
+. * 1. 主模型系数表
+. * 2. 空间效应分解表
+. * 3. Stata 日志
+. * ============================================================
+. 
+. global PROJECT_ROOT "."
+
+. cd "${PROJECT_ROOT}"
+C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛
+
+. 
+. global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
+
+. global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
+
+. global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
+
+. global W_GEO_INV_FILE "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
+
+. global W_ECO_GEO_NEST_FILE "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
+
+. global OUT_DIR     "outputs/空间分析/40_空间SDM主模型"
+
+. global STATA_DIR   "${OUT_DIR}/stata"
+
+. 
+. cap mkdir "${OUT_DIR}"
+
+. cap mkdir "${STATA_DIR}"
+
+. cap log close _all
+
+. log using "${STATA_DIR}/空间SDM主模型总日志.log", text replace
 -------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/空间SDM主模型总日志.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- opened on:   6 May 2026, 22:09:00
+ opened on:   7 May 2026, 18:27:52
 
 . 
 . cap which xsmle
@@ -89,8 +161,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a210_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a210_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_1450_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_1450_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -104,12 +176,12 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_a210_000001.tmp saved as .dta
 . postfile coef_handle str32 weight_type str20 section str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`coef_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a210_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_1450_000002.tmp not found)
 
 . postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`effect_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a210_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_1450_000003.tmp not found)
 
 . 
 . * ------------------------------
@@ -188,10 +260,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:   6 May 2026, 22:09:00
+ opened on:   7 May 2026, 18:27:52
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -249,10 +321,10 @@ LR_Total     |
 matrices:
               r(table) :  9 x 32
       name:  sdm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:   6 May 2026, 22:09:02
+ closed on:   7 May 2026, 18:27:55
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
@@ -262,10 +334,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 22:09:02
+ opened on:   7 May 2026, 18:27:55
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -323,10 +395,10 @@ LR_Total     |
 matrices:
               r(table) :  9 x 32
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 22:09:04
+ closed on:   7 May 2026, 18:27:56
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile(
@@ -337,10 +409,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 22:09:04
+ opened on:   7 May 2026, 18:27:56
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 双固定效应 SDM 主模型
@@ -398,10 +470,10 @@ LR_Total     |
 matrices:
               r(table) :  9 x 32
       name:  sdm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 22:09:05
+ closed on:   7 May 2026, 18:27:57
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") w
@@ -412,10 +484,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 22:09:05
+ opened on:   7 May 2026, 18:27:57
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -473,10 +545,10 @@ LR_Total     |
 matrices:
               r(table) :  9 x 32
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 22:09:07
+ closed on:   7 May 2026, 18:28:00
 -------------------------------------------------------------------------------
 
 . 
@@ -490,10 +562,10 @@ matrices:
 . sort weight_type section variable
 
 . export delimited using "${OUT_DIR}/主模型系数表.csv", replace
-file outputs/回归分析/80_空间SDM主模型/主模型系数表.csv saved
+file outputs/空间分析/40_空间SDM主模型/主模型系数表.csv saved
 
 . save "${STATA_DIR}/主模型系数表.dta", replace
-file outputs/回归分析/80_空间SDM主模型/stata/主模型系数表.dta saved
+file outputs/空间分析/40_空间SDM主模型/stata/主模型系数表.dta saved
 
 . 
 . use "`effect_results'", clear
@@ -501,10 +573,10 @@ file outputs/回归分析/80_空间SDM主模型/stata/主模型系数表.dta sav
 . sort weight_type effect_type variable
 
 . export delimited using "${OUT_DIR}/空间效应分解表.csv", replace
-file outputs/回归分析/80_空间SDM主模型/空间效应分解表.csv saved
+file outputs/空间分析/40_空间SDM主模型/空间效应分解表.csv saved
 
 . save "${STATA_DIR}/空间效应分解表.dta", replace
-file outputs/回归分析/80_空间SDM主模型/stata/空间效应分解表.dta saved
+file outputs/空间分析/40_空间SDM主模型/stata/空间效应分解表.dta saved
 
 . 
 . display as text "============================================"
@@ -514,13 +586,13 @@ file outputs/回归分析/80_空间SDM主模型/stata/空间效应分解表.dta 
 结果文件已输出：
 
 . display as text "${OUT_DIR}/主模型系数表.csv"
-outputs/回归分析/80_空间SDM主模型/主模型系数表.csv
+outputs/空间分析/40_空间SDM主模型/主模型系数表.csv
 
 . display as text "${OUT_DIR}/空间效应分解表.csv"
-outputs/回归分析/80_空间SDM主模型/空间效应分解表.csv
+outputs/空间分析/40_空间SDM主模型/空间效应分解表.csv
 
 . display as text "${STATA_DIR}/SDM主模型_*.log"
-outputs/回归分析/80_空间SDM主模型/stata/SDM主模型_*.log
+outputs/空间分析/40_空间SDM主模型/stata/SDM主模型_*.log
 
 . display as text "============================================"
 ============================================
@@ -528,8 +600,11 @@ outputs/回归分析/80_空间SDM主模型/stata/SDM主模型_*.log
 . 
 . log close
       name:  <unnamed>
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/空间SDM主模型总日志.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- closed on:   6 May 2026, 22:09:07
+ closed on:   7 May 2026, 18:28:00
 -------------------------------------------------------------------------------
+
+. 
+end of do-file

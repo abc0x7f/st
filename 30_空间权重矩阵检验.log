@@ -1,19 +1,91 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: abc0xff
+               HP
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\code\空间分析\30_空间权重矩阵
+> 检验.do 
+
+. version 17.0
+
+. clear all
+
+. set more off
+
+. 
+. * ============================================================
+. * 空间权重矩阵检验
+. * 参考：docs/参考资料/小鲜烽的空间计量代码.do
+. * 内容：
+. * 1. 对 0-1 邻接矩阵、经济倒数权重矩阵进行 LM / Robust LM 检验
+. * 2. 基于 SDM 分别估计个体、时间、双固定效应模型，并做 LR 检验
+. * 3. 基于双固定 SDM 做 Wald-SAR / Wald-SEM 检验
+. * 4. 输出日志与结果表
+. * ============================================================
+. 
+. global PROJECT_ROOT "."
+
+. cd "${PROJECT_ROOT}"
+C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛
+
+. 
+. global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
+
+. global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
+
+. global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
+
+. global W_GEO_INV_FILE "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
+
+. global W_ECO_GEO_NEST_FILE "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
+
+. global OUT_DIR     "outputs/空间分析/30_空间权重矩阵检验"
+
+. global STATA_DIR   "${OUT_DIR}/stata"
+
+. 
+. cap mkdir "${OUT_DIR}"
+
+. cap mkdir "${STATA_DIR}"
+
+. cap log close _all
+
+. log using "${STATA_DIR}/空间权重矩阵检验总日志.log", text replace
 -------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/空间权重矩阵检验总日志.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/空间权重矩阵检验总日志.log
   log type:  text
- opened on:   6 May 2026, 21:15:13
+ opened on:   7 May 2026, 19:02:02
 
 . 
 . display as text "当前工作目录: `c(pwd)'"
-当前工作目录: C:\Users\abc0x7f\Desktop\PRO\统计建模
+当前工作目录: C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛
 
 . display as text "数据文件: ${DATA_FILE}"
 数据文件: data/最终数据/第二阶段_基础.csv
 
 . display as text "输出目录: ${OUT_DIR}"
-输出目录: outputs/回归分析/70_空间权重矩阵检验
+输出目录: outputs/空间分析/30_空间权重矩阵检验
 
 . 
 . * ------------------------------
@@ -141,8 +213,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -175,15 +247,15 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000001.tmp saved as .dta
 
 . postfile lm_handle str32 weight_type str20 test_name ///
 >     double statistic double df double pvalue using "`lm_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000002.tmp not found)
 
 . postfile lr_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`lr_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000003.tmp not found)
 
 . postfile wald_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`wald_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000004.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000004.tmp not found)
 
 . 
 . * ------------------------------
@@ -365,8 +437,8 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000001.tmp saved as .dta
 . * ------------------------------
 . run_one_matrix, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -381,15 +453,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 21:15:14
+ opened on:   7 May 2026, 19:02:03
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 LM / Robust LM 检验
@@ -502,17 +574,17 @@ RLMerr  2.2927069          1  .12998306
  LMlag  .91411951          1  .33902375
 RLMlag  .22711853          1  .63366868
       name:  lm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 21:15:15
+ closed on:   7 May 2026, 19:02:05
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 21:15:15
+ opened on:   7 May 2026, 19:02:05
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 SDM 个体 / 时间 / 双固定估计
@@ -634,17 +706,17 @@ Wald 检验
                chi2(6) =       31.28
            Prob > chi2 =        0.0000
       name:  sdm_adjacency_01
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_adjacency_01.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 21:15:19
+ closed on:   7 May 2026, 19:02:08
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FI
 > LE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -659,15 +731,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:19
+ opened on:   7 May 2026, 19:02:08
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 LM / Robust LM 检验
@@ -780,17 +852,17 @@ RLMerr   6.3648628           1   .01164021
  LMlag   2.7971089           1   .09443445
 RLMlag   .70102715           1   .40243877
       name:  lm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:19
+ closed on:   7 May 2026, 19:02:08
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:19
+ opened on:   7 May 2026, 19:02:08
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -912,17 +984,17 @@ Wald 检验
                chi2(6) =       45.85
            Prob > chi2 =        0.0000
       name:  sdm_economic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_economic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:21
+ closed on:   7 May 2026, 19:02:10
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile
 > ("${W_GEO_INV_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -937,15 +1009,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:21
+ opened on:   7 May 2026, 19:02:10
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 LM / Robust LM 检验
@@ -1058,17 +1130,17 @@ RLMerr  .69493756          1  .40448999
  LMlag  .44142474          1  .50643559
 RLMlag  .11466093          1  .73489888
       name:  lm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:22
+ closed on:   7 May 2026, 19:02:10
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- opened on:   6 May 2026, 21:15:22
+ opened on:   7 May 2026, 19:02:10
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -1190,17 +1262,17 @@ Wald 检验
                chi2(6) =       11.44
            Prob > chi2 =        0.0757
       name:  sdm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_geographic_inv.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- closed on:   6 May 2026, 21:15:24
+ closed on:   7 May 2026, 19:02:13
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") 
 > wfile("${W_ECO_GEO_NEST_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -1215,15 +1287,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_3c90_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_9c34_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 21:15:25
+ opened on:   7 May 2026, 19:02:13
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 LM / Robust LM 检验
@@ -1336,17 +1408,17 @@ RLMerr   2.0250225           1   .15472663
  LMlag   1.0041663           1   .31630448
 RLMlag   .21740152           1     .641027
       name:  lm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 21:15:25
+ closed on:   7 May 2026, 19:02:13
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 21:15:25
+ opened on:   7 May 2026, 19:02:13
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 SDM 个体 / 时间 / 双固定估计
@@ -1468,10 +1540,10 @@ Wald 检验
                chi2(6) =       15.09
            Prob > chi2 =        0.0196
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/模型结果_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 21:15:28
+ closed on:   7 May 2026, 19:02:16
 -------------------------------------------------------------------------------
 
 . 
@@ -1487,10 +1559,10 @@ Wald 检验
 . sort weight_type test_name
 
 . export delimited using "${OUT_DIR}/LM与RobustLM检验结果.csv", replace
-file outputs/回归分析/70_空间权重矩阵检验/LM与RobustLM检验结果.csv saved
+file outputs/空间分析/30_空间权重矩阵检验/LM与RobustLM检验结果.csv saved
 
 . save "${STATA_DIR}/LM与RobustLM检验结果.dta", replace
-file outputs/回归分析/70_空间权重矩阵检验/stata/LM与RobustLM检验结果.dta
+file outputs/空间分析/30_空间权重矩阵检验/stata/LM与RobustLM检验结果.dta
     saved
 
 . 
@@ -1499,10 +1571,10 @@ file outputs/回归分析/70_空间权重矩阵检验/stata/LM与RobustLM检验�
 . sort weight_type test_name
 
 . export delimited using "${OUT_DIR}/LR检验结果.csv", replace
-file outputs/回归分析/70_空间权重矩阵检验/LR检验结果.csv saved
+file outputs/空间分析/30_空间权重矩阵检验/LR检验结果.csv saved
 
 . save "${STATA_DIR}/LR检验结果.dta", replace
-file outputs/回归分析/70_空间权重矩阵检验/stata/LR检验结果.dta saved
+file outputs/空间分析/30_空间权重矩阵检验/stata/LR检验结果.dta saved
 
 . 
 . use "`wald_results'", clear
@@ -1510,10 +1582,10 @@ file outputs/回归分析/70_空间权重矩阵检验/stata/LR检验结果.dta s
 . sort weight_type test_name
 
 . export delimited using "${OUT_DIR}/Wald检验结果.csv", replace
-file outputs/回归分析/70_空间权重矩阵检验/Wald检验结果.csv saved
+file outputs/空间分析/30_空间权重矩阵检验/Wald检验结果.csv saved
 
 . save "${STATA_DIR}/Wald检验结果.dta", replace
-file outputs/回归分析/70_空间权重矩阵检验/stata/Wald检验结果.dta saved
+file outputs/空间分析/30_空间权重矩阵检验/stata/Wald检验结果.dta saved
 
 . 
 . display as text "============================================"
@@ -1523,19 +1595,19 @@ file outputs/回归分析/70_空间权重矩阵检验/stata/Wald检验结果.dta
 结果文件已输出：
 
 . display as text "${OUT_DIR}/LM与RobustLM检验结果.csv"
-outputs/回归分析/70_空间权重矩阵检验/LM与RobustLM检验结果.csv
+outputs/空间分析/30_空间权重矩阵检验/LM与RobustLM检验结果.csv
 
 . display as text "${OUT_DIR}/LR检验结果.csv"
-outputs/回归分析/70_空间权重矩阵检验/LR检验结果.csv
+outputs/空间分析/30_空间权重矩阵检验/LR检验结果.csv
 
 . display as text "${OUT_DIR}/Wald检验结果.csv"
-outputs/回归分析/70_空间权重矩阵检验/Wald检验结果.csv
+outputs/空间分析/30_空间权重矩阵检验/Wald检验结果.csv
 
 . display as text "${STATA_DIR}/LM_*.log"
-outputs/回归分析/70_空间权重矩阵检验/stata/LM_*.log
+outputs/空间分析/30_空间权重矩阵检验/stata/LM_*.log
 
 . display as text "${STATA_DIR}/模型结果_*.log"
-outputs/回归分析/70_空间权重矩阵检验/stata/模型结果_*.log
+outputs/空间分析/30_空间权重矩阵检验/stata/模型结果_*.log
 
 . display as text "============================================"
 ============================================
@@ -1543,8 +1615,11 @@ outputs/回归分析/70_空间权重矩阵检验/stata/模型结果_*.log
 . 
 . log close
       name:  <unnamed>
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/空间权重矩阵检验总日志.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/空间权重矩阵检验总日志.log
   log type:  text
- closed on:   6 May 2026, 21:15:28
+ closed on:   7 May 2026, 19:02:16
 -------------------------------------------------------------------------------
+
+. 
+end of do-file

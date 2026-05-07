@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:   6 May 2026, 22:09:05
+ opened on:   7 May 2026, 18:27:57
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -61,8 +61,8 @@ LR_Total     |
 matrices:
               r(table) :  9 x 32
       name:  sdm_economic_geo_nested
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/80_空间SDM
-> 主模型/stata/SDM主模型_economic_geo_nested.log
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/40_空
+> 间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:   6 May 2026, 22:09:07
+ closed on:   7 May 2026, 18:28:00
 -------------------------------------------------------------------------------

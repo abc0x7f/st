@@ -348,11 +348,27 @@ class TablePanel(ArtifactNavigatorPanel):
         self.table_view.setModel(self.model)
         self.outer_layout.addWidget(self.table_view, 1)
         self.outer_layout.addWidget(self.page_label)
+        self.prev_button.setParent(self)
+        self.next_button.setParent(self)
+        self.prev_button.raise_()
+        self.next_button.raise_()
         self.register_hover_target(self.table_view.viewport())
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        table_geom = self.table_view.geometry()
+        center_y = max(18, (table_geom.height() - self.prev_button.height()) // 2)
+        self.prev_button.move(table_geom.left() + 14, table_geom.top() + center_y)
+        self.next_button.move(
+            table_geom.left() + max(14, table_geom.width() - self.next_button.width() - 14),
+            table_geom.top() + center_y,
+        )
+        self.prev_button.raise_()
+        self.next_button.raise_()
 
     def set_table(self, path: Path | None, frame: pd.DataFrame | None, index: int, total: int) -> None:
         self.model.set_frame(frame)
-        self.path_label.setText(str(path) if path else "未发现 CSV")
+        self.path_label.setText(format_display_path(path) if path else "未发现 CSV")
         self.update_pager(index, total)
         self.table_view.resizeColumnsToContents()
 

@@ -12,7 +12,7 @@ set more off
 * 4. 输出日志与结果表
 * ============================================================
 
-global PROJECT_ROOT "C:/Users/abc0x7f/Desktop/PRO/统计建模"
+global PROJECT_ROOT "."
 cd "${PROJECT_ROOT}"
 
 global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
@@ -20,7 +20,7 @@ global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
 global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
 global W_GEO_INV_FILE "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
 global W_ECO_GEO_NEST_FILE "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
-global OUT_DIR     "outputs/回归分析/70_空间权重矩阵检验"
+global OUT_DIR     "outputs/空间分析/30_空间权重矩阵检验"
 global STATA_DIR   "${OUT_DIR}/stata"
 
 cap mkdir "${OUT_DIR}"

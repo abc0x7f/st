@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
-      name:  lm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_geographic_inv.log
+      name:  lm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- opened on:   6 May 2026, 21:15:21
+ opened on:   7 May 2026, 19:02:03
 ============================================
-矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
+矩阵：0-1邻接矩阵 (adjacency_01)
 LM / Robust LM 检验
 ============================================
 
@@ -94,13 +94,13 @@ Diagnostics
 Test                           |  Statistic    df   p-value
 -------------------------------+----------------------------
 Spatial error:                 |
-  Moran's I                    |     0.852      1    0.394
-  Lagrange multiplier          |     1.022      1    0.312
-  Robust Lagrange multiplier   |     0.695      1    0.404
+  Moran's I                    |     2.499      1    0.012
+  Lagrange multiplier          |     2.980      1    0.084
+  Robust Lagrange multiplier   |     2.293      1    0.130
                                |
 Spatial lag:                   |
-  Lagrange multiplier          |     0.441      1    0.506
-  Robust Lagrange multiplier   |     0.115      1    0.735
+  Lagrange multiplier          |     0.914      1    0.339
+  Robust Lagrange multiplier   |     0.227      1    0.634
 ------------------------------------------------------------
 
 
@@ -110,14 +110,14 @@ matrices:
 
 r(stats)[5,3]
              stat         df    p-value
- Moran  .85159589          1  .39443842
- LMerr  1.0217014          1  .31211578
-RLMerr  .69493756          1  .40448999
- LMlag  .44142474          1  .50643559
-RLMlag  .11466093          1  .73489888
-      name:  lm_geographic_inv
-       log:  C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs/回归分析/70_空间权重
-> 矩阵检验/stata/LM_geographic_inv.log
+ Moran  2.4985686          1   .0124696
+ LMerr  2.9797078          1  .08431449
+RLMerr  2.2927069          1  .12998306
+ LMlag  .91411951          1  .33902375
+RLMlag  .22711853          1  .63366868
+      name:  lm_adjacency_01
+       log:  C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛\outputs/空间分析/30_空
+> 间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- closed on:   6 May 2026, 21:15:22
+ closed on:   7 May 2026, 19:02:05
 -------------------------------------------------------------------------------
