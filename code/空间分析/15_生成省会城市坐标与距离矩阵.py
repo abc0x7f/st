@@ -8,15 +8,15 @@ import geopandas as gpd
 import pandas as pd
 
 
-PROJECT_ROOT = Path(r"C:\Users\abc0x7f\Desktop\PRO\统计建模")
-PROVINCE_GEOJSON = PROJECT_ROOT / "data/外部资料/中国省级地图.geojson"
-CITY_GEOJSON = PROJECT_ROOT / "data/外部资料/中国市级地图.geojson"
-PANEL_FILE = PROJECT_ROOT / "data/最终数据/第二阶段_基础.csv"
-ECONOMIC_MATRIX_FILE = PROJECT_ROOT / "data/最终数据/省际经济距离矩阵.csv"
+ROOT = Path(__file__).resolve().parents[2]
+PROVINCE_GEOJSON = ROOT / "data" / "外部资料" / "中国省级地图.geojson"
+CITY_GEOJSON = ROOT / "data" / "外部资料" / "中国市级地图.geojson"
+PANEL_FILE = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
+ECONOMIC_MATRIX_FILE = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
 
-OUT_CAPITALS = PROJECT_ROOT / "data/中间数据/省会城市坐标表.csv"
-OUT_MATRIX = PROJECT_ROOT / "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
-OUT_NESTED_MATRIX = PROJECT_ROOT / "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
+OUT_CAPITALS = ROOT / "data" / "中间数据" / "省会城市坐标表.csv"
+OUT_MATRIX = ROOT / "data" / "最终数据" / "省际地理距离倒数矩阵_省会版.csv"
+OUT_NESTED_MATRIX = ROOT / "data" / "最终数据" / "省际经济地理嵌套矩阵_省会版.csv"
 
 
 CAPITAL_MAP = {
