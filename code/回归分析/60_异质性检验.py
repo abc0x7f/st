@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import numpy as np
@@ -10,14 +11,18 @@ from linearmodels.panel import PanelOLS
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "60_异质性检验"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["panel_data"])
+OUT_DIR = stage_output_dir(CONFIG, "60_异质性检验")
 
 ENTITY_COL = "province"
 TIME_COL = "year"
-DEP_VAR = "eff"
-CORE_VAR = "lntl"
-CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
+DEP_VAR = CONFIG["dep_var"]
+CORE_VAR = CONFIG["core_var"]
+CONTROL_VARS = list(CONFIG["control_vars"])
 
 REGION_MAP = {
     "东部": ["北京", "天津", "河北", "上海", "江苏", "浙江", "福建", "山东", "广东", "海南"],
@@ -54,6 +59,10 @@ def format_decimal(value: float, digits: int = 4) -> str:
     if rounded == 0:
         rounded = 0.0
     return f"{rounded:.{digits}f}"
+
+
+def core_prefix() -> str:
+    return CORE_VAR
 
 
 def format_numeric(value) -> str:
@@ -186,13 +195,13 @@ def build_core_table(summary_df: pd.DataFrame) -> pd.DataFrame:
     ].copy()
     out = out.rename(
         columns={
-            "coef_core": "lntl_coef",
-            "se_core": "lntl_se",
-            "t_core": "lntl_t",
-            "p_core": "lntl_p",
-            "ci_lower": "lntl_ci_lower",
-            "ci_upper": "lntl_ci_upper",
-            "stars_core": "lntl_stars",
+            "coef_core": f"{core_prefix()}_coef",
+            "se_core": f"{core_prefix()}_se",
+            "t_core": f"{core_prefix()}_t",
+            "p_core": f"{core_prefix()}_p",
+            "ci_lower": f"{core_prefix()}_ci_lower",
+            "ci_upper": f"{core_prefix()}_ci_upper",
+            "stars_core": f"{core_prefix()}_stars",
         }
     )
     return out
@@ -230,7 +239,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         "## 结果分析",
         "",
         (
-            f"四大区域中，`lntl` 系数绝对值和方向存在明显差异。按系数大小排序，依次为"
+            f"四大区域中，`{CORE_VAR}` 系数绝对值和方向存在明显差异。按系数大小排序，依次为"
             f" `{ordered.iloc[0]['region']}`（{ordered.iloc[0]['coef_core']:.4f}）、"
             f"`{ordered.iloc[1]['region']}`（{ordered.iloc[1]['coef_core']:.4f}）、"
             f"`{ordered.iloc[2]['region']}`（{ordered.iloc[2]['coef_core']:.4f}）、"
@@ -245,7 +254,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
 
     if sig_df.empty:
         lines.append(
-            "四个地区中，`lntl` 在 10% 水平下均未达到显著，这说明分组后样本缩小明显，"
+            f"四个地区中，`{CORE_VAR}` 在 10% 水平下均未达到显著，这说明分组后样本缩小明显，"
             "异质性更多体现为系数方向和量级差异，而不是统计显著差异。"
         )
     else:
@@ -270,7 +279,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         )
 
     lines.append(
-        "从论文写作角度，正文应优先比较 `lntl` 的系数方向、大小和显著性，再结合东中西东北在"
+        f"从论文写作角度，正文应优先比较 `{CORE_VAR}` 的系数方向、大小和显著性，再结合东中西东北在"
         "经济基础、产业结构、创新投入、能源结构和开放水平上的差异解释区域异质性。"
     )
     return lines
@@ -288,7 +297,7 @@ def save_report(
         "## 模型设定",
         "",
         "```text",
-        "PanelOLS: eff ~ lntl + ind + urb + rd + open + es",
+        f"PanelOLS: {DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)}",
         "Effects: Entity + Time",
         "Covariance: Driscoll-Kraay",
         "Sample split: 东部 / 中部 / 西部 / 东北",

@@ -1,0 +1,8 @@
+{
+  "config_name": "default",
+  "efficiency_extract_output": "data/中间数据/碳排放效率结果_2015_2022.csv",
+  "first_stage_panel": "data/最终数据/第一阶段_基础.csv",
+  "second_stage_panel": "data/最终数据/第二阶段_基础.csv",
+  "map_geojson": "data/外部资料/中国省级地图.geojson",
+  "output_root": "outputs/效率测算/default"
+}

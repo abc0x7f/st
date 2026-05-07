@@ -1,6 +1,7 @@
 version 17.0
 clear all
 set more off
+args config_do
 
 * ============================================================
 * 空间 SDM 主模型估计与效应分解
@@ -12,16 +13,20 @@ set more off
 * 3. Stata 日志
 * ============================================================
 
-global PROJECT_ROOT "."
+if "`config_do'" != "" {
+    do "`config_do'"
+}
+else {
+    global PROJECT_ROOT "."
+    global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
+    global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
+    global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
+    global W_GEO_INV_FILE "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
+    global W_ECO_GEO_NEST_FILE "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
+    global OUT_DIR     "outputs/空间分析/40_空间SDM主模型"
+    global STATA_DIR   "${OUT_DIR}/stata"
+}
 cd "${PROJECT_ROOT}"
-
-global DATA_FILE   "data/最终数据/第二阶段_基础.csv"
-global W_ADJ_FILE  "data/最终数据/省际01邻接矩阵.csv"
-global W_ECO_FILE  "data/最终数据/省际经济距离矩阵.csv"
-global W_GEO_INV_FILE "data/最终数据/省际地理距离倒数矩阵_省会版.csv"
-global W_ECO_GEO_NEST_FILE "data/最终数据/省际经济地理嵌套矩阵_省会版.csv"
-global OUT_DIR     "outputs/空间分析/40_空间SDM主模型"
-global STATA_DIR   "${OUT_DIR}/stata"
 
 cap mkdir "${OUT_DIR}"
 cap mkdir "${STATA_DIR}"

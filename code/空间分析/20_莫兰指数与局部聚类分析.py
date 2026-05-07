@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -16,10 +17,14 @@ import seaborn as sns
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WEIGHT_PATH = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
-EFF_PATH = ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
-GEOJSON_PATH = ROOT / "data" / "外部资料" / "中国省级地图.geojson"
-OUT_DIR = ROOT / "outputs" / "空间分析" / "20_莫兰指数与LISA分析"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+WEIGHT_PATH = resolve_project_path(CONFIG["economic_matrix"])
+EFF_PATH = resolve_project_path(CONFIG["efficiency_data"])
+GEOJSON_PATH = resolve_project_path(CONFIG["province_geojson"])
+OUT_DIR = stage_output_dir(CONFIG, "20_莫兰指数与LISA分析")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET_YEARS = list(range(2015, 2023))

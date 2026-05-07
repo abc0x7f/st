@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -10,8 +11,12 @@ from matplotlib import colors, font_manager
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "10_碳排放效率绘图"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
+OUT_DIR = stage_output_dir(CONFIG, "10_碳排放效率绘图")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 

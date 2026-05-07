@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -12,17 +13,17 @@ from linearmodels.panel import PanelOLS
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE_DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-LAG_DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_滞后一期.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "50_稳健性检验"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+OUT_DIR = stage_output_dir(CONFIG, "50_稳健性检验")
 
 ENTITY_COL = "province"
 TIME_COL = "year"
-DEP_VAR = "eff"
-BASE_CORE_VAR = "lntl"
-LAG_CORE_VAR = "lntl_lag1"
-CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
-WINSOR_VARS = [DEP_VAR, BASE_CORE_VAR, *CONTROL_VARS]
+DEP_VAR = CONFIG["dep_var"]
+BASE_CORE_VAR = CONFIG["core_var"]
+CONTROL_VARS = list(CONFIG["control_vars"])
 FONT_SIZE_DELTA = 2
 
 
@@ -55,15 +56,13 @@ def format_decimal(value: float, digits: int = 4) -> str:
     return f"{rounded:.{digits}f}"
 
 
+def core_description(core_var: str) -> str:
+    return "主灯光变量" if core_var == "lntl" else f"核心变量 {core_var}"
+
+
 def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
     plot_df = summary_df.copy()
-    label_map = {
-        "baseline": "基准模型",
-        "winsor_1pct": "1%缩尾",
-        "winsor_5pct": "5%缩尾",
-        "lag1": "滞后一期",
-    }
-    plot_df["label"] = plot_df["model"].map(label_map)
+    plot_df["label"] = plot_df["model_label"]
     plot_df = plot_df.iloc[::-1].reset_index(drop=True)
     y_pos = np.arange(len(plot_df))
 
@@ -163,7 +162,8 @@ def winsorize_series(series: pd.Series, lower_q: float, upper_q: float) -> tuple
 def build_winsorized_data(df: pd.DataFrame, rate: float) -> tuple[pd.DataFrame, pd.DataFrame]:
     out = df.copy()
     thresholds: list[dict[str, float | str]] = []
-    for var in WINSOR_VARS:
+    winsor_vars = [DEP_VAR, BASE_CORE_VAR, *CONTROL_VARS]
+    for var in winsor_vars:
         out[var], lower, upper = winsorize_series(out[var], rate, 1 - rate)
         thresholds.append(
             {
@@ -228,6 +228,7 @@ def extract_model_summary(result, model_name: str, core_var: str, df: pd.DataFra
     conf_int = result.conf_int()
     return {
         "model": model_name,
+        "model_label": df.attrs.get("model_label", model_name),
         "data_file": df.attrs.get("data_file", ""),
         "core_var": core_var,
         "nobs": int(result.nobs),
@@ -277,10 +278,8 @@ def build_core_comparison(summary_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_analysis(summary_df: pd.DataFrame) -> list[str]:
-    baseline = summary_df.loc[summary_df["model"] == "baseline"].iloc[0]
-    win1 = summary_df.loc[summary_df["model"] == "winsor_1pct"].iloc[0]
-    win5 = summary_df.loc[summary_df["model"] == "winsor_5pct"].iloc[0]
-    lag1 = summary_df.loc[summary_df["model"] == "lag1"].iloc[0]
+    baseline = summary_df.iloc[0]
+    other_rows = summary_df.iloc[1:]
 
     lines = [
         "## 结果分析",
@@ -288,25 +287,28 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         (
             f"基准模型中，核心解释变量 `{baseline['core_var']}` 的系数为 "
             f"`{baseline['coef_core']:.4f}`，显著性为 `{baseline['stars_core'] or 'ns'}`，"
-            f"表明夜间灯光聚合度对碳排放效率存在正向影响。"
+            f"表明{core_description(str(baseline['core_var']))}对 `{DEP_VAR}` 存在正向影响。"
         ),
-        (
-            f"`1%` 缩尾后，核心系数为 `{win1['coef_core']:.4f}`；`5%` 缩尾后为 "
-            f"`{win5['coef_core']:.4f}`。两者与基准模型方向一致，且系数量级接近，"
-            "说明基准结论并非由少数极端值驱动。"
-        ),
-        (
-            f"将核心解释变量替换为滞后一期的 `{lag1['core_var']}` 后，系数为 "
-            f"`{lag1['coef_core']:.4f}`，显著性为 `{lag1['stars_core'] or 'ns'}`。"
-            "若该系数仍显著为正，则说明夜间灯光聚合度对碳排放效率的促进作用在时间上具有延续性，"
-            "同时反向因果和同期联立偏误对主结论的干扰有限。"
-        ),
-        (
-            f"从拟合度看，四组模型的 `R^2` 均处于 `{summary_df['r2_model'].min():.4f}` 至 "
-            f"`{summary_df['r2_model'].max():.4f}` 区间，整体差异不大，说明稳健性处理并未改变模型的基本解释结构。"
-        ),
-        "总体而言，缩尾处理与滞后一期检验均支持基准回归的核心判断，即夜间灯光聚合度越高，碳排放效率越高，结论具有较强稳健性。",
     ]
+    for _, row in other_rows.iterrows():
+        lines.extend(
+            [
+                (
+                    f"`{row['model_label']}` 下，核心变量 `{row['core_var']}` 的系数为 "
+                    f"`{row['coef_core']:.4f}`，显著性为 `{row['stars_core'] or 'ns'}`。"
+                    "若方向与基准模型一致，说明主结论在该稳健性设定下保持稳定。"
+                )
+            ]
+        )
+    lines.extend(
+        [
+            (
+                f"从拟合度看，各组模型的 `R^2` 处于 `{summary_df['r2_model'].min():.4f}` 至 "
+                f"`{summary_df['r2_model'].max():.4f}` 区间，整体差异不大。"
+            ),
+            "总体而言，当前配置下的稳健性设定整体支持基准回归的核心判断。",
+        ]
+    )
     return lines
 
 
@@ -314,29 +316,29 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     configure_matplotlib()
 
-    baseline_df = load_panel_data(
-        BASELINE_DATA_PATH,
-        [ENTITY_COL, TIME_COL, DEP_VAR, BASE_CORE_VAR, *CONTROL_VARS],
-    )
-    baseline_df.attrs["data_file"] = BASELINE_DATA_PATH.name
-
-    lag_df = load_panel_data(
-        LAG_DATA_PATH,
-        [ENTITY_COL, TIME_COL, DEP_VAR, LAG_CORE_VAR, *CONTROL_VARS],
-    )
-    lag_df.attrs["data_file"] = LAG_DATA_PATH.name
-
-    win1_df, win1_thresholds = build_winsorized_data(baseline_df, 0.01)
-    win1_df.attrs["data_file"] = BASELINE_DATA_PATH.name
-    win5_df, win5_thresholds = build_winsorized_data(baseline_df, 0.05)
-    win5_df.attrs["data_file"] = BASELINE_DATA_PATH.name
-
-    model_specs = [
-        ("baseline", baseline_df, BASE_CORE_VAR),
-        ("winsor_1pct", win1_df, BASE_CORE_VAR),
-        ("winsor_5pct", win5_df, BASE_CORE_VAR),
-        ("lag1", lag_df, LAG_CORE_VAR),
-    ]
+    model_specs: list[tuple[str, pd.DataFrame, str]] = []
+    threshold_frames: list[pd.DataFrame] = []
+    spec_descriptions: list[str] = []
+    for model_cfg in CONFIG["robust_models"]:
+        model_name = str(model_cfg["name"])
+        model_label = str(model_cfg["label"])
+        core_var = str(model_cfg["core_var"])
+        data_path = resolve_project_path(model_cfg["data_path"])
+        mode = str(model_cfg.get("mode", "custom"))
+        df = load_panel_data(data_path, [ENTITY_COL, TIME_COL, DEP_VAR, core_var, *CONTROL_VARS])
+        df.attrs["data_file"] = data_path.name
+        df.attrs["model_label"] = model_label
+        if mode == "winsor":
+            winsor_rate = float(model_cfg["winsor_rate"])
+            df, threshold_df = build_winsorized_data(df, winsor_rate)
+            df.attrs["data_file"] = data_path.name
+            df.attrs["model_label"] = model_label
+            threshold_df.insert(0, "model", model_name)
+            threshold_frames.append(threshold_df)
+            spec_descriptions.append(f"- `{model_label}`：基于 `{data_path.relative_to(ROOT).as_posix()}`，按 `{winsor_rate:.0%}` 双侧缩尾。")
+        else:
+            spec_descriptions.append(f"- `{model_label}`：使用 `{data_path.relative_to(ROOT).as_posix()}`，核心变量为 `{core_var}`。")
+        model_specs.append((model_name, df, core_var))
 
     summaries: list[dict[str, float | str]] = []
     coef_tables: list[pd.DataFrame] = []
@@ -349,22 +351,24 @@ def main() -> None:
     summary_df = pd.DataFrame(summaries)
     coef_df = pd.concat(coef_tables, ignore_index=True)
     core_df = build_core_comparison(summary_df)
-    thresholds_df = pd.concat([win1_thresholds, win5_thresholds], ignore_index=True)
+    thresholds_df = pd.concat(threshold_frames, ignore_index=True) if threshold_frames else pd.DataFrame()
     forest_path = plot_core_robustness_forest(summary_df)
 
     summary_df.to_csv(OUT_DIR / "稳健性模型汇总.csv", index=False, encoding="utf-8-sig")
     coef_df.to_csv(OUT_DIR / "稳健性系数表.csv", index=False, encoding="utf-8-sig")
     core_df.to_csv(OUT_DIR / "稳健性核心比较表.csv", index=False, encoding="utf-8-sig")
-    thresholds_df.to_csv(OUT_DIR / "Winsor阈值表.csv", index=False, encoding="utf-8-sig")
+    if not thresholds_df.empty:
+        thresholds_df.to_csv(OUT_DIR / "Winsor阈值表.csv", index=False, encoding="utf-8-sig")
 
     md_lines = [
         "# 面板回归稳健性检验结果",
         "",
         "## 检验口径",
         "",
-        f"- 基准模型：`{BASELINE_DATA_PATH.relative_to(ROOT).as_posix()}`，双向固定效应，`Driscoll-Kraay` 稳健标准误。",
-        "- 缩尾稳健性：对 `eff`、`lntl`、`ind`、`urb`、`rd`、`open`、`es` 分别做 `1%` 与 `5%` 双侧 winsorize。",
-        f"- 滞后稳健性：使用 `{LAG_DATA_PATH.relative_to(ROOT).as_posix()}`，将核心解释变量替换为 `lntl_lag1`。",
+        f"- 当前配置：`{CONFIG['config_name']}`",
+        f"- 因变量：`{DEP_VAR}`；基准核心变量：`{BASE_CORE_VAR}`；控制变量：`{', '.join(CONTROL_VARS)}`。",
+        "- 模型均采用双向固定效应与 `Driscoll-Kraay` 稳健标准误。",
+        *spec_descriptions,
         "",
         "## 核心结果对比",
         "",
@@ -378,11 +382,9 @@ def main() -> None:
         "",
         df_to_md(coef_df),
         "",
-        "## 缩尾阈值",
-        "",
-        df_to_md(thresholds_df),
-        "",
     ]
+    if not thresholds_df.empty:
+        md_lines.extend(["## 缩尾阈值", "", df_to_md(thresholds_df), ""])
     md_lines.extend(build_analysis(summary_df))
     (OUT_DIR / "稳健性检验报告.md").write_text("\n".join(md_lines), encoding="utf-8")
 

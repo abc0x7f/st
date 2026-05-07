@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import re
+import sys
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -11,9 +12,13 @@ from openpyxl import load_workbook
 STANDARD_COAL_MJ_PER_KG = 29.3076
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CEADS_DIR = PROJECT_ROOT / "data" / "原始数据" / "各省能源清单CEADS"
-FACTOR_OUTPUT = PROJECT_ROOT / "data" / "外部资料" / "省级能源折标准煤系数_ceads.csv"
-PANEL_OUTPUT = PROJECT_ROOT / "data" / "中间数据" / "省级能源energy与es_ceads(暂未启用).csv"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+CEADS_DIR = resolve_project_path(CONFIG["energy_ceads_dir"])
+FACTOR_OUTPUT = resolve_project_path(CONFIG["energy_factor_output"])
+PANEL_OUTPUT = resolve_project_path(CONFIG["energy_panel_output"])
 
 
 PROVINCE_MAP = {

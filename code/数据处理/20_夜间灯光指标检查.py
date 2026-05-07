@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import sys
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -13,14 +14,13 @@ from matplotlib.patches import Polygon, FancyArrowPatch, Rectangle
 from matplotlib.lines import Line2D
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "数据处理" / "20_夜间灯光指标检查"
-MAP_PATHS = [
-    PROJECT_ROOT / "data" / "外部资料" / "中国省级地图.geojson",
-    PROJECT_ROOT / "data" / "china_provinces.geojson",
-    PROJECT_ROOT / "data" / "china.geojson",
-    PROJECT_ROOT / "data" / "中国省级.geojson",
-]
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
+OUTPUT_DIR = stage_output_dir(CONFIG, "20_夜间灯光指标检查")
+MAP_PATHS = [resolve_project_path(path) for path in CONFIG["map_geojson_paths"]]
 MAP_YEAR = 2022
 FONT_SIZE_DELTA = 4
 

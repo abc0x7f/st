@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,14 +16,18 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "40_基准面板回归诊断"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["panel_data"])
+OUT_DIR = stage_output_dir(CONFIG, "40_基准面板回归诊断")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-DEP_VAR = "eff"
-CORE_VAR = "lntl"
-CONTROL_VARS = ["ind", "urb", "rd", "open", "es"]
-MODEL_FORMULA = "eff ~ lntl + ind + urb + rd + open + es + C(province) + C(year)"
+DEP_VAR = CONFIG["dep_var"]
+CORE_VAR = CONFIG["core_var"]
+CONTROL_VARS = list(CONFIG["control_vars"])
+MODEL_FORMULA = f"{DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)} + C(province) + C(year)"
 FONT_SIZE_DELTA = 2
 
 
@@ -46,6 +51,10 @@ def format_decimal(value: float, digits: int = 4) -> str:
     if rounded == 0:
         rounded = 0.0
     return f"{rounded:.{digits}f}"
+
+
+def core_display_name() -> str:
+    return "夜间灯光聚集度" if CORE_VAR == "lntl" else f"核心变量 {CORE_VAR}"
 
 
 def configure_matplotlib() -> None:
@@ -220,9 +229,9 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     y_line = intercept + slope * x_line
     ax.plot(x_line, y_line, color="#1F2933", linewidth=2.2, label="线性拟合")
 
-    ax.set_title("lntl 与 eff 散点拟合图")
-    ax.set_xlabel("lntl")
-    ax.set_ylabel("eff")
+    ax.set_title(f"{CORE_VAR} 与 {DEP_VAR} 散点拟合图")
+    ax.set_xlabel(CORE_VAR)
+    ax.set_ylabel(DEP_VAR)
     ax.set_xlim(right=3.0)
     ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
@@ -404,14 +413,14 @@ def plot_coefficient_forest(result) -> Path:
     coef_table = build_regression_table(result)
     coef_table = coef_table.loc[coef_table["variable"].isin([CORE_VAR, *CONTROL_VARS])].copy()
     label_map = {
-        "lntl": "夜间灯光聚合度",
+        "lntl": "夜间灯光聚集度",
         "ind": "产业结构",
         "urb": "城镇化水平",
         "rd": "研发投入",
         "open": "对外开放",
         "es": "能源结构",
     }
-    coef_table["label"] = coef_table["variable"].map(label_map)
+    coef_table["label"] = coef_table["variable"].map(label_map).fillna(coef_table["variable"])
     coef_table = coef_table.iloc[::-1].reset_index(drop=True)
     y_pos = np.arange(len(coef_table))
 
@@ -533,9 +542,9 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     ax.plot(smooth[:, 0], smooth[:, 1], color="#C26D00", linewidth=1.8, linestyle="--", label="LOWESS")
     ax.axhline(0, color="#9CA3AF", linewidth=1.0, linestyle=":")
     ax.axvline(0, color="#9CA3AF", linewidth=1.0, linestyle=":")
-    ax.set_title("控制双固定效应后的 lntl 净关系图")
-    ax.set_xlabel("lntl 残差")
-    ax.set_ylabel("eff 残差")
+    ax.set_title(f"控制双固定效应后的 {CORE_VAR} 净关系图")
+    ax.set_xlabel(f"{CORE_VAR} 残差")
+    ax.set_ylabel(f"{DEP_VAR} 残差")
     ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
     fig.tight_layout()
 
@@ -667,7 +676,7 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
         "## 模型",
         "",
         "```text",
-        "PanelOLS: eff ~ lntl + ind + urb + rd + open + es",
+        f"PanelOLS: {DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)}",
         "Effects: Entity + Time",
         "Covariance: Driscoll-Kraay",
         "```",

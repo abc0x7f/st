@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
@@ -13,9 +14,13 @@ from scipy import stats
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "30_面板单位根检验"
-VARIABLES = ["eff", "lntl", "ind", "urb", "rd", "open", "es"]
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["panel_data"])
+OUT_DIR = stage_output_dir(CONFIG, "30_面板单位根检验")
+VARIABLES = [str(CONFIG["dep_var"]), str(CONFIG["core_var"]), *list(CONFIG["control_vars"])]
 ENTITY_COL = "province"
 TIME_COL = "year"
 
@@ -267,7 +272,8 @@ def main() -> None:
     df = pd.read_csv(DATA_PATH).sort_values([ENTITY_COL, TIME_COL]).reset_index(drop=True)
 
     level_df, pp_detail_df = run_level_tests(df)
-    diff_df = run_first_difference_checks(df, ["eff", "rd"])
+    diff_targets = [name for name in [str(CONFIG["dep_var"]), "rd"] if name in VARIABLES]
+    diff_df = run_first_difference_checks(df, diff_targets)
     summary_df = decision_summary(level_df)
 
     level_df.to_csv(OUT_DIR / "面板单位根详细结果.csv", index=False, encoding="utf-8-sig")

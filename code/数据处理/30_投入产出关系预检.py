@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,8 +8,12 @@ import seaborn as sns
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "数据处理" / "30_投入产出关系预检"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["first_stage_panel"])
+OUTPUT_DIR = stage_output_dir(CONFIG, "30_投入产出关系预检")
 OUTPUT_PATH = OUTPUT_DIR / "09_投入产出关系散点图.png"
 FONT_SIZE_DELTA = 4
 

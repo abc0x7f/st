@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -7,8 +8,12 @@ import seaborn as sns
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-RESULT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "模型输出" / "分解_超效率SBM Malmquist 指数 -全局参比"
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "20_GM分解绘图"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import derived_dearun_result_dir, load_script_context, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+RESULT_DIR = derived_dearun_result_dir(CONFIG)
+OUTPUT_DIR = stage_output_dir(CONFIG, "20_GM分解绘图")
 
 REGION_MAP = {
     "北京": "东部", "天津": "东部", "河北": "东部", "上海": "东部", "江苏": "东部",

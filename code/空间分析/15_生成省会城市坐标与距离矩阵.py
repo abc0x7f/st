@@ -3,20 +3,25 @@ from __future__ import annotations
 import json
 from math import asin, cos, radians, sin, sqrt
 from pathlib import Path
+import sys
 
 import geopandas as gpd
 import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PROVINCE_GEOJSON = ROOT / "data" / "外部资料" / "中国省级地图.geojson"
-CITY_GEOJSON = ROOT / "data" / "外部资料" / "中国市级地图.geojson"
-PANEL_FILE = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-ECONOMIC_MATRIX_FILE = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path
 
-OUT_CAPITALS = ROOT / "data" / "中间数据" / "省会城市坐标表.csv"
-OUT_MATRIX = ROOT / "data" / "最终数据" / "省际地理距离倒数矩阵_省会版.csv"
-OUT_NESTED_MATRIX = ROOT / "data" / "最终数据" / "省际经济地理嵌套矩阵_省会版.csv"
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+PROVINCE_GEOJSON = resolve_project_path(CONFIG["province_geojson"])
+CITY_GEOJSON = resolve_project_path(CONFIG["city_geojson"])
+PANEL_FILE = resolve_project_path(CONFIG["second_stage_panel"])
+ECONOMIC_MATRIX_FILE = resolve_project_path(CONFIG["economic_matrix"])
+
+OUT_CAPITALS = resolve_project_path(CONFIG["capital_output"])
+OUT_MATRIX = resolve_project_path(CONFIG["geo_inverse_output"])
+OUT_NESTED_MATRIX = resolve_project_path(CONFIG["economic_geo_nested_output"])
 
 
 CAPITAL_MAP = {

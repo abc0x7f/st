@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import sys
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -9,15 +10,19 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import colormaps
 from matplotlib.collections import PatchCollection
-from matplotlib.patches import Polygon, Rectangle
+from matplotlib.patches import Patch, Polygon, Rectangle
 
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[1]
-DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-STAGE1_DATA_PATH = PROJECT_ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
-MAP_PATH = PROJECT_ROOT / "data" / "外部资料" / "中国省级地图.geojson"
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "效率测算" / "10_碳排放效率绘图"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
+STAGE1_DATA_PATH = resolve_project_path(CONFIG["first_stage_panel"])
+MAP_PATH = resolve_project_path(CONFIG["map_geojson"])
+OUTPUT_DIR = stage_output_dir(CONFIG, "10_碳排放效率绘图")
 MAP_YEAR = 2022
 KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]
@@ -48,6 +53,7 @@ REGION_MAP = {
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
+    sns.set_context("talk")
     plt.rcParams["font.family"] = [
         "Times New Roman",
         "SimSun",
@@ -171,37 +177,111 @@ def save_kde_plot(df: pd.DataFrame) -> Path:
 
 def save_region_boxplot(df: pd.DataFrame) -> Path:
     box_df = df.dropna(subset=["region"]).copy()
+    year_order = list(range(2015, 2023))
     region_order = ["东部", "中部", "西部", "东北"]
-    palette = ["#2E8B57", "#66C2A4", "#9ADBC4", "#CFEEDC"]
+    palette = {
+        "东部": "#7EA6E0",
+        "中部": "#D98C8C",
+        "西部": "#7FBF7B",
+        "东北": "#E6A141",
+    }
+    edge_palette = {
+        "东部": "#4C72B0",
+        "中部": "#9E4F4F",
+        "西部": "#3E8B5B",
+        "东北": "#B8741A",
+    }
+    box_df = box_df.loc[box_df["year"].isin(year_order)].copy()
+    box_df["year_str"] = box_df["year"].astype(str)
+    year_labels = [str(year) for year in year_order]
+    year_mean = (
+        box_df.groupby("year", as_index=False)["eff"]
+        .mean()
+        .sort_values("year")
+    )
 
-    fig, ax = plt.subplots(figsize=(8.8, 5.6))
-    sns.boxplot(
-        data=box_df,
-        x="region",
-        y="eff",
-        hue="region",
-        order=region_order,
-        palette=palette,
-        width=0.55,
-        linewidth=1.1,
-        fliersize=3,
-        legend=False,
-        ax=ax,
+    fig, ax = plt.subplots(figsize=(10.4, 6.2))
+
+    # 使用三次多项式生成平滑趋势线，并置于箱线图图层下方。
+    x_idx = np.arange(len(year_order), dtype=float)
+    coef = np.polyfit(x_idx, year_mean["eff"].to_numpy(), deg=3)
+    x_smooth = np.linspace(x_idx.min(), x_idx.max(), 240)
+    y_smooth = np.polyval(coef, x_smooth)
+    ax.plot(
+        x_smooth,
+        y_smooth,
+        color="#4D4D4D",
+        linewidth=2.4,
+        alpha=0.95,
+        zorder=1,
+        label="全国碳排放效率均值",
     )
-    sns.stripplot(
-        data=box_df,
-        x="region",
-        y="eff",
-        order=region_order,
-        color="#1F5133",
-        alpha=0.28,
-        size=2.8,
-        jitter=0.18,
-        ax=ax,
+    offsets = np.array([-0.30, -0.10, 0.10, 0.30])
+    box_width = 0.16
+    for region, offset in zip(region_order, offsets):
+        series_list = []
+        positions = []
+        for i, year in enumerate(year_order):
+            values = box_df.loc[(box_df["year"] == year) & (box_df["region"] == region), "eff"].dropna()
+            if values.empty:
+                continue
+            series_list.append(values.to_numpy())
+            positions.append(x_idx[i] + offset)
+
+        edge_color = edge_palette[region]
+        face_rgba = mcolors.to_rgba(palette[region], alpha=0.42)
+        ax.boxplot(
+            series_list,
+            positions=positions,
+            widths=box_width,
+            patch_artist=True,
+            whis=1.5,
+            manage_ticks=False,
+            boxprops=dict(facecolor=face_rgba, edgecolor=edge_color, linewidth=1.4),
+            whiskerprops=dict(color=edge_color, linewidth=1.4),
+            capprops=dict(color=edge_color, linewidth=1.4),
+            medianprops=dict(color=edge_color, linewidth=1.6),
+            flierprops=dict(
+                marker="o",
+                markerfacecolor=edge_color,
+                markeredgecolor=edge_color,
+                markersize=3.0,
+                alpha=0.9,
+            ),
+            zorder=3,
+        )
+
+    ax.scatter(
+        x_idx,
+        year_mean["eff"].to_numpy(),
+        color="#4D4D4D",
+        s=30,
+        zorder=2,
     )
-    ax.set_title("区域效率差异箱线图", fontsize=14)
-    ax.set_xlabel("区域")
-    ax.set_ylabel("碳排放效率")
+    legend_handles = [
+        Patch(facecolor=mcolors.to_rgba(palette[region], alpha=0.42), edgecolor=edge_palette[region], label=region)
+        for region in region_order
+    ]
+    legend_handles.append(plt.Line2D([], [], color="#4D4D4D", linewidth=2.4, marker="o", markersize=6, label="全国碳排放效率均值"))
+
+    ax.set_title("2015-2022年分区域碳排放效率箱线图", fontsize=20, pad=14)
+    ax.set_xlabel("年份", fontsize=16)
+    ax.set_ylabel("效率值", fontsize=16)
+    ax.set_ylim(0.2, 1.45)
+    ax.set_xticks(x_idx, year_labels)
+    ax.tick_params(axis="both", labelsize=14)
+    ax.grid(False)
+    ax.legend(
+        handles=legend_handles,
+        title=None,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.02),
+        ncol=5,
+        frameon=True,
+        fontsize=13,
+        columnspacing=1.2,
+        handletextpad=0.5,
+    )
     fig.tight_layout()
     out = OUTPUT_DIR / "13_区域效率差异箱线图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -248,27 +328,54 @@ def save_west_eff_trend_plot(df: pd.DataFrame) -> Path:
 
 def save_west_carbon_gdp_plot(stage1_df: pd.DataFrame) -> Path:
     west_df = stage1_df.loc[stage1_df["province"].isin(WEST_PROVINCES)].copy()
-    summary = (
-        west_df.groupby("province", as_index=False)["carbon_gdp"]
-        .mean()
-        .sort_values("carbon_gdp")
+    compare_cols = ["Population", "Capital", "energy_total", "GDP_constant", "Carbon"]
+    label_map = {
+        "Population": "人口",
+        "Capital": "资本投入",
+        "energy_total": "能源投入",
+        "GDP_constant": "GDP",
+        "Carbon": "碳排放",
+    }
+    qinghai_mean = west_df.loc[west_df["province"] == "青海", compare_cols].mean()
+    west_mean = west_df[compare_cols].mean()
+    compare_df = pd.DataFrame(
+        {
+            "指标": [label_map[col] for col in compare_cols],
+            "青海": qinghai_mean.reindex(compare_cols).to_numpy(),
+            "西部均值": west_mean.reindex(compare_cols).to_numpy(),
+        }
     )
-    colors = sns.color_palette("Greens", n_colors=len(summary) + 2)[2:]
 
-    fig, ax = plt.subplots(figsize=(10.5, 6.0))
-    ax.barh(
-        summary["province"],
-        summary["carbon_gdp"],
-        color=colors,
-        edgecolor="white",
-        linewidth=0.6,
+    fig, ax = plt.subplots(figsize=(10.8, 6.2))
+    x = np.arange(len(compare_df))
+    width = 0.34
+    ax.bar(
+        x - width / 2,
+        compare_df["青海"],
+        width=width,
+        color="#B7D9A8",
+        edgecolor="#6E9B63",
+        linewidth=1.0,
+        label="青海",
     )
-    ax.set_title("西部各省单位 GDP 碳排放对比图", fontsize=14)
-    ax.set_xlabel("单位 GDP 碳排放（Carbon / GDP_constant）")
-    ax.set_ylabel("省份")
-    ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.3f"))
+    ax.bar(
+        x + width / 2,
+        compare_df["西部均值"],
+        width=width,
+        color="#D7C6F3",
+        edgecolor="#9A82C4",
+        linewidth=1.0,
+        label="西部均值",
+    )
+    ax.set_title("青海与西部均值投入产出指标对比图", fontsize=18, pad=12)
+    ax.set_xlabel("指标", fontsize=16)
+    ax.set_ylabel("数值", fontsize=16)
+    ax.set_xticks(x, compare_df["指标"])
+    ax.set_yscale("log")
+    ax.tick_params(axis="both", labelsize=14)
+    ax.legend(loc="upper right", frameon=True, fontsize=13)
     fig.tight_layout()
-    out = OUTPUT_DIR / "13-2_西部各省单位GDP碳排放对比图.png"
+    out = OUTPUT_DIR / "13-2_青海与西部均值投入产出指标对比图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out

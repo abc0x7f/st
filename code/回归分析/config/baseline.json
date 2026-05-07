@@ -1,0 +1,46 @@
+{
+  "config_name": "baseline",
+  "panel_data": "data/最终数据/第二阶段_基础.csv",
+  "dep_var": "eff",
+  "core_var": "lntl",
+  "control_vars": [
+    "ind",
+    "urb",
+    "rd",
+    "open",
+    "es"
+  ],
+  "robust_models": [
+    {
+      "name": "baseline",
+      "label": "基准模型",
+      "data_path": "data/最终数据/第二阶段_基础.csv",
+      "core_var": "lntl",
+      "mode": "baseline"
+    },
+    {
+      "name": "winsor_1pct",
+      "label": "1%缩尾",
+      "data_path": "data/最终数据/第二阶段_基础.csv",
+      "core_var": "lntl",
+      "mode": "winsor",
+      "winsor_rate": 0.01
+    },
+    {
+      "name": "winsor_5pct",
+      "label": "5%缩尾",
+      "data_path": "data/最终数据/第二阶段_基础.csv",
+      "core_var": "lntl",
+      "mode": "winsor",
+      "winsor_rate": 0.05
+    },
+    {
+      "name": "lag_custom",
+      "label": "滞后一期",
+      "data_path": "data/最终数据/第二阶段_滞后一期.csv",
+      "core_var": "lntl",
+      "mode": "custom"
+    }
+  ],
+  "output_root": "outputs/回归分析/baseline"
+}

@@ -6,6 +6,7 @@ from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QSize
 from PySide6.QtGui import QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from pipeline_config import LOGO_PATH, PROJECT_ROOT
 from pipeline_service import (
+    available_stage_configs,
     check_step,
     detect_status,
     discover_artifacts,
@@ -31,6 +33,7 @@ from pipeline_service import (
     open_external_path,
     run_step,
 )
+from stage_config import get_active_config_name, set_active_config_name
 from step_types import ArtifactBundle, RunnerType, StepDefinition, StepStatus
 from ui_panels import ConsolePanel, ImagePanel, MarkdownPanel, TablePanel, status_color
 
@@ -49,6 +52,7 @@ class MainWindow(QMainWindow):
         self.current_image_index = 0
         self.current_artifacts = ArtifactBundle()
         self.running_step_id: str | None = None
+        self._config_refreshing = False
 
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self._read_stdout)
@@ -193,6 +197,27 @@ class MainWindow(QMainWindow):
         self.current_step_label.setStyleSheet("border: none; font-size: 20px; font-weight: 800;")
         execute_layout.addWidget(self.current_step_label)
 
+        config_row = QHBoxLayout()
+        config_row.setSpacing(8)
+        config_label = QLabel("阶段配置")
+        config_label.setStyleSheet("border: none; color: #5b6b7a; font-size: 12px;")
+        self.stage_config_combo = QComboBox()
+        self.stage_config_combo.setStyleSheet(
+            """
+            QComboBox {
+                border: 1px solid #cfd6de;
+                border-radius: 6px;
+                background: #fbfcfd;
+                padding: 6px 10px;
+                min-height: 32px;
+            }
+            """
+        )
+        self.stage_config_combo.currentTextChanged.connect(self._on_stage_config_changed)
+        config_row.addWidget(config_label)
+        config_row.addWidget(self.stage_config_combo, 1)
+        execute_layout.addLayout(config_row)
+
         button_row = QHBoxLayout()
         button_row.setSpacing(10)
         self.check_button = QPushButton("检查")
@@ -264,6 +289,31 @@ class MainWindow(QMainWindow):
     def _refresh_executable_summary(self) -> None:
         self.version_label.setText("GUI v0.2 | PySide6")
 
+    def _sync_stage_config_combo(self, stage: str) -> None:
+        self._config_refreshing = True
+        try:
+            names = available_stage_configs(stage)
+            current = get_active_config_name(stage)
+            self.stage_config_combo.blockSignals(True)
+            self.stage_config_combo.clear()
+            self.stage_config_combo.addItems(names)
+            self.stage_config_combo.setCurrentText(current)
+            self.stage_config_combo.blockSignals(False)
+        finally:
+            self._config_refreshing = False
+
+    def _on_stage_config_changed(self, config_name: str) -> None:
+        if self._config_refreshing or not config_name:
+            return
+        stage = self.steps[self.current_step_index].stage
+        current_step_id = self.steps[self.current_step_index].id
+        set_active_config_name(stage, config_name)
+        self.steps = list(list_steps())
+        self.statuses = {step.id: detect_status(step.id) for step in self.steps}
+        self._populate_step_list()
+        target_index = next((idx for idx, step in enumerate(self.steps) if step.id == current_step_id), 0)
+        self.step_list.setCurrentRow(target_index)
+
     def _on_step_changed(self, row: int) -> None:
         if row < 0 or row >= len(self.steps):
             return
@@ -273,6 +323,7 @@ class MainWindow(QMainWindow):
         step = self.steps[row]
         self.current_step_label.setText(step.name)
         self.step_hint_label.setText(step.description)
+        self._sync_stage_config_combo(step.stage)
         self.check_button.setVisible(step.precheck_mode != "none")
         self._sync_run_button(step)
         self._refresh_detail_views()

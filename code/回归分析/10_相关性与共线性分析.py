@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -14,12 +15,19 @@ from statsmodels.tools.tools import add_constant
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "10_相关性与VIF分析"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["panel_data"])
+OUT_DIR = stage_output_dir(CONFIG, "10_相关性与VIF分析")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-CORR_VARS = ["eff", "lntl", "ind", "urb", "rd", "open", "es"]
-VIF_VARS = ["lntl", "ind", "urb", "rd", "open", "es"]
+DEP_VAR = str(CONFIG["dep_var"])
+CORE_VAR = str(CONFIG["core_var"])
+CONTROL_VARS = list(CONFIG["control_vars"])
+CORR_VARS = [DEP_VAR, CORE_VAR, *CONTROL_VARS]
+VIF_VARS = [CORE_VAR, *CONTROL_VARS]
 LABELS = {
     "eff": "碳排放效率\neff",
     "lntl": "夜间灯光\nlntl",
@@ -34,6 +42,10 @@ FONT_SIZE_DELTA = 2
 
 def fs(size: float) -> float:
     return size + FONT_SIZE_DELTA
+
+
+def display_label(variable: str) -> str:
+    return LABELS.get(variable, f"核心变量\n{variable}")
 
 
 def configure_matplotlib() -> None:
@@ -82,6 +94,7 @@ def build_corr_and_pvalues(
     df: pd.DataFrame, vars_to_use: list[str], method: str
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     renamed = df[vars_to_use].rename(columns=LABELS)
+    renamed = df[vars_to_use].rename(columns={col: display_label(col) for col in vars_to_use})
     cols = renamed.columns.tolist()
     corr = pd.DataFrame(np.eye(len(cols)), index=cols, columns=cols, dtype=float)
     pvals = pd.DataFrame(np.zeros((len(cols), len(cols))), index=cols, columns=cols, dtype=float)
@@ -238,7 +251,7 @@ def calculate_vif(df: pd.DataFrame, vars_to_use: list[str]) -> pd.DataFrame:
     result = pd.DataFrame(
         {
             "variable": vars_to_use,
-            "label": [LABELS[col].replace("\n", " ") for col in vars_to_use],
+            "label": [display_label(col).replace("\n", " ") for col in vars_to_use],
             "vif": vif_values,
             "tolerance": [1 / v for v in vif_values],
         }
@@ -308,10 +321,10 @@ def build_interpretation(
     vif_df: pd.DataFrame,
 ) -> str:
     n_obs = len(df)
-    pearson_eff = pearson_corr.loc[LABELS["eff"]].drop(LABELS["eff"]).sort_values(
+    pearson_eff = pearson_corr.loc[display_label(DEP_VAR)].drop(display_label(DEP_VAR)).sort_values(
         key=lambda s: s.abs(), ascending=False
     )
-    spearman_eff = spearman_corr.loc[LABELS["eff"]].drop(LABELS["eff"]).sort_values(
+    spearman_eff = spearman_corr.loc[display_label(DEP_VAR)].drop(display_label(DEP_VAR)).sort_values(
         key=lambda s: s.abs(), ascending=False
     )
 

@@ -3,13 +3,18 @@ from __future__ import annotations
 import csv
 from collections import OrderedDict
 from pathlib import Path
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-INPUT_PATH = ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
-ECONOMIC_INPUT_PATH = ROOT / "data" / "最终数据" / "第一阶段_基础.csv"
-ADJ_OUTPUT_PATH = ROOT / "data" / "最终数据" / "省际01邻接矩阵.csv"
-ECONOMIC_OUTPUT_PATH = ROOT / "data" / "最终数据" / "省际经济距离矩阵.csv"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+INPUT_PATH = resolve_project_path(CONFIG["efficiency_data"])
+ECONOMIC_INPUT_PATH = resolve_project_path(CONFIG["first_stage_panel"])
+ADJ_OUTPUT_PATH = resolve_project_path(CONFIG["adjacency_matrix"])
+ECONOMIC_OUTPUT_PATH = resolve_project_path(CONFIG["economic_matrix"])
 
 
 def load_province_order(path: Path) -> list[str]:

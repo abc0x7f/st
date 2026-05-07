@@ -1,0 +1,16 @@
+{
+  "config_name": "default",
+  "first_stage_panel": "data/最终数据/第一阶段_基础.csv",
+  "second_stage_panel": "data/最终数据/第二阶段_基础.csv",
+  "energy_ceads_dir": "data/原始数据/各省能源清单CEADS",
+  "energy_factor_output": "data/外部资料/省级能源折标准煤系数_ceads.csv",
+  "energy_panel_output": "data/中间数据/省级能源energy与es_ceads(暂未启用).csv",
+  "energy_yearbook_glob": "各省能源结构2003-2022.xlsx",
+  "map_geojson_paths": [
+    "data/外部资料/中国省级地图.geojson",
+    "data/china_provinces.geojson",
+    "data/china.geojson",
+    "data/中国省级.geojson"
+  ],
+  "output_root": "outputs/数据处理/default"
+}

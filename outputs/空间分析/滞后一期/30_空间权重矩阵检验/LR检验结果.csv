@@ -1,0 +1,9 @@
+weight_type,test_name,statistic,df,pvalue
+adjacency_01,LR: both vs ind,12.47857380405981,7,.0858789445697862
+adjacency_01,LR: both vs time,521.6912347948885,29,9.92847086300e-92
+economic_geo_nested,LR: both vs ind,13.89092203660118,7,.0531557710100102
+economic_geo_nested,LR: both vs time,524.0756749016361,29,3.20432891354e-92
+economic_inv,LR: both vs ind,13.37231538422168,7,.0635401187699638
+economic_inv,LR: both vs time,538.5809658541957,29,3.27637067044e-95
+geographic_inv,LR: both vs ind,17.27212268584844,7,.0157232854481737
+geographic_inv,LR: both vs time,538.6033130264917,29,3.24177392726e-95

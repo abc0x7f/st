@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -11,8 +12,13 @@ import seaborn as sns
 
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT_DIR = ROOT / "outputs" / "数据处理" / "50_样本构建流程缺失检查与变量箱线图"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, stage_output_dir
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+OUT_DIR = stage_output_dir(CONFIG, "50_样本构建流程缺失检查与变量箱线图")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+ENERGY_YEARBOOK_GLOB = CONFIG["energy_yearbook_glob"]
 FONT_SIZE_DELTA = 4
 
 
@@ -45,7 +51,7 @@ def configure_matplotlib() -> None:
 
 
 def create_missing_heatmap() -> None:
-    path = next((ROOT / "data").rglob("各省能源结构2003-2022.xlsx"))
+    path = next((ROOT / "data").rglob(ENERGY_YEARBOOK_GLOB))
     xls = pd.ExcelFile(path)
     df = pd.read_excel(path, sheet_name=xls.sheet_names[0])
 

@@ -1,11 +1,16 @@
 from pathlib import Path
+import sys
 
 import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-RESULT_DIR = PROJECT_ROOT / "data" / "最终数据" / "结果_第一阶段_基础"
-OUTPUT_PATH = PROJECT_ROOT / "data" / "中间数据" / "碳排放效率结果_2015_2022.csv"
+sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
+from stage_config import derived_dearun_result_dir, load_script_context, resolve_project_path
+
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+RESULT_DIR = derived_dearun_result_dir(CONFIG)
+OUTPUT_PATH = resolve_project_path(CONFIG["efficiency_extract_output"])
 
 
 def find_source_file() -> Path:

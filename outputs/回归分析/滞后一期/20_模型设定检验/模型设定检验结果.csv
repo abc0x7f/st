@@ -1,0 +1,7 @@
+﻿test,statistic,pvalue,df,decision_5pct,null_hypothesis,interpretation
+Pooled F,61.22800808647688,0.0,"F(36,197)",Reject H0,All entity/time effects are jointly zero,Effects needed
+Time Effects Wald,19.133618722211036,0.0077789107417820524,chi2(7),Reject H0,Year effects jointly zero,Keep time effects
+Hausman,15.46151247401303,0.016955451458581683,6,Reject H0,RE consistent and efficient,Prefer FE
+Pesaran CD,1.630610680644592,0.10297249405657549,,Fail to reject H0,No cross-sectional dependence,avg_abs_corr=0.458
+Modified Wald,257.7705649233102,0.0,30,Reject H0,Homoskedasticity across entities,variance_ratio=192.314
+Wooldridge AR(1),22.535808850453428,5.1198878786462565e-05,"F(1,29)",Reject H0,No first-order serial correlation,"beta=-0.177, se=0.068"

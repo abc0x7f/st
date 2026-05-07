@@ -1,0 +1,9 @@
+﻿variable,test,statistic,pvalue,decision_5pct,note
+D.eff,LLC,-15.677510271580395,1.0776924921264701e-55,Reject H0,lags=0
+D.eff,IPS,-12.93350375598176,1.456189102583261e-38,Reject H0,mean_lag=0.13
+D.eff,ADF-Fisher,317.89296057999064,0.0,Reject H0,first difference check
+D.eff,PP-Fisher,367.4858242188222,0.0,Reject H0,first difference check; PP lags=1
+D.rd,LLC,-14.891931010193812,1.8593603653547596e-50,Reject H0,lags=0
+D.rd,IPS,-8.662351630091623,2.3106513448931205e-18,Reject H0,mean_lag=0.03
+D.rd,ADF-Fisher,252.66611238329065,0.0,Reject H0,first difference check
+D.rd,PP-Fisher,217.6672225024045,0.0,Reject H0,first difference check; PP lags=1

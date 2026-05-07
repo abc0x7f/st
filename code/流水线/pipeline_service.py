@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import pandas as pd
 
-from pipeline_config import PROJECT_ROOT, PYTHON_EXE, STEP_BY_ID, STEP_DEFINITIONS
+from pipeline_config import PROJECT_ROOT, PYTHON_EXE, build_step_definitions, build_step_map
+from stage_config import derived_dearun_result_dir, list_stage_config_names, load_stage_config, resolve_project_path
 from step_types import ArtifactBundle, CheckResult, RunPreparation, RunnerType, StepDefinition, StepStatus
 
 
@@ -19,11 +21,15 @@ STATA_CANDIDATES = (
 
 
 def list_steps() -> tuple[StepDefinition, ...]:
-    return STEP_DEFINITIONS
+    return build_step_definitions()
 
 
 def get_step(step_id: str) -> StepDefinition:
-    return STEP_BY_ID[step_id]
+    return build_step_map()[step_id]
+
+
+def available_stage_configs(stage: str) -> list[str]:
+    return list_stage_config_names(stage)
 
 
 def resolve_stata_executable() -> Path | None:
@@ -105,7 +111,12 @@ def check_step(step_id: str) -> CheckResult:
         if matched_outputs:
             messages.append("[通过] 已发现人工步骤产物。")
         else:
-            messages.append("[待处理] 尚未发现 Dearun 回填结果，请手动完成后再检查。")
+            if step.id == "dearun_manual":
+                eff_cfg = load_stage_config("效率测算")
+                result_dir = derived_dearun_result_dir(eff_cfg)
+                messages.append(f"[待处理] 尚未发现 Dearun 回填结果，请检查目录: {result_dir.relative_to(PROJECT_ROOT)}")
+            else:
+                messages.append("[待处理] 尚未发现人工步骤产物，请手动完成后再检查。")
 
     missing_or_failed = [line for line in messages if line.startswith("[缺失]") or line.startswith("[失败]")]
     waiting = [line for line in messages if line.startswith("[待处理]")]
@@ -264,7 +275,7 @@ def run_step(step_id: str) -> RunPreparation:
             allowed=True,
             status=StepStatus.RUNNING,
             program=str(stata_exe),
-            arguments=["/e", "do", str(script_path)],
+            arguments=["/e", "do", str(script_path), str(_write_stata_config(step.id))],
             working_dir=step.working_dir,
             message=f"启动 Stata 脚本：{script_path.relative_to(PROJECT_ROOT)}",
         )
@@ -293,3 +304,29 @@ def executable_summary() -> str:
 
 def open_external_path(path_text: str) -> None:
     os.startfile(path_text)
+
+
+def _write_stata_config(step_id: str) -> Path:
+    spatial_cfg = load_stage_config("空间分析")
+    output_root = resolve_project_path(spatial_cfg["output_root"])
+    if step_id == "reg_spatial_weight_stata":
+        out_dir = output_root / "30_空间权重矩阵检验"
+    else:
+        out_dir = output_root / "40_空间SDM主模型"
+    stata_dir = out_dir / "stata"
+
+    lines = [
+        f'global PROJECT_ROOT "{PROJECT_ROOT.as_posix()}"',
+        f'global DATA_FILE "{resolve_project_path(spatial_cfg["second_stage_panel"]).as_posix()}"',
+        f'global W_ADJ_FILE "{resolve_project_path(spatial_cfg["adjacency_matrix"]).as_posix()}"',
+        f'global W_ECO_FILE "{resolve_project_path(spatial_cfg["economic_matrix"]).as_posix()}"',
+        f'global W_GEO_INV_FILE "{resolve_project_path(spatial_cfg["geo_inverse_matrix"]).as_posix()}"',
+        f'global W_ECO_GEO_NEST_FILE "{resolve_project_path(spatial_cfg["economic_geo_nested_matrix"]).as_posix()}"',
+        f'global OUT_DIR "{out_dir.as_posix()}"',
+        f'global STATA_DIR "{stata_dir.as_posix()}"',
+    ]
+    tmp_dir = Path(tempfile.gettempdir())
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    config_path = tmp_dir / f"{step_id}_stage_config.do"
+    config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return config_path

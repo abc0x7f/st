@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
@@ -10,11 +11,15 @@ from scipy import stats
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "最终数据" / "第二阶段_基础.csv"
-OUT_DIR = ROOT / "outputs" / "回归分析" / "20_模型设定检验"
+sys.path.insert(0, str(ROOT / "code" / "流水线"))
+from stage_config import load_script_context, resolve_project_path, stage_output_dir
 
-Y_VAR = "eff"
-X_VARS = ["lntl", "ind", "urb", "rd", "open", "es"]
+CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
+DATA_PATH = resolve_project_path(CONFIG["panel_data"])
+OUT_DIR = stage_output_dir(CONFIG, "20_模型设定检验")
+
+Y_VAR = str(CONFIG["dep_var"])
+X_VARS = [str(CONFIG["core_var"]), *list(CONFIG["control_vars"])]
 ENTITY_COL = "province"
 TIME_COL = "year"
 
@@ -219,7 +224,7 @@ def main() -> None:
         "",
         f"数据文件：`{DATA_PATH.relative_to(ROOT).as_posix()}`",
         "",
-        "- 基准回归变量：`eff ~ lntl + ind + urb + rd + open + es`",
+        f"- 基准回归变量：`{Y_VAR} ~ {' + '.join(X_VARS)}`",
         "- `Pooled F` 基于双固定效应模型的 poolability 检验",
         "- `Hausman` 比较对象为“省份固定效应 + 年份虚拟变量”和“随机效应 + 年份虚拟变量”，仅对核心解释变量与控制变量系数作比较",
         "- `Pesaran CD`、`Modified Wald`、`Wooldridge` 基于双固定效应模型残差",
