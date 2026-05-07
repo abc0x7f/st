@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPixmap, QTextOption
+from PySide6.QtGui import QColor, QPainter, QPixmap, QTextDocument, QTextOption
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
 from PySide6.QtWidgets import (
     QFrame,
@@ -25,6 +25,11 @@ from PySide6.QtWidgets import (
 )
 
 from table_model import DataFrameTableModel
+
+try:
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+except ImportError:
+    QWebEngineView = None
 
 
 def format_display_path(path: Path | None) -> str:
@@ -140,27 +145,121 @@ class ConsolePanel(PanelFrame):
 class MarkdownPanel(PanelFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("结果说明区", parent)
-        self.browser = QTextBrowser()
-        self.browser.setOpenExternalLinks(True)
-        self.browser.document().setDefaultTextOption(QTextOption(Qt.AlignLeft))
-        self.browser.setStyleSheet(
-            """
-            QTextBrowser {
-                border: 1px solid #dfd5a6;
-                border-radius: 4px;
-                background: #fff7d6;
-                padding: 10px;
-                color: #18212b;
-            }
-            """
-        )
-        self.outer_layout.addWidget(self.browser, 1)
+        self.browser: QTextBrowser | None = None
+        self.web_view: QWebEngineView | None = None
+
+        if QWebEngineView is not None:
+            self.web_view = QWebEngineView()
+            self.web_view.setStyleSheet(
+                """
+                QWebEngineView {
+                    border: 1px solid #dfd5a6;
+                    border-radius: 4px;
+                    background: #fff7d6;
+                }
+                """
+            )
+            self.outer_layout.addWidget(self.web_view, 1)
+        else:
+            self.browser = QTextBrowser()
+            self.browser.setOpenExternalLinks(True)
+            self.browser.document().setDefaultTextOption(QTextOption(Qt.AlignLeft))
+            self.browser.setStyleSheet(
+                """
+                QTextBrowser {
+                    border: 1px solid #dfd5a6;
+                    border-radius: 4px;
+                    background: #fff7d6;
+                    padding: 10px;
+                    color: #18212b;
+                }
+                """
+            )
+            self.outer_layout.addWidget(self.browser, 1)
 
     def set_markdown_text(self, text: str) -> None:
+        if self.web_view is not None:
+            self.web_view.setHtml(self._build_html(text))
+            return
+
+        if self.browser is None:
+            return
         if hasattr(self.browser, "setMarkdown"):
             self.browser.setMarkdown(text)
         else:
             self.browser.setPlainText(text)
+
+    @staticmethod
+    def _build_html(markdown_text: str) -> str:
+        document = QTextDocument()
+        document.setMarkdown(markdown_text)
+        body_html = document.toHtml()
+        return f"""
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {{
+      margin: 0;
+      padding: 12px;
+      background: #fff7d6;
+      color: #18212b;
+      font-family: "Times New Roman", "SimSun";
+      line-height: 1.65;
+      font-size: 15px;
+    }}
+    h1, h2, h3, h4, h5, h6 {{
+      color: #18212b;
+      margin-top: 1.1em;
+      margin-bottom: 0.55em;
+    }}
+    p, li {{
+      margin: 0.45em 0;
+    }}
+    pre, code {{
+      font-family: "Consolas", "Courier New", monospace;
+    }}
+    table {{
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.9em 0;
+      background: #fffdf3;
+    }}
+    th, td {{
+      border: 1px solid #dfd5a6;
+      padding: 6px 8px;
+      text-align: left;
+    }}
+    th {{
+      background: #f8efc6;
+    }}
+    blockquote {{
+      margin: 0.8em 0;
+      padding-left: 0.9em;
+      border-left: 4px solid #d8c36e;
+      color: #4a5560;
+    }}
+  </style>
+  <script>
+    window.MathJax = {{
+      tex: {{
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        processEscapes: true
+      }},
+      options: {{
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }}
+    }};
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+{body_html}
+</body>
+</html>
+"""
 
 
 class ArtifactNavigatorPanel(PanelFrame):
