@@ -28,11 +28,6 @@ DEP_VAR = CONFIG["dep_var"]
 CORE_VAR = CONFIG["core_var"]
 CONTROL_VARS = list(CONFIG["control_vars"])
 MODEL_FORMULA = f"{DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)} + C(province) + C(year)"
-FONT_SIZE_DELTA = 2
-
-
-def fs(size: float) -> float:
-    return size + FONT_SIZE_DELTA
 
 
 def resolve_output_path(path: Path) -> Path:
@@ -59,6 +54,7 @@ def core_display_name() -> str:
 
 def configure_matplotlib() -> None:
     sns.set_theme(style="whitegrid")
+    sns.set_context("talk")
     available = {f.name for f in font_manager.fontManager.ttflist}
     serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
     chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
@@ -68,12 +64,21 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
-    matplotlib.rcParams["font.size"] = fs(10)
-    matplotlib.rcParams["axes.titlesize"] = fs(12)
-    matplotlib.rcParams["axes.labelsize"] = fs(10)
-    matplotlib.rcParams["xtick.labelsize"] = fs(10)
-    matplotlib.rcParams["ytick.labelsize"] = fs(10)
-    matplotlib.rcParams["legend.fontsize"] = fs(9)
+    matplotlib.rcParams["grid.linestyle"] = "--"
+    matplotlib.rcParams["grid.linewidth"] = 0.7
+    matplotlib.rcParams["grid.alpha"] = 0.22
+    matplotlib.rcParams["grid.color"] = "#9CA3AF"
+
+
+def symmetric_limit(values: pd.Series | np.ndarray, pad_ratio: float = 0.08, minimum: float = 1e-3) -> float:
+    arr = np.asarray(values, dtype=float)
+    if arr.size == 0:
+        return 1.0
+    max_abs = float(np.nanmax(np.abs(arr)))
+    if not np.isfinite(max_abs):
+        return 1.0
+    max_abs = max(max_abs, minimum)
+    return max_abs * (1.0 + pad_ratio)
 
 
 def get_year_color_map(years: list[int]) -> dict[int, tuple[float, float, float, float]]:
@@ -233,7 +238,7 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     ax.set_xlabel(CORE_VAR)
     ax.set_ylabel(DEP_VAR)
     ax.set_xlim(right=3.0)
-    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "01_夜间灯光与效率散点拟合图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -262,17 +267,16 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
             zorder=3,
             label="真实eff值" if year_idx == 0 else None,
         )
-
-    ax.plot(
-        ordered["sample_index"],
-        ordered["fitted"],
-        color="#4B5563",
-        linewidth=1.1,
-        marker="s",
-        markersize=3.3,
-        label="预测eff值",
-        zorder=4,
-    )
+        ax.plot(
+            x,
+            part["fitted"].to_numpy(),
+            color="#4B5563",
+            linewidth=1.1,
+            marker="s",
+            markersize=3.3,
+            label="预测eff值" if year_idx == 0 else None,
+            zorder=4,
+        )
 
     ax.set_title("真实 eff 与预测 eff 序列图")
     ax.set_xlabel("样本序号")
@@ -280,18 +284,17 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
     ax.set_xlim(0, 240)
     major_ticks = np.arange(0, 241, 30)
     ax.set_xticks(major_ticks)
-    ax.set_xticklabels([str(v) for v in major_ticks])
+    ax.set_xticklabels([])
     for idx, year in enumerate(years):
         center = idx * 30 + 15.5
-        ax.text(center, -0.13, str(year), ha="center", va="top", transform=ax.get_xaxis_transform(), fontsize=fs(9))
-    ax.legend(loc="upper left", fontsize=fs(9), frameon=True, borderaxespad=0.8)
+        ax.text(center, -0.13, str(year), ha="center", va="top", transform=ax.get_xaxis_transform())
+    ax.legend(loc="upper left", frameon=True, borderaxespad=0.8)
     fig.text(
         0.5,
         0.01,
         "注：先按 2015 年 eff 从小到大确定省份顺序；其后各年份均保持该顺序，且同一年份样本相邻排列。",
         ha="center",
         va="bottom",
-        fontsize=fs(9),
     )
     ax.tick_params(axis="x", pad=8)
     fig.tight_layout(rect=(0, 0.09, 1, 1))
@@ -326,9 +329,9 @@ def plot_pred_vs_actual(df: pd.DataFrame) -> Path:
     ax.set_title("预测值-真实值散点图")
     ax.set_xlabel("真实值 eff")
     ax.set_ylabel("预测值 eff")
-    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
-    out = OUT_DIR / "03_pred_vs_actual_scatter.png"
+    out = OUT_DIR / "03_预测值与真实值散点图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -356,10 +359,11 @@ def plot_residual_vs_fitted(df: pd.DataFrame) -> Path:
     ax.set_title("拟合值-残差图")
     ax.set_xlabel("拟合值")
     ax.set_ylabel("残差")
-    ax.set_ylim(-0.3, 0.3)
-    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    resid_limit = symmetric_limit(df["resid"])
+    ax.set_ylim(-resid_limit, resid_limit)
+    ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
-    out = OUT_DIR / "04_residual_vs_fitted.png"
+    out = OUT_DIR / "04_拟合值与残差图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -376,7 +380,7 @@ def plot_residual_qq(df: pd.DataFrame) -> Path:
     qq_df["theoretical_q"] = stats.norm.ppf(probs)
     qq_df["ordered_std_resid"] = qq_df["std_resid"].to_numpy()
 
-    slope, intercept, r = stats.probplot(qq_df["std_resid"].to_numpy(), dist="norm", fit=True)[1]
+    slope, intercept, _ = stats.probplot(qq_df["std_resid"].to_numpy(), dist="norm", fit=True)[1]
 
     fig, ax = plt.subplots(figsize=(8.2, 7.1))
     for year in years:
@@ -396,14 +400,13 @@ def plot_residual_qq(df: pd.DataFrame) -> Path:
     ax.set_title("标准化残差正态 Q-Q 图")
     ax.set_xlabel("理论分位数")
     ax.set_ylabel("标准化残差分位数")
-    ax.set_xlim(-3, 3)
-    ax.set_ylim(bottom=-6)
-#    ax.axhline(0, color="black", linewidth=1.0, linestyle="--", zorder=1)
-#    ax.axvline(0, color="black", linewidth=1.0, linestyle="--", zorder=1)
-    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
-    ax.text(0.03, 0.72, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=fs(10), color="#334E68")
+    ax.set_xlim(-4, 4)
+    ax.set_ylim(-4, 4)
+    ax.axhline(0, color="#9CA3AF", linewidth=1.0, linestyle="--", zorder=1)
+    ax.axvline(0, color="#9CA3AF", linewidth=1.0, linestyle="--", zorder=1)
+    ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.tight_layout()
-    out = OUT_DIR / "05_residual_qq.png"
+    out = OUT_DIR / "05_标准化残差QQ图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -461,32 +464,32 @@ def plot_coefficient_forest(result) -> Path:
     ax.set_yticklabels([])
     ax.set_xticks(tick_values)
     ax.set_xticklabels([f"{v:.1f}" if abs(v) < 1 else f"{v:.0f}" for v in tick_values])
-    ax.set_xlabel("系数估计值", fontsize=fs(10))
-    ax.set_title("基准回归系数森林图", fontsize=fs(12))
+    ax.set_xlabel("系数估计值")
+    ax.set_title("基准回归系数森林图")
     ax.grid(axis="y", linestyle=":", alpha=0.22)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="x", labelsize=fs(9), pad=6)
+    ax.tick_params(axis="x", pad=6)
 
     ax_left.set_xlim(0, 1)
     ax_left.set_ylim(ax.get_ylim())
     ax_left.axis("off")
-    ax_left.text(0.00, len(coef_table) - 0.1, "变量", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_left.text(0.00, len(coef_table) - 0.1, "变量", ha="left", va="bottom", color="black", fontweight="bold")
     for idx, row in coef_table.iterrows():
-        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=fs(9.6), color="black")
+        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", color="black")
 
     ax_right.set_xlim(0, 1)
     ax_right.set_ylim(ax.get_ylim())
     ax_right.axis("off")
-    ax_right.text(0.02, len(coef_table) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
-    ax_right.text(0.98, len(coef_table) - 0.1, "p", ha="right", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_right.text(0.02, len(coef_table) - 0.1, "coef (95% CI)", ha="left", va="bottom", color="black", fontweight="bold")
+    ax_right.text(0.98, len(coef_table) - 0.1, "p", ha="right", va="bottom", color="black", fontweight="bold")
     for idx, row in coef_table.iterrows():
         coef_text = (
             f"{format_decimal(row['coef'])} "
             f"({format_decimal(row['ci_lower'])}, {format_decimal(row['ci_upper'])})"
         )
-        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=fs(9.2), color="black")
+        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", color="black")
         stars = ""
         if row["p_value"] < 0.01:
             stars = "***"
@@ -494,7 +497,7 @@ def plot_coefficient_forest(result) -> Path:
             stars = "**"
         elif row["p_value"] < 0.1:
             stars = "*"
-        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_value'])}{stars}", ha="right", va="center", fontsize=fs(9.2), color="black")
+        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_value'])}{stars}", ha="right", va="center", color="black")
 
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
 
@@ -542,10 +545,25 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     ax.plot(smooth[:, 0], smooth[:, 1], color="#C26D00", linewidth=1.8, linestyle="--", label="LOWESS")
     ax.axhline(0, color="#9CA3AF", linewidth=1.0, linestyle=":")
     ax.axvline(0, color="#9CA3AF", linewidth=1.0, linestyle=":")
+    ax.set_xlim(-0.2, 0.2)
+    y_abs_max = max(abs(float(partial_df["eff_resid"].min())), abs(float(partial_df["eff_resid"].max())))
+    x_abs_max = max(abs(float(partial_df["lntl_resid"].min())), abs(float(partial_df["lntl_resid"].max())), 0.25)
+    scale_ratio = 0.25 / x_abs_max if x_abs_max > 0 else 1.0
+    ylim = max(y_abs_max * scale_ratio, 1e-3)
+    ax.set_ylim(-ylim, ylim)
     ax.set_title(f"控制双固定效应后的 {CORE_VAR} 净关系图")
     ax.set_xlabel(f"{CORE_VAR} 残差")
     ax.set_ylabel(f"{DEP_VAR} 残差")
-    ax.legend(loc="upper left", ncol=2, fontsize=fs(9), frameon=True, borderaxespad=0.8)
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.995),
+        ncol=5,
+        frameon=True,
+        borderaxespad=0.2,
+        handletextpad=0.35,
+        columnspacing=0.8,
+        labelspacing=0.35,
+    )
     fig.tight_layout()
 
     out = OUT_DIR / "07_夜间灯光与效率偏回归关系图.png"
@@ -554,31 +572,12 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     return out
 
 
-def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
+def plot_diagnostics_pair(df: pd.DataFrame) -> Path:
     years = sorted(df["year"].unique())
     year_color_map = get_year_color_map(years)
-    fig, axes = plt.subplots(1, 3, figsize=(20.0, 6.9))
+    fig, axes = plt.subplots(1, 2, figsize=(13.8, 6.9))
 
     ax = axes[0]
-    for year in years:
-        part = df.loc[df["year"] == year]
-        ax.scatter(
-            part[DEP_VAR],
-            part["fitted"],
-            s=28,
-            color=year_color_map[year],
-            alpha=0.8,
-            edgecolor="white",
-            linewidth=0.35,
-        )
-    lower = min(df[DEP_VAR].min(), df["fitted"].min())
-    upper = max(df[DEP_VAR].max(), df["fitted"].max())
-    ax.plot([lower, upper], [lower, upper], color="#111827", linewidth=1.5)
-    ax.set_title("预测值-真实值")
-    ax.set_xlabel("真实值 eff")
-    ax.set_ylabel("预测值 eff")
-
-    ax = axes[1]
     for year in years:
         part = df.loc[df["year"] == year]
         ax.scatter(
@@ -594,15 +593,17 @@ def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
     ax.set_title("拟合值-残差")
     ax.set_xlabel("拟合值")
     ax.set_ylabel("残差")
+    resid_limit = symmetric_limit(df["resid"])
+    ax.set_ylim(-resid_limit, resid_limit)
 
-    ax = axes[2]
+    ax = axes[1]
     qq_df = df[["year", "province", "std_resid"]].copy()
     qq_df = qq_df.sort_values(["std_resid", "year", "province"]).reset_index(drop=True)
     n = len(qq_df)
     probs = (np.arange(1, n + 1) - 0.5) / n
     qq_df["theoretical_q"] = stats.norm.ppf(probs)
     qq_df["ordered_std_resid"] = qq_df["std_resid"].to_numpy()
-    slope, intercept, r = stats.probplot(qq_df["std_resid"].to_numpy(), dist="norm", fit=True)[1]
+    slope, intercept, _ = stats.probplot(qq_df["std_resid"].to_numpy(), dist="norm", fit=True)[1]
     for year in years:
         part = qq_df.loc[qq_df["year"] == year]
         ax.scatter(
@@ -618,17 +619,20 @@ def plot_diagnostics_triptych(df: pd.DataFrame) -> Path:
     ax.set_title("标准化残差 Q-Q")
     ax.set_xlabel("理论分位数")
     ax.set_ylabel("样本分位数")
-    ax.text(0.04, 0.94, f"R = {r:.4f}", transform=ax.transAxes, ha="left", va="top", fontsize=fs(9))
+    ax.set_xlim(-4, 4)
+    ax.set_ylim(-4, 4)
+    ax.axhline(0, color="#9CA3AF", linewidth=1.0, linestyle="--", zorder=1)
+    ax.axvline(0, color="#9CA3AF", linewidth=1.0, linestyle="--", zorder=1)
 
     handles = [
         plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=year_color_map[year], markersize=7, label=str(year))
         for year in years
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=8, frameon=False, bbox_to_anchor=(0.5, -0.02), fontsize=fs(9), columnspacing=1.1, handletextpad=0.5)
-    fig.suptitle("基准回归诊断图组", y=1.02, fontsize=fs(14))
+    fig.legend(handles=handles, loc="lower center", ncol=8, frameon=False, bbox_to_anchor=(0.5, -0.02), columnspacing=1.1, handletextpad=0.5)
+    fig.suptitle("基准回归残差诊断图组", y=1.02)
     fig.tight_layout(rect=(0, 0.1, 1, 0.97))
 
-    out = OUT_DIR / "08_诊断图组三联图.png"
+    out = OUT_DIR / "08_诊断图组后二联图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return out
@@ -648,6 +652,9 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
     fitted_df.to_csv(fitted_path, index=False, encoding="utf-8-sig")
 
     obsolete_paths = [
+        OUT_DIR / "08_诊断图组三联图.png",
+        OUT_DIR / "08_诊断图组三联图.svg",
+        OUT_DIR / "08_诊断图组后二联图.png",
         OUT_DIR / "03_pred_vs_actual_scatter.png",
         OUT_DIR / "04_residual_vs_fitted.png",
         OUT_DIR / "05_residual_qq.png",
@@ -665,9 +672,12 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
     plot_paths = [
         plot_lntl_eff_scatter(fitted_df),
         plot_true_vs_pred_sequence(fitted_df),
+        plot_pred_vs_actual(fitted_df),
+        plot_residual_vs_fitted(fitted_df),
+        plot_residual_qq(fitted_df),
         plot_coefficient_forest(result),
         plot_partial_relationship(fitted_df, result),
-        plot_diagnostics_triptych(fitted_df),
+        plot_diagnostics_pair(fitted_df),
     ]
 
     report_lines = [
