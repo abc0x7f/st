@@ -1,8 +1,10 @@
 from pathlib import Path
 import sys
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from matplotlib import colors, font_manager
 import pandas as pd
 import seaborn as sns
 
@@ -27,12 +29,36 @@ REGION_MAP = {
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
-    plt.rcParams["font.family"] = [
-        "Times New Roman",
-        "SimSun",
-        "DejaVu Serif",
-    ]
-    plt.rcParams["axes.unicode_minus"] = False
+    sns.set_context("talk")
+    serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
+    chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    serif = next((name for name in serif_candidates if name in available), "DejaVu Serif")
+    chinese = next((name for name in chinese_candidates if name in available), "DejaVu Sans")
+    matplotlib.rcParams["font.family"] = [serif, chinese]
+    matplotlib.rcParams["font.serif"] = [serif]
+    matplotlib.rcParams["font.sans-serif"] = [chinese]
+    matplotlib.rcParams["axes.unicode_minus"] = False
+
+
+def darken_color(color: str | tuple[float, float, float], factor: float = 0.60) -> tuple[float, float, float]:
+    rgb = colors.to_rgb(color)
+    return tuple(channel * factor for channel in rgb)
+
+
+def centered_symlog_transform(values: pd.Series | list[float], center: float = 1.0) -> pd.Series:
+    return pd.Series(values, copy=False, dtype=float) - center
+
+
+def centered_symlog_tick_formatter(value: float, _pos: int) -> str:
+    raw = value + 1.0
+    if abs(raw - 1.0) < 1e-8:
+        return ""
+    if abs(raw) >= 100:
+        return f"{raw:.0f}"
+    if abs(raw) >= 10:
+        return f"{raw:.1f}".rstrip("0").rstrip(".")
+    return f"{raw:.2f}".rstrip("0").rstrip(".")
 
 
 def find_file(pattern: str) -> Path:
@@ -99,7 +125,7 @@ def draw_trend_plot(
         )
 
     ax.axhline(1, color="#666666", linestyle="--", linewidth=1.2, label="基线 y=1")
-    ax.set_title(title, fontsize=14)
+    ax.set_title(title)
     ax.set_xlabel("时期")
     ax.set_ylabel(ylabel)
     ax.yaxis.set_major_locator(mticker.MaxNLocator(7))
@@ -123,37 +149,74 @@ def draw_distribution_boxplot(panel_df: pd.DataFrame) -> Path:
     )
     label_map = {"tfpch": "tfpch", "effch": "effch", "techch": "techch"}
     long_df["指标"] = long_df["指标"].map(label_map)
+    long_df["偏离值"] = centered_symlog_transform(long_df["数值"])
+
+    palette = {"tfpch": "#2E8B57", "effch": "#5DADE2", "techch": "#E67E22"}
+    order = ["tfpch", "effch", "techch"]
 
     fig, ax = plt.subplots(figsize=(8.8, 5.8))
-    sns.boxplot(
-        data=long_df,
-        x="指标",
-        y="数值",
-        hue="指标",
-        palette=["#2E8B57", "#5DADE2", "#E67E22"],
-        width=0.55,
-        linewidth=1.1,
-        fliersize=3,
-        legend=False,
-        ax=ax,
-    )
+    positions = list(range(len(order)))
+    for pos, metric in zip(positions, order):
+        color = palette[metric]
+        edge_color = darken_color(color)
+        values = long_df.loc[long_df["指标"] == metric, "偏离值"].to_numpy()
+        ax.boxplot(
+            values,
+            positions=[pos],
+            widths=0.52,
+            patch_artist=True,
+            boxprops={
+                "facecolor": (*colors.to_rgb(color), 0.34),
+                "edgecolor": edge_color,
+                "linewidth": 1.7,
+            },
+            whiskerprops={"color": edge_color, "linewidth": 1.45},
+            capprops={"color": edge_color, "linewidth": 1.45},
+            medianprops={"color": edge_color, "linewidth": 1.65},
+            flierprops={
+                "marker": "o",
+                "markerfacecolor": color,
+                "markeredgecolor": edge_color,
+                "markersize": 4.0,
+                "alpha": 0.95,
+            },
+        )
+
     sns.stripplot(
         data=long_df,
         x="指标",
-        y="数值",
-        color="#2F2F2F",
+        y="偏离值",
+        order=order,
+        color="#8F96A3",
         alpha=0.20,
-        jitter=0.18,
-        size=2.2,
+        jitter=0.16,
+        size=2.8,
         ax=ax,
+        zorder=1,
     )
-    ax.axhline(1, color="#666666", linestyle="--", linewidth=1.2, label="基线 y=1")
-    ymax = max(1.15, float(long_df["数值"].max()) * 1.08)
-    ax.set_ylim(top=ymax)
-    ax.set_title("tfpch、effch 与 techch 省际分布并列箱线图", fontsize=14)
+    ax.axhline(0, color="#666666", linestyle="--", linewidth=1.2, label="基线 y=1")
+    ax.set_yscale("symlog", linthresh=0.08, linscale=1.0)
+    ax.yaxis.set_major_formatter(mticker.FuncFormatter(centered_symlog_tick_formatter))
+    ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+    ax.set_xticks(positions)
+    ax.set_xticklabels(order)
+    transformed_min = float(long_df["偏离值"].min())
+    transformed_max = float(long_df["偏离值"].max())
+    margin = max(abs(transformed_min), abs(transformed_max)) * 0.08
+    ax.set_ylim(transformed_min - margin, transformed_max + margin)
+    ax.text(
+        0.02,
+        0,
+        "1",
+        transform=ax.get_yaxis_transform(),
+        ha="left",
+        va="bottom",
+        color="#666666",
+    )
+    ax.set_title("tfpch、effch 与 techch 省际分布并列箱线图")
     ax.set_xlabel("指标")
     ax.set_ylabel("指数数值")
-    _finalize_legend(ax, ymax)
+    _finalize_legend(ax, None)
     fig.tight_layout()
 
     out = OUTPUT_DIR / "14-1_tfpch与effch与techch省际分布并列箱线图.png"
@@ -191,7 +254,7 @@ def draw_region_trend_plot(panel_df: pd.DataFrame) -> Path:
             ax=ax,
         )
         ax.axhline(1, color="#666666", linestyle="--", linewidth=1.1, label="基线 y=1")
-        ax.set_title(title, fontsize=12)
+        ax.set_title(title)
         ax.set_xlabel("时期")
         ax.set_ylabel("指数均值")
         ax.set_ylim(lower, upper)
@@ -199,13 +262,13 @@ def draw_region_trend_plot(panel_df: pd.DataFrame) -> Path:
 
     handles, labels = axes[-1].get_legend_handles_labels()
     if handles:
-        axes[-1].legend(handles, labels, loc="upper right", ncol=1, fontsize=8.5)
+        axes[-1].legend(handles, labels, loc="upper right", ncol=1)
     for ax in axes[:-1]:
         leg = ax.get_legend()
         if leg is not None:
             leg.remove()
 
-    fig.suptitle("分区域 GM 趋势图", fontsize=14, y=0.98)
+    fig.suptitle("分区域 GM 趋势图", y=0.98)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     out = OUTPUT_DIR / "14-2_分区域GM趋势图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -227,7 +290,7 @@ def draw_province_rank_plot(panel_df: pd.DataFrame) -> Path:
     ax.invert_yaxis()
     xmax = max(1.08, float(rank_df["tfpch"].max()) * 1.08)
     ax.set_xlim(left=min(float(rank_df["tfpch"].min()) * 0.98, 0.95), right=xmax)
-    ax.set_title("各省平均 tfpch 排序图", fontsize=14)
+    ax.set_title("各省平均 tfpch 排序图")
     ax.set_xlabel("平均 tfpch")
     ax.set_ylabel("省份")
     _finalize_legend(ax, None)

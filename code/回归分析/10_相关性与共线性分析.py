@@ -37,11 +37,6 @@ LABELS = {
     "open": "对外开放度\nopen",
     "es": "能源结构\nes",
 }
-FONT_SIZE_DELTA = 2
-
-
-def fs(size: float) -> float:
-    return size + FONT_SIZE_DELTA
 
 
 def display_label(variable: str) -> str:
@@ -50,6 +45,7 @@ def display_label(variable: str) -> str:
 
 def configure_matplotlib() -> None:
     sns.set_theme(style="white")
+    sns.set_context("talk")
     serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
     chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
     available = {f.name for f in font_manager.fontManager.ttflist}
@@ -59,12 +55,6 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
-    matplotlib.rcParams["font.size"] = fs(10)
-    matplotlib.rcParams["axes.titlesize"] = fs(12)
-    matplotlib.rcParams["axes.labelsize"] = fs(10)
-    matplotlib.rcParams["xtick.labelsize"] = fs(10)
-    matplotlib.rcParams["ytick.labelsize"] = fs(10)
-    matplotlib.rcParams["legend.fontsize"] = fs(10)
 
 
 def load_data(path: Path) -> pd.DataFrame:
@@ -163,7 +153,6 @@ def draw_corr_ellipse_matrix_on_ax(
                     text,
                     ha="center",
                     va="center",
-                    fontsize=fs(10),
                     color=text_color_for_value(value, cmap, norm),
                     fontweight="normal",
                 )
@@ -174,15 +163,14 @@ def draw_corr_ellipse_matrix_on_ax(
                     corr.index[i],
                     ha="center",
                     va="center",
-                    fontsize=fs(10),
                     color="#111827",
                     fontweight="bold",
                 )
 
     ax.set_xticks(np.arange(n) + 0.5)
     ax.set_yticks(np.arange(n) + 0.5)
-    ax.set_xticklabels(corr.columns, fontsize=fs(10))
-    ax.set_yticklabels(corr.index, fontsize=fs(10))
+    ax.set_xticklabels(corr.columns)
+    ax.set_yticklabels(corr.index)
     ax.xaxis.tick_top()
     plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
     ax.tick_params(length=0, pad=8)
@@ -190,14 +178,14 @@ def draw_corr_ellipse_matrix_on_ax(
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    ax.set_title(title, fontsize=fs(15), pad=28)
+    ax.set_title(title, pad=28)
 
 
 def save_combined_corr_ellipse_matrix(
     pearson_corr: pd.DataFrame,
     spearman_corr: pd.DataFrame,
 ) -> Path:
-    fig, axes = plt.subplots(1, 2, figsize=(26, 11.5), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(26, 13.2), constrained_layout=True)
     draw_corr_ellipse_matrix_on_ax(axes[0], pearson_corr, "Pearson 相关性椭圆矩阵")
     draw_corr_ellipse_matrix_on_ax(axes[1], spearman_corr, "Spearman 相关性椭圆矩阵")
 
@@ -206,12 +194,12 @@ def save_combined_corr_ellipse_matrix(
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=axes, fraction=0.03, pad=0.02)
-    cbar.set_label("相关系数", fontsize=fs(10))
-    cbar.ax.tick_params(labelsize=fs(9))
+    cbar.set_label("相关系数")
 
-    fig.suptitle("第二阶段变量相关性椭圆矩阵", fontsize=fs(17))
+    fig.suptitle("第二阶段变量相关性椭圆矩阵", y=0.97)
     note = "注：下三角为相关性椭圆，上三角为相关系数数值；相关性检验仅作描述性分析，图中不再展示显著性标记。"
-    fig.text(0.01, 0.003, note, ha="left", va="bottom", fontsize=fs(9), color="#4B5563")
+    fig.set_constrained_layout_pads(w_pad=0.04, h_pad=0.06, hspace=0.04, wspace=0.04)
+    fig.text(0.01, 0.02, note, ha="left", va="bottom", color="black")
 
     out_path = OUT_DIR / "相关椭圆矩阵组合图.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
@@ -281,13 +269,13 @@ def save_vif_cleveland_plot(vif_df: pd.DataFrame) -> Path:
     ax.axvline(10, color="#C0392B", linestyle="--", linewidth=1.3, label="VIF=10")
 
     for yi, value in zip(y, vif_df["vif"]):
-        ax.text(value + 0.12, yi, f"{value:.2f}", va="center", ha="left", fontsize=fs(10), color="#111827")
+        ax.text(value + 0.12, yi, f"{value:.2f}", va="center", ha="left", color="#111827")
 
     ax.set_yticks(y)
-    ax.set_yticklabels(vif_df["label"], fontsize=fs(10))
-    ax.set_xlabel("VIF", fontsize=fs(10))
-    ax.set_title("VIF 检验克利夫兰图", fontsize=fs(15), pad=14)
-    ax.tick_params(axis="x", labelsize=fs(10), pad=6)
+    ax.set_yticklabels(vif_df["label"])
+    ax.set_xlabel("VIF")
+    ax.set_title("VIF 检验克利夫兰图", pad=14)
+    ax.tick_params(axis="x", pad=6)
     ax.tick_params(axis="y", pad=8)
     ax.grid(axis="x", color="#E5E7EB", linewidth=0.8)
     ax.grid(axis="y", visible=False)

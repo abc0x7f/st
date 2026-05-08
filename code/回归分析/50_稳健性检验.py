@@ -10,6 +10,7 @@ import pandas as pd
 from matplotlib import font_manager
 from matplotlib.colors import TwoSlopeNorm
 from linearmodels.panel import PanelOLS
+import seaborn as sns
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,14 +25,11 @@ TIME_COL = "year"
 DEP_VAR = CONFIG["dep_var"]
 BASE_CORE_VAR = CONFIG["core_var"]
 CONTROL_VARS = list(CONFIG["control_vars"])
-FONT_SIZE_DELTA = 2
-
-
-def fs(size: float) -> float:
-    return size + FONT_SIZE_DELTA
 
 
 def configure_matplotlib() -> None:
+    sns.set_theme(style="whitegrid")
+    sns.set_context("talk")
     available = {f.name for f in font_manager.fontManager.ttflist}
     serif_candidates = ["Times New Roman", "Times New Roman PS MT", "DejaVu Serif"]
     chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC"]
@@ -41,12 +39,6 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["font.serif"] = [serif]
     matplotlib.rcParams["font.sans-serif"] = [chinese]
     matplotlib.rcParams["axes.unicode_minus"] = False
-    matplotlib.rcParams["font.size"] = fs(10)
-    matplotlib.rcParams["axes.titlesize"] = fs(12)
-    matplotlib.rcParams["axes.labelsize"] = fs(10)
-    matplotlib.rcParams["xtick.labelsize"] = fs(10)
-    matplotlib.rcParams["ytick.labelsize"] = fs(10)
-    matplotlib.rcParams["legend.fontsize"] = fs(9)
 
 
 def format_decimal(value: float, digits: int = 4) -> str:
@@ -100,33 +92,35 @@ def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
     xticks = [x for x in xticks if x <= xmax]
     ax.set_xticks(xticks)
     ax.set_xticklabels([f"{x:.2f}" for x in xticks])
-    ax.set_xlabel("系数估计值", fontsize=fs(10))
-    ax.set_title("稳健性检验核心系数森林图", fontsize=fs(12))
+    ax.axvline(0, color="#7F7F7F", linewidth=1.0, zorder=1)
+    ax.set_xlabel("系数估计值")
+    ax.set_title("稳健性检验核心系数森林图")
+    ax.grid(axis="x", color="#D1D5DB", linestyle="--", linewidth=0.8)
     ax.grid(axis="y", linestyle=":", alpha=0.22)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
-    ax.tick_params(axis="x", labelsize=fs(9), pad=6)
+    ax.tick_params(axis="x", pad=6)
 
     ax_left.set_xlim(0, 1)
     ax_left.set_ylim(ax.get_ylim())
     ax_left.axis("off")
-    ax_left.text(0.00, len(plot_df) - 0.1, "模型", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_left.text(0.00, len(plot_df) - 0.1, "模型", ha="left", va="bottom", color="black", fontweight="bold")
     for idx, row in plot_df.iterrows():
-        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", fontsize=fs(9.6), color="black")
+        ax_left.text(0.00, y_pos[idx], row["label"], ha="left", va="center", color="black")
 
     ax_right.set_xlim(0, 1)
     ax_right.set_ylim(ax.get_ylim())
     ax_right.axis("off")
-    ax_right.text(0.02, len(plot_df) - 0.1, "coef (95% CI)", ha="left", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
-    ax_right.text(0.98, len(plot_df) - 0.1, "p", ha="right", va="bottom", fontsize=fs(10), color="black", fontweight="bold")
+    ax_right.text(0.02, len(plot_df) - 0.1, "coef (95% CI)", ha="left", va="bottom", color="black", fontweight="bold")
+    ax_right.text(0.98, len(plot_df) - 0.1, "p", ha="right", va="bottom", color="black", fontweight="bold")
     for idx, row in plot_df.iterrows():
         coef_text = (
             f"{format_decimal(row['coef_core'])} "
             f"({format_decimal(row['ci_lower'])}, {format_decimal(row['ci_upper'])})"
         )
-        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", fontsize=fs(9.2), color="black")
-        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", fontsize=fs(9.2), color="black")
+        ax_right.text(0.02, y_pos[idx], coef_text, ha="left", va="center", color="black")
+        ax_right.text(0.98, y_pos[idx], f"{format_decimal(row['p_core'])}{row['stars_core']}", ha="right", va="center", color="black")
 
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "稳健性核心森林图.png"
