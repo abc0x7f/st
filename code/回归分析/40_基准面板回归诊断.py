@@ -28,6 +28,10 @@ DEP_VAR = CONFIG["dep_var"]
 CORE_VAR = CONFIG["core_var"]
 CONTROL_VARS = list(CONFIG["control_vars"])
 MODEL_FORMULA = f"{DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)} + C(province) + C(year)"
+DISPLAY_NAME_MAP = {
+    "eff": "碳排放效率",
+    "lntl": "夜间灯光强度",
+}
 
 
 def resolve_output_path(path: Path) -> Path:
@@ -49,7 +53,11 @@ def format_decimal(value: float, digits: int = 4) -> str:
 
 
 def core_display_name() -> str:
-    return "夜间灯光聚集度" if CORE_VAR == "lntl" else f"核心变量 {CORE_VAR}"
+    return DISPLAY_NAME_MAP.get(CORE_VAR, f"核心变量 {CORE_VAR}")
+
+
+def var_display_name(var_name: str) -> str:
+    return DISPLAY_NAME_MAP.get(var_name, var_name)
 
 
 def configure_matplotlib() -> None:
@@ -234,9 +242,9 @@ def plot_lntl_eff_scatter(df: pd.DataFrame) -> Path:
     y_line = intercept + slope * x_line
     ax.plot(x_line, y_line, color="#1F2933", linewidth=2.2, label="线性拟合")
 
-    ax.set_title(f"{CORE_VAR} 与 {DEP_VAR} 散点拟合图")
-    ax.set_xlabel(CORE_VAR)
-    ax.set_ylabel(DEP_VAR)
+    ax.set_title(f"{var_display_name(CORE_VAR)}与{var_display_name(DEP_VAR)}散点拟合图")
+    ax.set_xlabel(var_display_name(CORE_VAR))
+    ax.set_ylabel(var_display_name(DEP_VAR))
     ax.set_xlim(right=3.0)
     ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
@@ -265,7 +273,7 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
             edgecolor="white",
             linewidth=0.35,
             zorder=3,
-            label="真实eff值" if year_idx == 0 else None,
+            label=f"真实{var_display_name(DEP_VAR)}值" if year_idx == 0 else None,
         )
         ax.plot(
             x,
@@ -274,13 +282,13 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
             linewidth=1.1,
             marker="s",
             markersize=3.3,
-            label="预测eff值" if year_idx == 0 else None,
+            label=f"预测{var_display_name(DEP_VAR)}值" if year_idx == 0 else None,
             zorder=4,
         )
 
-    ax.set_title("真实 eff 与预测 eff 序列图")
+    ax.set_title(f"真实{var_display_name(DEP_VAR)}与预测{var_display_name(DEP_VAR)}序列图")
     ax.set_xlabel("样本序号")
-    ax.set_ylabel("eff")
+    ax.set_ylabel(var_display_name(DEP_VAR))
     ax.set_xlim(0, 240)
     major_ticks = np.arange(0, 241, 30)
     ax.set_xticks(major_ticks)
@@ -292,7 +300,7 @@ def plot_true_vs_pred_sequence(df: pd.DataFrame) -> Path:
     fig.text(
         0.5,
         0.01,
-        "注：先按 2015 年 eff 从小到大确定省份顺序；其后各年份均保持该顺序，且同一年份样本相邻排列。",
+        f"注：先按 2015 年{var_display_name(DEP_VAR)}从小到大确定省份顺序；其后各年份均保持该顺序，且同一年份样本相邻排列。",
         ha="center",
         va="bottom",
     )
@@ -327,8 +335,8 @@ def plot_pred_vs_actual(df: pd.DataFrame) -> Path:
     ax.plot([lower, upper], [lower, upper], color="black", linewidth=1.8, label="45°线")
 
     ax.set_title("预测值-真实值散点图")
-    ax.set_xlabel("真实值 eff")
-    ax.set_ylabel("预测值 eff")
+    ax.set_xlabel(f"真实值{var_display_name(DEP_VAR)}")
+    ax.set_ylabel(f"预测值{var_display_name(DEP_VAR)}")
     ax.legend(loc="upper left", ncol=2, frameon=True, borderaxespad=0.8)
     fig.subplots_adjust(left=0.05, right=0.985, top=0.9, bottom=0.13, wspace=0.05)
     out = OUT_DIR / "03_预测值与真实值散点图.png"
@@ -416,7 +424,7 @@ def plot_coefficient_forest(result) -> Path:
     coef_table = build_regression_table(result)
     coef_table = coef_table.loc[coef_table["variable"].isin([CORE_VAR, *CONTROL_VARS])].copy()
     label_map = {
-        "lntl": "夜间灯光聚集度",
+        "lntl": "夜间灯光强度",
         "ind": "产业结构",
         "urb": "城镇化水平",
         "rd": "研发投入",
@@ -551,9 +559,9 @@ def plot_partial_relationship(df: pd.DataFrame, result) -> Path:
     scale_ratio = 0.25 / x_abs_max if x_abs_max > 0 else 1.0
     ylim = max(y_abs_max * scale_ratio, 1e-3)
     ax.set_ylim(-ylim, ylim)
-    ax.set_title(f"控制双固定效应后的 {CORE_VAR} 净关系图")
-    ax.set_xlabel(f"{CORE_VAR} 残差")
-    ax.set_ylabel(f"{DEP_VAR} 残差")
+    ax.set_title(f"控制双固定效应后的{var_display_name(CORE_VAR)}净关系图")
+    ax.set_xlabel(f"{var_display_name(CORE_VAR)}残差")
+    ax.set_ylabel(f"{var_display_name(DEP_VAR)}残差")
     ax.legend(
         loc="upper center",
         bbox_to_anchor=(0.5, 0.995),

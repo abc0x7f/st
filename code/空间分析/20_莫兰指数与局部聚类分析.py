@@ -32,6 +32,7 @@ LOCAL_PLOT_YEARS = [2015, 2018, 2022]
 N_PERMUTATIONS = 9999
 RANDOM_SEED = 42
 LOCAL_SIGNIFICANCE_ALPHA = 0.10
+EFF_DISPLAY_NAME = "碳排放效率"
 PROVINCE_NAME_MAP = {
     "北京": "北京市",
     "天津": "天津市",
@@ -565,7 +566,7 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
     axes[2].set_ylabel("空间滞后值")
     axes[0].set_xlabel("")
     axes[1].set_xlabel("")
-    axes[2].set_xlabel("标准化 eff")
+    axes[2].set_xlabel(f"标准化{EFF_DISPLAY_NAME}")
 
     legend_handles = [
         Line2D([0], [0], marker="o", color="w", label="高-高", markerfacecolor=SCATTER_COLORS["HH"], markersize=10),
@@ -596,7 +597,7 @@ def save_moran_scatter_plot(local_result: pd.DataFrame, global_result: pd.DataFr
         color="black",
         wrap=True,
     )
-    fig.suptitle("图24 eff 的 Moran 散点图（2015、2018、2022）", y=0.97)
+    fig.suptitle(f"图24 {EFF_DISPLAY_NAME}的 Moran 散点图（2015、2018、2022）", y=0.97)
 
     out_path = OUT_DIR / "24_效率莫兰散点图_2015_2018_2022.png"
     fig.savefig(out_path, dpi=300, bbox_inches="tight")
@@ -955,7 +956,7 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
         color="black",
         wrap=True,
     )
-    fig.suptitle("图25 eff 的 LISA 聚类图（2015、2018、2022）", y=0.99)
+    fig.suptitle(f"图25 {EFF_DISPLAY_NAME}的 LISA 聚类图（2015、2018、2022）", y=0.99)
 
     combined_out_path = OUT_DIR / "25_效率局部聚类图_2015_2018_2022.png"
     fig.savefig(combined_out_path, dpi=300, bbox_inches="tight")
@@ -1006,7 +1007,7 @@ def save_lisa_cluster_maps_split(local_result: pd.DataFrame) -> list[Path]:
             color="black",
             wrap=True,
         )
-        fig.suptitle(f"图25-{idx} eff 的 LISA 聚类图（{year}）", y=0.98)
+        fig.suptitle(f"图25-{idx} {EFF_DISPLAY_NAME}的 LISA 聚类图（{year}）", y=0.98)
         out_path = OUT_DIR / f"25-{idx}_效率局部聚类图_{year}.png"
         fig.savefig(out_path, dpi=300, bbox_inches="tight")
         plt.close(fig)

@@ -27,6 +27,10 @@ MAP_YEAR = 2022
 KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]
 MAP_FONT_SIZE_DELTA = 8
+DISPLAY_NAME_MAP = {
+    "lntl": "夜间灯光强度",
+    "mean_eff": "平均碳排放效率",
+}
 
 PROVINCE_NAME_MAP = {
     "北京市": "北京", "天津市": "天津", "上海市": "上海", "重庆市": "重庆",
@@ -129,11 +133,11 @@ def save_year_mean_plot(df: pd.DataFrame) -> Path:
         linewidth=2.4,
         color="#2E8B57",
         ax=ax,
-        label="全国年度均值",
+        label="全国平均碳排放效率",
     )
     ax.set_title("全国碳排放效率年度均值折线图", fontsize=14)
     ax.set_xlabel("年份")
-    ax.set_ylabel("碳排放效率年度均值")
+    ax.set_ylabel("平均碳排放效率")
     ax.set_xticks(year_mean["year"])
     ax.yaxis.set_major_locator(mticker.MaxNLocator(6))
     ax.legend(loc="best")
@@ -214,7 +218,7 @@ def save_region_boxplot(df: pd.DataFrame) -> Path:
         linewidth=2.4,
         alpha=0.95,
         zorder=1,
-        label="全国碳排放效率均值",
+        label="全国平均碳排放效率",
     )
     offsets = np.array([-0.30, -0.10, 0.10, 0.30])
     box_width = 0.16
@@ -262,7 +266,7 @@ def save_region_boxplot(df: pd.DataFrame) -> Path:
         Patch(facecolor=mcolors.to_rgba(palette[region], alpha=0.42), edgecolor=edge_palette[region], label=region)
         for region in region_order
     ]
-    legend_handles.append(plt.Line2D([], [], color="#4D4D4D", linewidth=2.4, marker="o", markersize=6, label="全国碳排放效率均值"))
+    legend_handles.append(plt.Line2D([], [], color="#4D4D4D", linewidth=2.4, marker="o", markersize=6, label="全国平均碳排放效率"))
 
     ax.set_title("2015-2022年分区域碳排放效率箱线图", fontsize=20, pad=14)
     ax.set_xlabel("年份", fontsize=16)

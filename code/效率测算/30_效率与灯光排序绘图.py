@@ -108,10 +108,10 @@ def draw_plot(df: pd.DataFrame) -> Path:
     for i, province in enumerate(df["province"]):
         ax_mid.text(0.5, i, province, ha="center", va="center", fontsize=10.5)
 
-    ax_left.set_title("各省平均 lntl", fontsize=14, pad=10)
-    ax_right.set_title("各省平均效率", fontsize=14, pad=10)
-    ax_left.set_xlabel("平均 lntl", fontsize=11)
-    ax_right.set_xlabel("平均效率值", fontsize=11)
+    ax_left.set_title("各省平均夜间灯光强度", fontsize=14, pad=10)
+    ax_right.set_title("各省平均碳排放效率", fontsize=14, pad=10)
+    ax_left.set_xlabel("平均夜间灯光强度", fontsize=11)
+    ax_right.set_xlabel("平均碳排放效率", fontsize=11)
     ax_left.set_xlim(lntl_max * 1.18, 0)
     ax_right.set_xlim(0, max(eff_max * 1.16, 1.08))
 
@@ -135,8 +135,8 @@ def draw_plot(df: pd.DataFrame) -> Path:
             spine.set_color("black")
             spine.set_linewidth(1.0)
 
-    fig.suptitle("各省平均效率与平均 lntl 对比排序图", fontsize=16, y=0.98)
-    fig.text(0.5, 0.02, "注：省份顺序按平均效率值由高到低排列。", ha="center", fontsize=10)
+    fig.suptitle("各省平均碳排放效率与平均夜间灯光强度对比排序图", fontsize=16, y=0.98)
+    fig.text(0.5, 0.02, "注：省份顺序按平均碳排放效率由高到低排列。", ha="center", fontsize=10)
     fig.subplots_adjust(left=0.05, right=0.97, top=0.93, bottom=0.06, wspace=0.005)
 
     output_path = OUT_DIR / "各省平均效率与平均lntl对比排序图.png"
@@ -169,8 +169,8 @@ def draw_eff_only_plot(df: pd.DataFrame) -> Path:
             color="#17351e",
         )
 
-    ax_bar.set_title("各省平均效率排序图", fontsize=15, pad=10)
-    ax_bar.set_xlabel("平均效率值", fontsize=11)
+    ax_bar.set_title("各省平均碳排放效率排序图", fontsize=15, pad=10)
+    ax_bar.set_xlabel("平均碳排放效率", fontsize=11)
     ax_bar.set_xlim(0, max(eff_max * 1.12, 1.08))
     ax_bar.set_yticks(y)
     ax_bar.set_yticklabels(df["province"], fontsize=11)

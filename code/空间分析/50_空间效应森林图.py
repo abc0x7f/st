@@ -130,6 +130,14 @@ def configure_matplotlib() -> None:
     matplotlib.rcParams["grid.linewidth"] = 0.7
     matplotlib.rcParams["grid.alpha"] = 0.20
     matplotlib.rcParams["grid.color"] = "#9CA3AF"
+    matplotlib.rcParams["font.size"] = 11
+    matplotlib.rcParams["axes.titlesize"] = 15
+    matplotlib.rcParams["axes.labelsize"] = 11
+    matplotlib.rcParams["xtick.labelsize"] = 10
+    matplotlib.rcParams["ytick.labelsize"] = 10
+    matplotlib.rcParams["legend.fontsize"] = 10
+    matplotlib.rcParams["legend.title_fontsize"] = 11
+    matplotlib.rcParams["figure.titlesize"] = 16
 
 
 def format_decimal(value: float, digits: int = 4) -> str:
@@ -414,7 +422,6 @@ def add_north_arrow(ax, x: float = 0.50, y: float = 0.95, size: float = 0.08) ->
         transform=ax.transAxes,
         ha="center",
         va="bottom",
-        fontsize=12,
         fontweight="bold",
         color="#111827",
         zorder=6,
@@ -446,7 +453,6 @@ def add_scale_bar(
         f"{int(length_km)} km",
         ha="center",
         va="bottom",
-        fontsize=10,
         color="#111827",
         zorder=6,
     )
@@ -548,7 +554,6 @@ def add_network_legends(fig) -> None:
         bbox_to_anchor=(0.01, 0.06, 0.38, 0.11),
         ncol=5,
         frameon=True,
-        fontsize=10,
         title="LISA 聚类",
         mode="expand",
         borderaxespad=0.0,
@@ -560,7 +565,6 @@ def add_network_legends(fig) -> None:
         bbox_to_anchor=(0.39, 0.06, 0.26, 0.11),
         ncol=2,
         frameon=True,
-        fontsize=10,
         title="边方向与符号",
         mode="expand",
         borderaxespad=0.0,
@@ -572,7 +576,6 @@ def add_network_legends(fig) -> None:
         bbox_to_anchor=(0.71, 0.06, 0.28, 0.11),
         ncol=3,
         frameon=True,
-        fontsize=10,
         title="节点大小",
         scatterpoints=1,
         mode="expand",
@@ -591,7 +594,7 @@ def add_network_legends_to_axis(ax) -> None:
     ]
     for x, y, w, h, title in box_specs:
         ax.add_patch(Rectangle((x, y), w, h, facecolor="white", edgecolor="#D1D5DB", linewidth=1.0))
-        ax.text(x + w / 2.0, y + h - 0.05, title, ha="center", va="center", fontsize=14.5, color="black")
+        ax.text(x + w / 2.0, y + h - 0.05, title, ha="center", va="center", color="black")
 
     lisa_items = [
         ("高-高", LISA_COLORS["HH"]),
@@ -603,19 +606,19 @@ def add_network_legends_to_axis(ax) -> None:
     lisa_xs = [0.10, 0.28, 0.46, 0.64, 0.82]
     for x, (label, color) in zip(lisa_xs, lisa_items):
         ax.scatter(x, 0.79, s=95, color=color, edgecolors="white", linewidths=0.7)
-        ax.text(x + 0.03, 0.79, label, ha="left", va="center", fontsize=11, color="black")
+        ax.text(x + 0.03, 0.79, label, ha="left", va="center", color="black")
 
     ax.plot([0.23, 0.41], [0.53, 0.53], color="#C2410C", linewidth=2.8, alpha=0.9, solid_capstyle="round")
-    ax.text(0.43, 0.53, "正向溢出", ha="left", va="center", fontsize=11.5, color="black")
+    ax.text(0.43, 0.53, "正向溢出", ha="left", va="center", color="black")
     ax.plot([0.58, 0.76], [0.53, 0.53], color="#1D4ED8", linewidth=2.8, alpha=0.9, solid_capstyle="round")
-    ax.text(0.78, 0.53, "负向溢出", ha="left", va="center", fontsize=11.5, color="black")
+    ax.text(0.78, 0.53, "负向溢出", ha="left", va="center", color="black")
 
     size_values = np.array([0.30, 0.60, 0.90], dtype=float)
     size_markers = minmax_scale(size_values, *NETWORK_NODE_SIZE_RANGE)
     xs = [0.24, 0.50, 0.76]
     for x, size, value in zip(xs, size_markers, size_values):
         ax.scatter(x, 0.285, s=size, color="#BFC5D1", edgecolors="white", linewidths=0.7, alpha=0.9)
-        ax.text(x, 0.245, f"eff={value:.2f}", ha="center", va="top", fontsize=11, color="black")
+        ax.text(x, 0.245, f"eff={value:.2f}", ha="center", va="top", color="black")
 
     ax.text(
         0.04,
@@ -623,7 +626,6 @@ def add_network_legends_to_axis(ax) -> None:
         "注：边颜色由出发地深色向目的地浅色过渡，弱连接通过较低透明度淡化；比例尺按图幅中心纬度换算 500 km 的经度长度。",
         ha="left",
         va="bottom",
-        fontsize=10.5,
         color="black",
         wrap=True,
     )
@@ -694,7 +696,6 @@ def draw_spillover_panel(
             row.center_lon + 0.25,
             row.center_lat + 0.18,
             row.province,
-            fontsize=9,
             color="#111827",
             zorder=3,
         )
@@ -705,7 +706,7 @@ def draw_spillover_panel(
         add_scale_bar(ax, xlim, ylim, length_km=500.0)
     if show_north:
         add_north_arrow(ax)
-    ax.set_title(title, fontsize=15, pad=10)
+    ax.set_title(title, pad=10)
 
 
 def plot_spillover_network_maps(effect_df: pd.DataFrame, weight_type: str) -> tuple[list[Path], Path, Path]:
@@ -891,7 +892,6 @@ def add_figure_legend(fig, anchor_x: float) -> None:
         group_labels,
         loc="lower left",
         frameon=True,
-        fontsize=10.5,
         borderpad=0.35,
         labelspacing=0.5,
         handlelength=1.5,
@@ -936,8 +936,8 @@ def plot_sorted_economic_matrix_heatmap() -> Path:
     ax.set_title("按 GDP 从高到低排序的行标准化经济矩阵热力图", pad=12)
     ax.set_xlabel("省份（按平均 GDP 降序）")
     ax.set_ylabel("省份（按平均 GDP 降序）")
-    ax.tick_params(axis="x", rotation=90, labelsize=10)
-    ax.tick_params(axis="y", rotation=0, labelsize=10)
+    ax.tick_params(axis="x", rotation=90)
+    ax.tick_params(axis="y", rotation=0)
     fig.tight_layout()
 
     out_path = resolve_output_path(OUT_DIR / "50_行标准化经济矩阵热力图_GDP降序.png")
@@ -1017,7 +1017,6 @@ def plot_effect_stacked_bar(effect_df: pd.DataFrame, weight_type: str) -> Path:
             ha=ha,
             va="center",
             color="black",
-            fontsize=11,
         )
 
     x_abs = max(
@@ -1043,7 +1042,6 @@ def plot_effect_stacked_bar(effect_df: pd.DataFrame, weight_type: str) -> Path:
         loc="lower right",
         ncol=3,
         frameon=True,
-        fontsize=10.5,
         borderpad=0.5,
         handlelength=1.6,
         columnspacing=0.9,
@@ -1148,7 +1146,7 @@ def plot_effect_forest(effect_df: pd.DataFrame, weight_type: str) -> Path:
                 f"({format_decimal(row['ll'])}, {format_decimal(row['ul'])})\n"
                 f"p={format_decimal(row['pvalue'])}"
             )
-            ax.text(0.02, row_idx, text, ha="left", va="center", color="black", fontsize=9.8, linespacing=1.20)
+            ax.text(0.02, row_idx, text, ha="left", va="center", color="black", linespacing=1.20)
 
     fig.suptitle(f"核心解释变量空间效应森林图（{weight_label}）", y=0.98)
     fig.subplots_adjust(left=0.04, right=0.99, top=0.90, bottom=0.14, wspace=0.04)

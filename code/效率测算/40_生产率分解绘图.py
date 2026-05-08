@@ -17,6 +17,14 @@ CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 RESULT_DIR = derived_dearun_result_dir(CONFIG)
 OUTPUT_DIR = stage_output_dir(CONFIG, "20_GM分解绘图")
 
+TERM_LABELS = {
+    "tfpch": "全要素生产率（tfpch）",
+    "effch": "效率变化（effch）",
+    "techch": "技术变化（techch）",
+    "pech": "纯技术效率变化（pech）",
+    "sech": "规模效率变化（sech）",
+}
+
 REGION_MAP = {
     "北京": "东部", "天津": "东部", "河北": "东部", "上海": "东部", "江苏": "东部",
     "浙江": "东部", "福建": "东部", "山东": "东部", "广东": "东部", "海南": "东部",
@@ -101,6 +109,10 @@ def _finalize_legend(ax: plt.Axes, ymax: float | None = None) -> None:
         ax.set_ylim(top=ymax)
 
 
+def term_label(name: str) -> str:
+    return TERM_LABELS.get(name, name)
+
+
 def draw_trend_plot(
     df: pd.DataFrame,
     title: str,
@@ -147,12 +159,12 @@ def draw_distribution_boxplot(panel_df: pd.DataFrame) -> Path:
         var_name="指标",
         value_name="数值",
     )
-    label_map = {"tfpch": "tfpch", "effch": "effch", "techch": "techch"}
+    label_map = {name: term_label(name) for name in ["tfpch", "effch", "techch"]}
     long_df["指标"] = long_df["指标"].map(label_map)
     long_df["偏离值"] = centered_symlog_transform(long_df["数值"])
 
-    palette = {"tfpch": "#2E8B57", "effch": "#5DADE2", "techch": "#E67E22"}
-    order = ["tfpch", "effch", "techch"]
+    palette = {term_label("tfpch"): "#2E8B57", term_label("effch"): "#5DADE2", term_label("techch"): "#E67E22"}
+    order = [term_label("tfpch"), term_label("effch"), term_label("techch")]
 
     fig, ax = plt.subplots(figsize=(8.8, 5.8))
     positions = list(range(len(order)))
@@ -213,7 +225,7 @@ def draw_distribution_boxplot(panel_df: pd.DataFrame) -> Path:
         va="bottom",
         color="#666666",
     )
-    ax.set_title("tfpch、effch 与 techch 省际分布并列箱线图")
+    ax.set_title(f"{term_label('tfpch')}、{term_label('effch')}与{term_label('techch')}省际分布并列箱线图")
     ax.set_xlabel("指标")
     ax.set_ylabel("指数数值")
     _finalize_legend(ax, None)
@@ -235,7 +247,7 @@ def draw_region_trend_plot(panel_df: pd.DataFrame) -> Path:
     palette = {"东部": "#2E8B57", "中部": "#5DADE2", "西部": "#E67E22", "东北": "#8E44AD"}
 
     fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.2), sharex=True, sharey=True)
-    metric_config = [("tfpch", "GM（tfpch）"), ("effch", "effch"), ("techch", "techch")]
+    metric_config = [("tfpch", term_label("tfpch")), ("effch", term_label("effch")), ("techch", term_label("techch"))]
     ymax = max(float(region_df[col].max()) for col, _ in metric_config)
     upper = max(1.12, ymax * 1.10)
     ymin = min(float(region_df[col].min()) for col, _ in metric_config)
@@ -268,7 +280,7 @@ def draw_region_trend_plot(panel_df: pd.DataFrame) -> Path:
         if leg is not None:
             leg.remove()
 
-    fig.suptitle("分区域 GM 趋势图", y=0.98)
+    fig.suptitle("分区域全要素生产率及其分解项趋势图", y=0.98)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     out = OUTPUT_DIR / "14-2_分区域GM趋势图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
@@ -290,8 +302,8 @@ def draw_province_rank_plot(panel_df: pd.DataFrame) -> Path:
     ax.invert_yaxis()
     xmax = max(1.08, float(rank_df["tfpch"].max()) * 1.08)
     ax.set_xlim(left=min(float(rank_df["tfpch"].min()) * 0.98, 0.95), right=xmax)
-    ax.set_title("各省平均 tfpch 排序图")
-    ax.set_xlabel("平均 tfpch")
+    ax.set_title(f"各省平均{term_label('tfpch')}排序图")
+    ax.set_xlabel(f"平均{term_label('tfpch')}")
     ax.set_ylabel("省份")
     _finalize_legend(ax, None)
     fig.tight_layout()
@@ -323,12 +335,12 @@ def main() -> None:
     outputs = [
         draw_trend_plot(
             gm_df,
-            "GM 及其分解项年度趋势图",
+            "全要素生产率及其分解项年度趋势图",
             "指数均值",
             [
-                ("tfpch", "GM（tfpch）", "#2E8B57"),
-                ("effch", "效率变化（effch）", "#5DADE2"),
-                ("techch", "技术变化（techch）", "#E67E22"),
+                ("tfpch", term_label("tfpch"), "#2E8B57"),
+                ("effch", term_label("effch"), "#5DADE2"),
+                ("techch", term_label("techch"), "#E67E22"),
             ],
             "14_GM及其分解项年度趋势图.png",
         ),
@@ -340,11 +352,11 @@ def main() -> None:
             "FGNZ 分解趋势图",
             "指数均值",
             [
-                ("tfpch", "tfpch", "#2E8B57"),
-                ("effch", "effch", "#5DADE2"),
-                ("techch", "techch", "#E67E22"),
-                ("pech", "pech", "#8E44AD"),
-                ("sech", "sech", "#C0392B"),
+                ("tfpch", term_label("tfpch"), "#2E8B57"),
+                ("effch", term_label("effch"), "#5DADE2"),
+                ("techch", term_label("techch"), "#E67E22"),
+                ("pech", term_label("pech"), "#8E44AD"),
+                ("sech", term_label("sech"), "#C0392B"),
             ],
             "15_FGNZ分解趋势图.png",
         ),
@@ -353,8 +365,8 @@ def main() -> None:
             "RD 分解趋势图",
             "指数均值",
             [
-                ("tfpch", "tfpch", "#2E8B57"),
-                ("pech", "pech", "#8E44AD"),
+                ("tfpch", term_label("tfpch"), "#2E8B57"),
+                ("pech", term_label("pech"), "#8E44AD"),
                 ("ptechch", "ptechch", "#E67E22"),
                 ("SCH", "SCH", "#C0392B"),
             ],

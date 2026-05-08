@@ -34,6 +34,7 @@ def fs(size: float) -> float:
 
 def configure_style() -> None:
     sns.set_theme(style="whitegrid")
+    sns.set_context("talk")
     plt.rcParams["font.family"] = ["Times New Roman", "SimSun", "DejaVu Serif"]
     plt.rcParams["font.serif"] = ["Times New Roman", "DejaVu Serif"]
     plt.rcParams["font.sans-serif"] = ["SimSun", "SimHei", "Microsoft YaHei", "DejaVu Sans"]
@@ -111,14 +112,14 @@ def draw_input_output_scatter(df: pd.DataFrame) -> Path:
             ax=ax,
         )
         add_fit_curve(ax, df[x_col], df[y_col])
-        ax.set_title(f"{COLUMN_LABELS[x_col]} 与 {COLUMN_LABELS[y_col]}", fontsize=fs(12), pad=10)
-        ax.set_xlabel(COLUMN_LABELS[x_col], fontsize=fs(10))
-        ax.set_ylabel(COLUMN_LABELS[y_col], fontsize=fs(10))
+        ax.set_title(f"{COLUMN_LABELS[x_col]} 与 {COLUMN_LABELS[y_col]}", pad=10)
+        ax.set_xlabel(COLUMN_LABELS[x_col])
+        ax.set_ylabel(COLUMN_LABELS[y_col])
         ax.ticklabel_format(style="plain", axis="both", useOffset=False)
         ax.tick_params(axis="both", pad=6)
-        ax.legend(title="年份", fontsize=fs(8), title_fontsize=fs(9), loc="best", ncol=2, frameon=True, borderaxespad=0.8)
+        ax.legend(title="年份", loc="best", ncol=2, frameon=True, borderaxespad=0.8)
 
-    fig.suptitle("投入-产出关系散点图", fontsize=fs(16), y=0.995)
+    fig.suptitle("投入-产出关系散点图", y=0.995)
     fig.tight_layout(rect=(0, 0, 1, 0.982))
     fig.savefig(OUTPUT_PATH, dpi=300, bbox_inches="tight")
     plt.close(fig)
