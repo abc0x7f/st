@@ -3,7 +3,7 @@ from __future__ import annotations
 import locale
 
 from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QSize
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QAction, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -17,14 +17,17 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSplitter,
+    QToolButton,
     QVBoxLayout,
     QWidget,
+    QMenu,
 )
 
 from pipeline_config import LOGO_PATH, PROJECT_ROOT
 from pipeline_service import (
     available_stage_configs,
     check_step,
+    detect_output_health,
     detect_status,
     discover_artifacts,
     list_steps,
@@ -33,12 +36,67 @@ from pipeline_service import (
     open_external_path,
     run_step,
 )
-from stage_config import get_active_config_name, set_active_config_name
+from stage_config import get_active_config_name, get_ui_setting, set_active_config_name, set_ui_setting
 from step_types import ArtifactBundle, RunnerType, StepDefinition, StepStatus
 from ui_panels import ConsolePanel, ImagePanel, MarkdownPanel, TablePanel, status_color
 
 
+class StepListItemWidget(QFrame):
+    def __init__(self, title: str, subtitle: str, subtitle_color: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._selected = False
+        self._title_text = title
+        self.setStyleSheet("QFrame { border: none; border-radius: 6px; }")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(6)
+
+        self.title_label = QLabel(title)
+        self.title_label.setStyleSheet(
+            "border: none; color: #18212b; font-size: 14px; font-weight: 700; min-height: 22px;"
+        )
+        self.title_label.setWordWrap(False)
+        self.title_label.setTextFormat(Qt.PlainText)
+        self.title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel(subtitle)
+        self.subtitle_label.setMinimumHeight(20)
+        self.subtitle_label.setWordWrap(True)
+        layout.addWidget(self.subtitle_label)
+        self.set_status(subtitle, subtitle_color)
+        self.set_selected(False)
+        self.set_title(title)
+
+    def set_title(self, title: str) -> None:
+        self._title_text = title
+        self.title_label.setToolTip(title)
+        self._update_title_elision()
+
+    def set_status(self, subtitle: str, subtitle_color: str) -> None:
+        self.subtitle_label.setText(subtitle)
+        self.subtitle_label.setStyleSheet(
+            f"border: none; color: {subtitle_color}; font-size: 12px; font-weight: 700;"
+        )
+
+    def set_selected(self, selected: bool) -> None:
+        self._selected = selected
+        background = "#e8eef3" if selected else "transparent"
+        self.setStyleSheet(f"QFrame {{ border: none; border-radius: 6px; background: {background}; }}")
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._update_title_elision()
+
+    def _update_title_elision(self) -> None:
+        available_width = max(40, self.title_label.width() - 4)
+        elided = self.title_label.fontMetrics().elidedText(self._title_text, Qt.ElideRight, available_width)
+        self.title_label.setText(elided)
+
+
 class MainWindow(QMainWindow):
+    RENDER_EXISTING_OUTPUTS_KEY = "render_existing_outputs_without_run"
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("光碳智绘：省域碳排放效率可视分析")
@@ -53,6 +111,7 @@ class MainWindow(QMainWindow):
         self.current_artifacts = ArtifactBundle()
         self.running_step_id: str | None = None
         self._config_refreshing = False
+        self.render_existing_outputs = bool(get_ui_setting(self.RENDER_EXISTING_OUTPUTS_KEY, False))
 
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self._read_stdout)
@@ -152,8 +211,55 @@ class MainWindow(QMainWindow):
         title_block_layout.addWidget(title_label)
         title_block_layout.addWidget(self.version_label)
 
+        self.settings_button = QToolButton()
+        self.settings_button.setText("设置")
+        self.settings_button.setPopupMode(QToolButton.InstantPopup)
+        self.settings_button.setStyleSheet(
+            """
+            QToolButton {
+                border: 1px solid #cfd6de;
+                border-radius: 6px;
+                background: #fbfcfd;
+                font-size: 15px;
+                font-weight: 700;
+                padding: 8px 14px;
+                color: #18212b;
+            }
+            QToolButton::menu-indicator {
+                image: none;
+                width: 0px;
+            }
+            QToolButton:hover {
+                background: #f0f4f7;
+            }
+            """
+        )
+        settings_menu = QMenu(self.settings_button)
+        settings_menu.setStyleSheet(
+            """
+            QMenu {
+                background: #fbfcfd;
+                border: 1px solid #d8dee6;
+                padding: 6px;
+            }
+            QMenu::item {
+                padding: 8px 28px 8px 12px;
+            }
+            QMenu::item:selected {
+                background: #e8eef3;
+            }
+            """
+        )
+        self.render_existing_outputs_action = QAction("渲染已存在输出（未点击运行也显示）", self)
+        self.render_existing_outputs_action.setCheckable(True)
+        self.render_existing_outputs_action.setChecked(self.render_existing_outputs)
+        self.render_existing_outputs_action.toggled.connect(self._on_render_existing_outputs_toggled)
+        settings_menu.addAction(self.render_existing_outputs_action)
+        self.settings_button.setMenu(settings_menu)
+
         layout.addWidget(logo_label, 0)
         layout.addWidget(title_block, 1)
+        layout.addWidget(self.settings_button, 0, Qt.AlignTop)
         return frame
 
     def _build_left_column(self) -> QWidget:
@@ -274,20 +380,46 @@ class MainWindow(QMainWindow):
         self.step_list.clear()
         for step in self.steps:
             status = self.statuses.get(step.id, StepStatus.IDLE)
-            item = QListWidgetItem(f"{step.stage} | {step.name}\n{self._status_text(status)}")
+            item = QListWidgetItem()
             item.setData(Qt.UserRole, step.id)
-            item.setBackground(status_color(status.value))
+            item.setSizeHint(QSize(260, 84))
             self.step_list.addItem(item)
+            self._refresh_step_item_widget(self.step_list.count() - 1)
+        self._sync_step_item_selection()
 
     def _refresh_step_item(self, row: int) -> None:
+        self._refresh_step_item_widget(row)
+        self._sync_step_item_selection()
+
+    def _refresh_step_item_widget(self, row: int) -> None:
         step = self.steps[row]
         item = self.step_list.item(row)
         status = self.statuses.get(step.id, StepStatus.IDLE)
-        item.setText(f"{step.stage} | {step.name}\n{self._status_text(status)}")
-        item.setBackground(status_color(status.value))
+        subtitle, subtitle_color = self._display_status(step, status)
+        widget = self.step_list.itemWidget(item)
+        title = f"{step.stage} | {step.name}"
+        if widget is None:
+            widget = StepListItemWidget(title, subtitle, subtitle_color)
+            self.step_list.setItemWidget(item, widget)
+        else:
+            widget.set_title(title)
+            widget.set_status(subtitle, subtitle_color)
+        item.setBackground(Qt.transparent)
+
+    def _sync_step_item_selection(self) -> None:
+        current_row = self.step_list.currentRow()
+        for row in range(self.step_list.count()):
+            widget = self.step_list.itemWidget(self.step_list.item(row))
+            if widget is not None:
+                widget.set_selected(row == current_row)
 
     def _refresh_executable_summary(self) -> None:
         self.version_label.setText("GUI v0.2 | PySide6")
+
+    def _on_render_existing_outputs_toggled(self, checked: bool) -> None:
+        self.render_existing_outputs = checked
+        set_ui_setting(self.RENDER_EXISTING_OUTPUTS_KEY, checked)
+        self._refresh_detail_views()
 
     def _sync_stage_config_combo(self, stage: str) -> None:
         self._config_refreshing = True
@@ -326,6 +458,7 @@ class MainWindow(QMainWindow):
         self._sync_stage_config_combo(step.stage)
         self.check_button.setVisible(step.precheck_mode != "none")
         self._sync_run_button(step)
+        self._sync_step_item_selection()
         self._refresh_detail_views()
 
     def _sync_run_button(self, step: StepDefinition) -> None:
@@ -356,6 +489,23 @@ class MainWindow(QMainWindow):
             StepStatus.MANUAL_PENDING: "需人工处理",
         }
         return mapping[status]
+
+    def _display_status(self, step: StepDefinition, status: StepStatus) -> tuple[str, str]:
+        runtime_color = {
+            StepStatus.RUNNING: "#4f46e5",
+            StepStatus.FAILED: "#dc2626",
+            StepStatus.MANUAL_PENDING: "#a21caf",
+        }
+        if status in runtime_color:
+            return f"● {self._status_text(status)}", runtime_color[status]
+
+        output_health = detect_output_health(step.id)
+        color_map = {
+            "missing": "#dc2626",
+            "stale": "#d97706",
+            "fresh": "#16a34a",
+        }
+        return output_health.text, color_map[output_health.state.value]
 
     def _run_check(self) -> None:
         step = self.steps[self.current_step_index]
@@ -415,7 +565,6 @@ class MainWindow(QMainWindow):
             current_pythonpath = process_env.value("PYTHONPATH", "")
             merged_pythonpath = code_root if not current_pythonpath else f"{code_root};{current_pythonpath}"
             process_env.insert("PYTHONPATH", merged_pythonpath)
-            process_env.insert("GUI_EXPORT_SVG", "1")
             self.process.setProcessEnvironment(process_env)
         self.process.start(preparation.program, preparation.arguments)
         if not self.process.waitForStarted(3000):
@@ -488,7 +637,7 @@ class MainWindow(QMainWindow):
         self.markdown_panel.set_markdown_text(load_markdown(step.id, current_status))
 
     def _should_render_outputs(self, status: StepStatus) -> bool:
-        return status == StepStatus.SUCCESS
+        return status == StepStatus.SUCCESS or self.render_existing_outputs
 
     def _render_table(self) -> None:
         total = len(self.current_artifacts.csv_files)

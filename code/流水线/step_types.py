@@ -22,6 +22,12 @@ class StepStatus(str, Enum):
     MANUAL_PENDING = "manual_pending"
 
 
+class OutputState(str, Enum):
+    MISSING = "missing"
+    STALE = "stale"
+    FRESH = "fresh"
+
+
 @dataclass(frozen=True)
 class InputRequirement:
     path: Path
@@ -70,3 +76,9 @@ class RunPreparation:
     arguments: list[str] = field(default_factory=list)
     working_dir: Path | None = None
     message: str = ""
+
+
+@dataclass(frozen=True)
+class OutputHealth:
+    state: OutputState
+    text: str

@@ -67,6 +67,24 @@ def _save_state(state: dict[str, str]) -> None:
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def get_ui_setting(key: str, default: Any = None) -> Any:
+    state = _load_state()
+    ui_settings = state.get("_ui_settings", {})
+    if not isinstance(ui_settings, dict):
+        return default
+    return ui_settings.get(key, default)
+
+
+def set_ui_setting(key: str, value: Any) -> None:
+    state = _load_state()
+    ui_settings = state.get("_ui_settings")
+    if not isinstance(ui_settings, dict):
+        ui_settings = {}
+    ui_settings[key] = value
+    state["_ui_settings"] = ui_settings
+    _save_state(state)
+
+
 def get_active_config_name(stage: str) -> str:
     state = _load_state()
     active = state.get(stage)

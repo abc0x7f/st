@@ -661,7 +661,6 @@ def save_outputs(result, fitted_df: pd.DataFrame) -> None:
 
     obsolete_paths = [
         OUT_DIR / "08_诊断图组三联图.png",
-        OUT_DIR / "08_诊断图组三联图.svg",
         OUT_DIR / "08_诊断图组后二联图.png",
         OUT_DIR / "03_pred_vs_actual_scatter.png",
         OUT_DIR / "04_residual_vs_fitted.png",

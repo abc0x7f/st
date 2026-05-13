@@ -2,5 +2,8 @@
   "数据处理": "default",
   "效率测算": "default",
   "回归分析": "baseline",
-  "空间分析": "baseline"
+  "空间分析": "baseline",
+  "_ui_settings": {
+    "render_existing_outputs_without_run": true
+  }
 }
