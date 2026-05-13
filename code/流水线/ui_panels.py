@@ -3,16 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPixmap, QTextDocument, QTextOption
-from PySide6.QtSvgWidgets import QGraphicsSvgItem
+from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, Signal, QUrl
+from PySide6.QtGui import QColor, QTextDocument, QTextOption
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
-    QGraphicsItem,
-    QGraphicsPixmapItem,
-    QGraphicsScene,
-    QGraphicsView,
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
@@ -373,109 +368,232 @@ class TablePanel(ArtifactNavigatorPanel):
         self.table_view.resizeColumnsToContents()
 
 
-class ZoomableImageView(QGraphicsView):
-    scaleChanged = Signal(float)
+if QWebEngineView is not None:
+    class WebImageView(QWebEngineView):
+        def __init__(self, parent: QWidget | None = None) -> None:
+            super().__init__(parent)
+            self.setStyleSheet("background: #f6f8fa; border: 1px solid #d4dce5; border-radius: 4px;")
+            self._current_path: Path | None = None
+            self._has_image = False
+            self._set_empty_html()
 
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setRenderHints(
-            QPainter.Antialiasing
-            | QPainter.SmoothPixmapTransform
-            | QPainter.TextAntialiasing
-        )
-        self.setOptimizationFlags(QGraphicsView.DontAdjustForAntialiasing | QGraphicsView.DontSavePainterState)
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.setCacheMode(QGraphicsView.CacheNone)
-        self.setDragMode(QGraphicsView.NoDrag)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorViewCenter)
-        self.setFrameShape(QFrame.NoFrame)
-        self.setStyleSheet("background: #f6f8fa; border: 1px solid #d4dce5; border-radius: 4px;")
+        def set_image(self, image_path: Path | None) -> None:
+            if image_path is None or not image_path.exists():
+                self._current_path = None
+                self._has_image = False
+                self._set_empty_html()
+                return
+            self._current_path = image_path
+            self._has_image = True
+            self._render_current()
 
-        self._scene = QGraphicsScene(self)
-        self.setScene(self._scene)
-        self._current_item: QGraphicsItem | None = None
-        self._dragging = False
-        self._drag_origin = QPoint()
-        self._current_scale = 1.0
+        def reset_view(self) -> None:
+            if self._current_path is None:
+                return
+            self.setZoomFactor(1.0)
+            self._render_current()
 
-    def set_image(self, image_path: Path | None) -> None:
-        self.resetTransform()
-        self._current_scale = 1.0
-        self._clear_current_item()
-        if image_path is None or not image_path.exists():
-            self._scene.setSceneRect(0, 0, 1, 1)
-            self.viewport().update()
-            self.scaleChanged.emit(self._current_scale)
+        def _render_current(self) -> None:
+            if self._current_path is None:
+                self._set_empty_html()
+                return
+            image_url = QUrl.fromLocalFile(str(self._current_path.resolve())).toString()
+            base_url = QUrl.fromLocalFile(str(self._current_path.parent.resolve()) + "/")
+            self.setHtml(
+                f"""
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body {{
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #f6f8fa;
+      overflow: hidden;
+    }}
+    body {{
+      user-select: none;
+      -webkit-user-select: none;
+    }}
+    #stage {{
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+    }}
+    #stage.dragging {{
+      cursor: grabbing;
+    }}
+    #image {{
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      max-width: none;
+      max-height: none;
+      transform-origin: center center;
+      image-rendering: auto;
+    }}
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <img id="image" src="{image_url}" alt="preview" draggable="false">
+  </div>
+  <script>
+    const stage = document.getElementById("stage");
+    const image = document.getElementById("image");
+
+    let scale = 1.0;
+    let offsetX = 0.0;
+    let offsetY = 0.0;
+    let dragging = false;
+    let lastX = 0.0;
+    let lastY = 0.0;
+    let fitted = false;
+
+    function clampScale(value) {{
+      return Math.min(12, Math.max(0.1, value));
+    }}
+
+    function applyTransform() {{
+      image.style.transform = `translate(calc(-50% + ${{offsetX}}px), calc(-50% + ${{offsetY}}px)) scale(${{scale}})`;
+    }}
+
+    function fitImage() {{
+      const stageRect = stage.getBoundingClientRect();
+      const naturalWidth = image.naturalWidth || 1;
+      const naturalHeight = image.naturalHeight || 1;
+      const fitScale = Math.min(stageRect.width / naturalWidth, stageRect.height / naturalHeight, 1);
+      scale = fitScale > 0 ? fitScale : 1;
+      offsetX = 0;
+      offsetY = 0;
+      fitted = true;
+      applyTransform();
+    }}
+
+    image.addEventListener("load", () => {{
+      fitImage();
+    }});
+
+    image.addEventListener("dragstart", (event) => {{
+      event.preventDefault();
+    }});
+
+    stage.addEventListener("wheel", (event) => {{
+      event.preventDefault();
+      if (!fitted) {{
+        fitImage();
+      }}
+      const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+      scale = clampScale(scale * factor);
+      applyTransform();
+    }}, {{ passive: false }});
+
+    stage.addEventListener("mousedown", (event) => {{
+      if (event.button !== 0) {{
+        return;
+      }}
+      dragging = true;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      stage.classList.add("dragging");
+    }});
+
+    window.addEventListener("mousemove", (event) => {{
+      if (!dragging) {{
+        return;
+      }}
+      offsetX += event.clientX - lastX;
+      offsetY += event.clientY - lastY;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      applyTransform();
+    }});
+
+    window.addEventListener("mouseup", () => {{
+      dragging = false;
+      stage.classList.remove("dragging");
+    }});
+
+    stage.addEventListener("dblclick", (event) => {{
+      event.preventDefault();
+      fitImage();
+    }});
+
+    window.addEventListener("resize", () => {{
+      fitImage();
+    }});
+  </script>
+</body>
+</html>
+""",
+                base_url,
+            )
+
+        def _set_empty_html(self) -> None:
+            self.setHtml(
+                """
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #f6f8fa;
+      color: #6b7785;
+      font-family: "Times New Roman", "SimSun";
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>未发现图片</body>
+</html>
+"""
+            )
+else:
+    class WebImageView(QTextBrowser):
+        def __init__(self, parent: QWidget | None = None) -> None:
+            super().__init__(parent)
+            self.setReadOnly(True)
+            self.setOpenExternalLinks(True)
+            self.setStyleSheet(
+                """
+                QTextBrowser {
+                    border: 1px solid #d4dce5;
+                    border-radius: 4px;
+                    background: #f6f8fa;
+                    color: #6b7785;
+                    font-family: "Times New Roman", "SimSun";
+                    padding: 10px;
+                }
+                """
+            )
+            self._current_path: Path | None = None
+            self._has_image = False
+            self.setHtml("<div style='text-align:center;'>未安装 QtWebEngine，无法渲染图片。</div>")
+
+        def set_image(self, image_path: Path | None) -> None:
+            self._current_path = image_path if image_path and image_path.exists() else None
+            self._has_image = self._current_path is not None
+            if self._current_path is None:
+                self.setHtml("<div style='text-align:center;'>未发现图片</div>")
+                return
+            self.setHtml(
+                f"<div style='text-align:center;'><p>当前环境未安装 QtWebEngine。</p><p>{format_display_path(self._current_path)}</p></div>"
+            )
+
+        def reset_view(self) -> None:
             return
-
-        if image_path.suffix.lower() == ".svg":
-            svg_item = QGraphicsSvgItem(str(image_path))
-            svg_item.setFlags(QGraphicsItem.ItemClipsToShape)
-            self._scene.addItem(svg_item)
-            self._current_item = svg_item
-            self._scene.setSceneRect(svg_item.boundingRect())
-        else:
-            pixmap = QPixmap(str(image_path))
-            pixmap_item = QGraphicsPixmapItem(pixmap)
-            pixmap_item.setTransformationMode(Qt.SmoothTransformation)
-            self._scene.addItem(pixmap_item)
-            self._current_item = pixmap_item
-            self._scene.setSceneRect(pixmap.rect())
-        self._fit_with_boost()
-        self._current_scale = 1.0
-        self.scaleChanged.emit(self._current_scale)
-
-    def reset_view(self) -> None:
-        self.resetTransform()
-        self._current_scale = 1.0
-        if self._current_item is not None:
-            self._fit_with_boost()
-        self.scaleChanged.emit(self._current_scale)
-
-    def _fit_with_boost(self) -> None:
-        if self._current_item is None:
-            return
-        self.fitInView(self._current_item, Qt.KeepAspectRatio)
-        self.scale(1.18, 1.18)
-
-    def _clear_current_item(self) -> None:
-        if self._current_item is not None:
-            self._scene.removeItem(self._current_item)
-            self._current_item = None
-
-    def wheelEvent(self, event) -> None:
-        if self._current_item is None:
-            return
-        factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
-        self.scale(factor, factor)
-        self._current_scale *= factor
-        self.scaleChanged.emit(self._current_scale)
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
-            self._dragging = True
-            self._drag_origin = event.pos()
-            self.setCursor(Qt.ClosedHandCursor)
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._dragging:
-            delta = event.pos() - self._drag_origin
-            self._drag_origin = event.pos()
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
-            self._dragging = False
-            self.setCursor(Qt.ArrowCursor)
-        super().mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        self.reset_view()
-        super().mouseDoubleClickEvent(event)
 
 
 class ImagePanel(ArtifactNavigatorPanel):
@@ -487,7 +605,7 @@ class ImagePanel(ArtifactNavigatorPanel):
         self.path_label.setStyleSheet("border: none; color: #5b6b7a;")
         self.outer_layout.addWidget(self.path_label)
 
-        self.image_view = ZoomableImageView()
+        self.image_view = WebImageView()
         self.outer_layout.addWidget(self.image_view, 1)
 
         footer = QHBoxLayout()
@@ -504,7 +622,7 @@ class ImagePanel(ArtifactNavigatorPanel):
         self.next_button.raise_()
         self.reset_button.raise_()
 
-        self.register_hover_target(self.image_view.viewport())
+        self.register_hover_target(self.image_view)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -525,7 +643,7 @@ class ImagePanel(ArtifactNavigatorPanel):
 
     def _set_overlay_visible(self, visible: bool) -> None:
         super()._set_overlay_visible(visible)
-        self.reset_button.fade_to(visible and self.image_view._current_item is not None)
+        self.reset_button.fade_to(visible and self.image_view._has_image)
 
     def set_image_path(self, path: Path | None, index: int, total: int) -> None:
         self.path_label.setText(format_display_path(path) if path else "未发现图片")

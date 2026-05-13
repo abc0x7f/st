@@ -142,7 +142,7 @@ def discover_artifacts(step_id: str) -> ArtifactBundle:
 
     csv_candidates.extend(csv_paths)
     csv_unique = _dedupe_paths(csv_candidates, primary=step.primary_csv)
-    image_unique = _dedupe_paths(image_paths, prefer_svg=True)
+    image_unique = _dedupe_paths(image_paths, prefer_svg=False)
     markdown_unique = _dedupe_paths(markdown_paths)
     return ArtifactBundle(csv_files=csv_unique, image_files=image_unique, markdown_files=markdown_unique)
 

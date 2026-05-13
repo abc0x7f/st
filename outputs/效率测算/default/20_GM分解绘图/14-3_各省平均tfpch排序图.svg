@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="658.783125pt" height="607.330078pt" viewBox="0 0 658.783125 607.330078" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="658.783125pt" height="607.290703pt" viewBox="0 0 658.783125 607.290703" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-05-08T08:07:11.051189</dc:date>
+    <dc:date>2026-05-13T14:36:10.948617</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -21,8 +21,8 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 607.330078 
-L 658.783125 607.330078 
+   <path d="M 0 607.290703 
+L 658.783125 607.290703 
 L 658.783125 0 
 L 0 0 
 z
@@ -30,8 +30,8 @@ z
   </g>
   <g id="axes_1">
    <g id="patch_2">
-    <path d="M 89.653125 550.168125 
-L 651.583125 550.168125 
+    <path d="M 89.653125 549.988125 
+L 651.583125 549.988125 
 L 651.583125 27.965625 
 L 89.653125 27.965625 
 z
@@ -40,13 +40,13 @@ z
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
-      <path d="M 89.653125 550.168125 
+      <path d="M 89.653125 549.988125 
 L 89.653125 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_1">
       <!-- 0.95 -->
-      <g style="fill: #262626" transform="translate(75.215625 574.125312) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(75.215625 573.945312) scale(0.165 -0.165)">
        <defs>
         <path id="TimesNewRomanPSMT-30" d="M 231 2094 
 Q 231 2819 450 3342 
@@ -151,13 +151,13 @@ z
     </g>
     <g id="xtick_2">
      <g id="line2d_2">
-      <path d="M 209.357047 550.168125 
+      <path d="M 209.357047 549.988125 
 L 209.357047 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_2">
       <!-- 1.00 -->
-      <g style="fill: #262626" transform="translate(194.919547 574.125312) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(194.919547 573.945312) scale(0.165 -0.165)">
        <defs>
         <path id="TimesNewRomanPSMT-31" d="M 750 3822 
 L 1781 4325 
@@ -190,13 +190,13 @@ z
     </g>
     <g id="xtick_3">
      <g id="line2d_3">
-      <path d="M 329.060969 550.168125 
+      <path d="M 329.060969 549.988125 
 L 329.060969 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_3">
       <!-- 1.05 -->
-      <g style="fill: #262626" transform="translate(314.623469 574.125312) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(314.623469 573.945312) scale(0.165 -0.165)">
        <use xlink:href="#TimesNewRomanPSMT-31"/>
        <use xlink:href="#TimesNewRomanPSMT-2e" transform="translate(50 0)"/>
        <use xlink:href="#TimesNewRomanPSMT-30" transform="translate(75 0)"/>
@@ -206,13 +206,13 @@ L 329.060969 27.965625
     </g>
     <g id="xtick_4">
      <g id="line2d_4">
-      <path d="M 448.764892 550.168125 
+      <path d="M 448.764892 549.988125 
 L 448.764892 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_4">
       <!-- 1.10 -->
-      <g style="fill: #262626" transform="translate(434.327392 574.125312) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(434.327392 573.945312) scale(0.165 -0.165)">
        <use xlink:href="#TimesNewRomanPSMT-31"/>
        <use xlink:href="#TimesNewRomanPSMT-2e" transform="translate(50 0)"/>
        <use xlink:href="#TimesNewRomanPSMT-31" transform="translate(75 0)"/>
@@ -222,13 +222,13 @@ L 448.764892 27.965625
     </g>
     <g id="xtick_5">
      <g id="line2d_5">
-      <path d="M 568.468814 550.168125 
+      <path d="M 568.468814 549.988125 
 L 568.468814 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_5">
       <!-- 1.15 -->
-      <g style="fill: #262626" transform="translate(554.031314 574.125312) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(554.031314 573.945312) scale(0.165 -0.165)">
        <use xlink:href="#TimesNewRomanPSMT-31"/>
        <use xlink:href="#TimesNewRomanPSMT-2e" transform="translate(50 0)"/>
        <use xlink:href="#TimesNewRomanPSMT-31" transform="translate(75 0)"/>
@@ -237,8 +237,8 @@ L 568.468814 27.965625
      </g>
     </g>
     <g id="text_6">
-     <!-- 平均 tfpch -->
-     <g style="fill: #262626" transform="translate(331.875938 596.279766) scale(0.18 -0.18)">
+     <!-- 平均全要素生产率（tfpch） -->
+     <g style="fill: #262626" transform="translate(262.125938 596.240391) scale(0.18 -0.18)">
       <defs>
        <path id="SimSun-5e73" d="M 3375 750 
 Q 3375 200 3400 -350 
@@ -343,7 +343,402 @@ L 1700 3150
 L 1700 1100 
 z
 " transform="scale(0.015625)"/>
-       <path id="TimesNewRomanPSMT-20" transform="scale(0.015625)"/>
+       <path id="SimSun-5168" d="M 3125 4725 
+Q 2375 3475 1525 2800 
+L 4225 2800 
+L 4500 3050 
+Q 3675 3725 3125 4725 
+z
+M 2900 5250 
+L 3425 4950 
+L 3225 4825 
+Q 3550 4275 4275 3650 
+Q 5000 3025 6100 2850 
+L 6100 2750 
+Q 5725 2675 5625 2400 
+Q 5075 2600 4500 3050 
+L 4925 2650 
+L 3350 2650 
+L 3350 1425 
+L 4400 1425 
+L 4700 1725 
+L 5150 1275 
+L 3350 1275 
+L 3350 -150 
+L 5075 -150 
+L 5425 225 
+L 5950 -300 
+L 1325 -300 
+Q 1000 -300 725 -375 
+L 500 -150 
+L 3000 -150 
+L 3000 1275 
+L 2075 1275 
+Q 1750 1275 1475 1200 
+L 1250 1425 
+L 3000 1425 
+L 3000 2650 
+L 2200 2650 
+Q 1875 2650 1625 2575 
+L 1450 2750 
+Q 900 2350 275 2100 
+L 250 2175 
+Q 1225 2750 1875 3550 
+Q 2525 4350 2900 5250 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-8981" d="M 2675 4600 
+L 2675 3850 
+L 3675 3850 
+L 3675 4600 
+L 2675 4600 
+z
+M 1475 3700 
+L 1475 2775 
+L 2350 2775 
+L 2350 3700 
+L 1475 3700 
+z
+M 2675 3700 
+L 2675 2775 
+L 3675 2775 
+L 3675 3700 
+L 2675 3700 
+z
+M 4000 3700 
+L 4000 2775 
+L 4875 2775 
+L 4875 3700 
+L 4000 3700 
+z
+M 525 4750 
+L 5025 4750 
+L 5425 5125 
+L 5925 4600 
+L 4000 4600 
+L 4000 3850 
+L 4825 3850 
+L 5000 4125 
+L 5400 3825 
+L 5200 3650 
+Q 5200 2875 5225 2525 
+L 4875 2350 
+L 4875 2625 
+L 1475 2625 
+L 1475 2425 
+L 1125 2275 
+Q 1150 2750 1150 3187 
+Q 1150 3625 1125 4050 
+L 1525 3850 
+L 2350 3850 
+L 2350 4600 
+L 1275 4600 
+Q 1025 4600 750 4525 
+L 525 4750 
+z
+M 2525 1625 
+Q 2350 1375 2025 900 
+Q 2575 825 3450 700 
+Q 3800 1050 4075 1625 
+L 2525 1625 
+z
+M 2525 2575 
+L 3050 2275 
+L 2850 2175 
+Q 2725 2000 2575 1775 
+L 5125 1775 
+L 5550 2150 
+L 6075 1625 
+L 4500 1625 
+Q 4225 1075 3825 600 
+Q 4800 375 5162 200 
+Q 5525 25 5537 -225 
+Q 5550 -475 5450 -475 
+Q 5375 -475 5200 -325 
+Q 4825 -25 3625 375 
+Q 3175 75 2487 -162 
+Q 1800 -400 375 -550 
+L 350 -450 
+Q 2400 -125 3250 500 
+Q 2350 700 1575 800 
+Q 1750 1000 2125 1625 
+L 975 1625 
+Q 775 1625 500 1550 
+L 275 1775 
+L 2200 1775 
+Q 2425 2175 2525 2575 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-7d20" d="M 2025 1275 
+L 4500 1450 
+Q 4275 1725 3975 1975 
+L 4025 2050 
+Q 4600 1775 4875 1575 
+Q 5150 1375 5137 1175 
+Q 5125 975 5062 900 
+Q 5000 825 4975 825 
+Q 4900 825 4850 950 
+Q 4725 1150 4600 1325 
+L 3375 1175 
+L 3375 -50 
+Q 3400 -500 2800 -650 
+Q 2775 -275 2025 -125 
+L 2025 -25 
+Q 2700 -75 2862 -75 
+Q 3025 -75 3025 100 
+L 3025 1150 
+Q 2150 1025 1887 950 
+Q 1625 875 1425 775 
+L 1175 1250 
+Q 1450 1300 1950 1500 
+Q 2450 1700 3350 2225 
+Q 2750 2175 2312 2100 
+Q 1875 2025 1600 1875 
+L 1350 2325 
+Q 1625 2375 1937 2562 
+Q 2250 2750 2525 3025 
+L 1150 3025 
+Q 825 3025 550 2950 
+L 325 3175 
+L 3025 3175 
+L 3025 3725 
+L 2125 3725 
+Q 1800 3725 1525 3650 
+L 1300 3875 
+L 3025 3875 
+L 3025 4425 
+L 1675 4425 
+Q 1350 4425 1075 4350 
+L 850 4575 
+L 3025 4575 
+Q 3025 5000 3000 5250 
+L 3600 5025 
+L 3375 4875 
+L 3375 4575 
+L 4875 4575 
+L 5200 4875 
+L 5650 4425 
+L 3375 4425 
+L 3375 3875 
+L 4425 3875 
+L 4775 4150 
+L 5175 3725 
+L 3375 3725 
+L 3375 3175 
+L 5300 3175 
+L 5675 3475 
+L 6100 3025 
+L 2725 3025 
+L 3025 2850 
+Q 2825 2800 2475 2625 
+Q 2100 2450 1725 2275 
+L 3475 2350 
+Q 3750 2575 3975 2850 
+L 4400 2500 
+Q 4175 2450 3675 2150 
+Q 3150 1825 2025 1275 
+z
+M 2025 875 
+L 2450 475 
+Q 2200 450 1600 50 
+Q 1000 -350 500 -525 
+L 450 -450 
+Q 1000 -150 1387 200 
+Q 1775 550 2025 875 
+z
+M 3925 800 
+Q 4875 450 5212 275 
+Q 5550 100 5575 -87 
+Q 5600 -275 5537 -387 
+Q 5475 -500 5450 -500 
+Q 5325 -500 5150 -250 
+Q 4850 125 3875 725 
+L 3925 800 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-751f" d="M 1575 4825 
+L 2150 4500 
+Q 1900 4375 1550 3575 
+L 3025 3575 
+Q 3025 4725 3000 5250 
+L 3600 5000 
+L 3400 4825 
+L 3400 3575 
+L 4825 3575 
+L 5200 3950 
+L 5675 3425 
+L 3400 3425 
+L 3400 1875 
+L 4525 1875 
+L 4925 2250 
+L 5375 1725 
+L 3400 1725 
+L 3400 -75 
+L 5200 -75 
+L 5600 325 
+L 6100 -225 
+L 1125 -225 
+Q 800 -225 525 -300 
+L 300 -75 
+L 3025 -75 
+L 3025 1725 
+L 2075 1725 
+Q 1750 1725 1475 1650 
+L 1250 1875 
+L 3025 1875 
+L 3025 3425 
+L 1500 3425 
+Q 925 2350 475 1900 
+L 400 1950 
+Q 825 2600 1125 3375 
+Q 1425 4150 1575 4825 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-4ea7" d="M 1975 3850 
+L 2025 3925 
+Q 2525 3600 2662 3412 
+Q 2800 3225 2800 3100 
+Q 2800 2975 2700 2837 
+Q 2600 2700 2550 2700 
+Q 2475 2700 2400 3000 
+Q 2300 3400 1975 3850 
+z
+M 4200 3950 
+L 4775 3650 
+L 4550 3550 
+Q 4325 3275 3825 2650 
+L 5100 2650 
+L 5475 3025 
+L 6000 2500 
+L 1375 2500 
+Q 1400 1600 1250 862 
+Q 1100 125 325 -650 
+L 250 -575 
+Q 850 175 937 1125 
+Q 1025 2075 975 2875 
+L 1400 2650 
+L 3675 2650 
+Q 4125 3550 4200 3950 
+z
+M 475 4200 
+L 3175 4200 
+Q 3150 4625 2675 5175 
+L 2750 5250 
+Q 3275 4975 3412 4825 
+Q 3550 4675 3550 4575 
+Q 3550 4400 3325 4200 
+L 5050 4200 
+L 5450 4600 
+L 6000 4050 
+L 1300 4050 
+Q 975 4050 700 3975 
+L 475 4200 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-7387" d="M 875 3725 
+L 925 3800 
+Q 1375 3650 1550 3525 
+Q 1725 3400 1725 3250 
+Q 1725 3175 1662 3025 
+Q 1600 2875 1550 2875 
+Q 1500 2875 1425 3050 
+Q 1275 3325 875 3725 
+z
+M 550 1850 
+Q 875 1925 2000 2575 
+L 2050 2500 
+Q 1675 2225 1337 1937 
+Q 1000 1650 875 1425 
+L 550 1850 
+z
+M 5200 3450 
+Q 4800 3150 4275 2800 
+L 4225 2875 
+Q 4775 3400 5050 3925 
+L 5450 3525 
+L 5200 3450 
+z
+M 4325 2500 
+L 4350 2575 
+Q 5225 2350 5375 2212 
+Q 5525 2075 5525 1900 
+Q 5525 1775 5487 1662 
+Q 5450 1550 5400 1550 
+Q 5325 1550 5200 1800 
+Q 4975 2150 4325 2500 
+z
+M 3150 3900 
+Q 2500 3300 2300 3150 
+Q 2800 3150 3400 3175 
+Q 3700 3500 3850 3825 
+L 4250 3450 
+Q 4050 3400 3450 2825 
+Q 2850 2250 2475 1950 
+Q 3150 1975 3850 2000 
+Q 3750 2175 3550 2450 
+L 3600 2500 
+Q 4050 2250 4200 2100 
+Q 4350 1950 4350 1850 
+Q 4350 1775 4250 1625 
+Q 4150 1475 4100 1475 
+Q 4075 1475 4050 1550 
+Q 4000 1700 3900 1900 
+Q 3650 1875 3075 1800 
+L 3500 1550 
+L 3325 1425 
+L 3325 975 
+L 5325 975 
+L 5650 1300 
+L 6100 825 
+L 3325 825 
+Q 3325 -275 3350 -525 
+L 2975 -650 
+Q 3000 0 3000 825 
+L 1125 825 
+Q 800 825 525 750 
+L 300 975 
+L 3000 975 
+L 3000 1775 
+Q 2450 1700 2200 1525 
+L 1950 1950 
+Q 2275 1950 2675 2350 
+Q 3075 2750 3325 3050 
+Q 2400 2950 2150 2775 
+L 1950 3175 
+Q 2150 3150 2475 3575 
+Q 2800 4000 2900 4225 
+L 1450 4225 
+Q 1125 4225 850 4150 
+L 625 4375 
+L 3100 4375 
+Q 3050 4800 2675 5200 
+L 2725 5250 
+Q 3225 5050 3337 4912 
+Q 3450 4775 3450 4700 
+Q 3450 4550 3250 4375 
+L 5025 4375 
+L 5350 4675 
+L 5775 4225 
+L 3050 4225 
+L 3375 3950 
+L 3150 3900 
+z
+" transform="scale(0.015625)"/>
+       <path id="SimSun-ff08" d="M 5087 200 
+Q 5475 -100 5425 -150 
+Q 5375 -200 4950 87 
+Q 4525 375 4137 850 
+Q 3750 1325 3687 2100 
+Q 3625 2875 4000 3487 
+Q 4375 4100 4887 4462 
+Q 5400 4825 5412 4762 
+Q 5425 4700 5075 4425 
+Q 4725 4125 4387 3600 
+Q 4050 3075 4050 2250 
+Q 4050 1425 4375 962 
+Q 4700 500 5087 200 
+z
+" transform="scale(0.015625)"/>
        <path id="TimesNewRomanPSMT-74" d="M 1031 3803 
 L 1031 2863 
 L 1700 2863 
@@ -517,28 +912,50 @@ L 897 4444
 L 1041 4444 
 z
 " transform="scale(0.015625)"/>
+       <path id="SimSun-ff09" d="M 2337 875 
+Q 1925 350 1437 62 
+Q 950 -225 937 -162 
+Q 925 -100 1300 175 
+Q 1650 425 2037 1012 
+Q 2425 1600 2375 2375 
+Q 2325 3150 1987 3662 
+Q 1650 4175 1300 4475 
+Q 925 4775 937 4837 
+Q 950 4900 1412 4587 
+Q 1875 4275 2325 3662 
+Q 2775 3050 2762 2225 
+Q 2750 1400 2337 875 
+z
+" transform="scale(0.015625)"/>
       </defs>
       <use xlink:href="#SimSun-5e73"/>
       <use xlink:href="#SimSun-5747" transform="translate(100 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-20" transform="translate(200 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-74" transform="translate(225 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-66" transform="translate(252.783203 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-70" transform="translate(286.083984 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-63" transform="translate(336.083984 0)"/>
-      <use xlink:href="#TimesNewRomanPSMT-68" transform="translate(380.46875 0)"/>
+      <use xlink:href="#SimSun-5168" transform="translate(200 0)"/>
+      <use xlink:href="#SimSun-8981" transform="translate(300 0)"/>
+      <use xlink:href="#SimSun-7d20" transform="translate(400 0)"/>
+      <use xlink:href="#SimSun-751f" transform="translate(500 0)"/>
+      <use xlink:href="#SimSun-4ea7" transform="translate(600 0)"/>
+      <use xlink:href="#SimSun-7387" transform="translate(700 0)"/>
+      <use xlink:href="#SimSun-ff08" transform="translate(800 0)"/>
+      <use xlink:href="#TimesNewRomanPSMT-74" transform="translate(900 0)"/>
+      <use xlink:href="#TimesNewRomanPSMT-66" transform="translate(927.783203 0)"/>
+      <use xlink:href="#TimesNewRomanPSMT-70" transform="translate(961.083984 0)"/>
+      <use xlink:href="#TimesNewRomanPSMT-63" transform="translate(1011.083984 0)"/>
+      <use xlink:href="#TimesNewRomanPSMT-68" transform="translate(1055.46875 0)"/>
+      <use xlink:href="#SimSun-ff09" transform="translate(1105.46875 0)"/>
      </g>
     </g>
    </g>
    <g id="matplotlib.axis_2">
     <g id="ytick_1">
      <g id="line2d_6">
-      <path d="M 89.653125 58.074311 
-L 651.583125 58.074311 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 58.063933 
+L 651.583125 58.063933 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_7">
       <!-- 天津 -->
-      <g style="fill: #262626" transform="translate(44.153125 63.882827) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 63.872448) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5929" d="M 975 4650 
 L 4525 4650 
@@ -683,13 +1100,13 @@ z
     </g>
     <g id="ytick_2">
      <g id="line2d_7">
-      <path d="M 89.653125 74.004833 
-L 651.583125 74.004833 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 73.988963 
+L 651.583125 73.988963 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_8">
       <!-- 四川 -->
-      <g style="fill: #262626" transform="translate(44.153125 79.733426) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 79.717557) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-56db" d="M 5525 600 
 Q 5525 350 5550 -425 
@@ -771,13 +1188,13 @@ z
     </g>
     <g id="ytick_3">
      <g id="line2d_8">
-      <path d="M 89.653125 89.935354 
-L 651.583125 89.935354 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 89.913994 
+L 651.583125 89.913994 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_9">
       <!-- 湖南 -->
-      <g style="fill: #262626" transform="translate(44.153125 95.663948) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 95.642587) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-6e56" d="M 2675 3750 
 Q 2675 4825 2650 5200 
@@ -960,13 +1377,13 @@ z
     </g>
     <g id="ytick_4">
      <g id="line2d_9">
-      <path d="M 89.653125 105.865876 
-L 651.583125 105.865876 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 105.839024 
+L 651.583125 105.839024 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_10">
       <!-- 河南 -->
-      <g style="fill: #262626" transform="translate(44.153125 111.59447) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 111.567618) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-6cb3" d="M 4000 100 
 Q 4750 0 4850 12 
@@ -1049,13 +1466,13 @@ z
     </g>
     <g id="ytick_5">
      <g id="line2d_10">
-      <path d="M 89.653125 121.796398 
-L 651.583125 121.796398 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 121.764055 
+L 651.583125 121.764055 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_11">
       <!-- 山东 -->
-      <g style="fill: #262626" transform="translate(44.153125 127.63714) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 127.604797) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5c71" d="M 5000 275 
 Q 5000 2600 5000 2850 
@@ -1144,13 +1561,13 @@ z
     </g>
     <g id="ytick_6">
      <g id="line2d_11">
-      <path d="M 89.653125 137.726919 
-L 651.583125 137.726919 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 137.689085 
+L 651.583125 137.689085 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_12">
       <!-- 江苏 -->
-      <g style="fill: #262626" transform="translate(44.153125 143.470982) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 143.433148) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-6c5f" d="M 2050 4275 
 L 5125 4275 
@@ -1285,13 +1702,13 @@ z
     </g>
     <g id="ytick_7">
      <g id="line2d_12">
-      <path d="M 89.653125 153.657441 
-L 651.583125 153.657441 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 153.614116 
+L 651.583125 153.614116 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_13">
       <!-- 湖北 -->
-      <g style="fill: #262626" transform="translate(44.153125 159.386035) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 159.342709) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5317" d="M 2175 3325 
 Q 2175 4625 2150 5175 
@@ -1341,13 +1758,13 @@ z
     </g>
     <g id="ytick_8">
      <g id="line2d_13">
-      <path d="M 89.653125 169.587963 
-L 651.583125 169.587963 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 169.539146 
+L 651.583125 169.539146 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_14">
       <!-- 河北 -->
-      <g style="fill: #262626" transform="translate(44.153125 175.316556) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 175.26774) scale(0.165 -0.165)">
        <use xlink:href="#SimSun-6cb3"/>
        <use xlink:href="#SimSun-5317" transform="translate(100 0)"/>
       </g>
@@ -1355,13 +1772,13 @@ L 651.583125 169.587963
     </g>
     <g id="ytick_9">
      <g id="line2d_14">
-      <path d="M 89.653125 185.518484 
-L 651.583125 185.518484 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 185.464177 
+L 651.583125 185.464177 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_15">
       <!-- 福建 -->
-      <g style="fill: #262626" transform="translate(44.153125 191.262547) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 191.208239) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-798f" d="M 3525 3875 
 L 3525 3075 
@@ -1576,13 +1993,13 @@ z
     </g>
     <g id="ytick_10">
      <g id="line2d_15">
-      <path d="M 89.653125 201.449006 
-L 651.583125 201.449006 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 201.389207 
+L 651.583125 201.389207 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_16">
       <!-- 吉林 -->
-      <g style="fill: #262626" transform="translate(44.153125 207.289748) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 207.229949) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5409" d="M 1600 1975 
 L 2000 1750 
@@ -1689,13 +2106,13 @@ z
     </g>
     <g id="ytick_11">
      <g id="line2d_16">
-      <path d="M 89.653125 217.379528 
-L 651.583125 217.379528 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 217.314238 
+L 651.583125 217.314238 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_17">
       <!-- 辽宁 -->
-      <g style="fill: #262626" transform="translate(44.153125 223.12359) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 223.0583) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-8fbd" d="M 3775 2625 
 Q 3775 3075 3725 3600 
@@ -1805,13 +2222,13 @@ z
     </g>
     <g id="ytick_12">
      <g id="line2d_17">
-      <path d="M 89.653125 233.310049 
-L 651.583125 233.310049 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 233.239268 
+L 651.583125 233.239268 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_18">
       <!-- 浙江 -->
-      <g style="fill: #262626" transform="translate(44.153125 239.038643) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 238.967862) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-6d59" d="M 1800 200 
 Q 2175 175 2362 175 
@@ -1908,13 +2325,13 @@ z
     </g>
     <g id="ytick_13">
      <g id="line2d_18">
-      <path d="M 89.653125 249.240571 
-L 651.583125 249.240571 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 249.164299 
+L 651.583125 249.164299 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_19">
       <!-- 内蒙古 -->
-      <g style="fill: #262626" transform="translate(27.653125 255.11354) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(27.653125 255.037267) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5185" d="M 1400 3625 
 L 1400 975 
@@ -2102,13 +2519,13 @@ z
     </g>
     <g id="ytick_14">
      <g id="line2d_19">
-      <path d="M 89.653125 265.171093 
-L 651.583125 265.171093 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 265.089329 
+L 651.583125 265.089329 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_20">
       <!-- 山西 -->
-      <g style="fill: #262626" transform="translate(44.153125 270.899686) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 270.817923) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-897f" d="M 5675 3275 
 L 5475 3075 
@@ -2174,13 +2591,13 @@ z
     </g>
     <g id="ytick_15">
      <g id="line2d_20">
-      <path d="M 89.653125 281.101614 
-L 651.583125 281.101614 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 281.01436 
+L 651.583125 281.01436 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_21">
       <!-- 上海 -->
-      <g style="fill: #262626" transform="translate(44.153125 286.845677) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 286.758422) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-4e0a" d="M 2725 5175 
 L 3400 4875 
@@ -2321,13 +2738,13 @@ z
     </g>
     <g id="ytick_16">
      <g id="line2d_21">
-      <path d="M 89.653125 297.032136 
-L 651.583125 297.032136 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 296.93939 
+L 651.583125 296.93939 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_22">
       <!-- 黑龙江 -->
-      <g style="fill: #262626" transform="translate(27.653125 302.872878) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(27.653125 302.780132) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-9ed1" d="M 3375 4600 
 L 3375 2950 
@@ -2489,13 +2906,13 @@ z
     </g>
     <g id="ytick_17">
      <g id="line2d_22">
-      <path d="M 89.653125 312.962657 
-L 651.583125 312.962657 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 312.864421 
+L 651.583125 312.864421 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_23">
       <!-- 北京 -->
-      <g style="fill: #262626" transform="translate(44.153125 318.771173) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 318.672936) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-4eac" d="M 400 4250 
 L 5125 4250 
@@ -2568,13 +2985,13 @@ z
     </g>
     <g id="ytick_18">
      <g id="line2d_23">
-      <path d="M 89.653125 328.893179 
-L 651.583125 328.893179 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 328.789451 
+L 651.583125 328.789451 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_24">
       <!-- 广西 -->
-      <g style="fill: #262626" transform="translate(44.153125 334.669468) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 334.56574) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5e7f" d="M 1000 4450 
 L 1425 4200 
@@ -2606,13 +3023,13 @@ z
     </g>
     <g id="ytick_19">
      <g id="line2d_24">
-      <path d="M 89.653125 344.823701 
-L 651.583125 344.823701 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 344.714482 
+L 651.583125 344.714482 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_25">
       <!-- 重庆 -->
-      <g style="fill: #262626" transform="translate(44.153125 350.632216) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 350.522997) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-91cd" d="M 3325 2275 
 L 3325 1600 
@@ -2748,13 +3165,13 @@ z
     </g>
     <g id="ytick_20">
      <g id="line2d_25">
-      <path d="M 89.653125 360.754222 
-L 651.583125 360.754222 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 360.639512 
+L 651.583125 360.639512 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_26">
       <!-- 甘肃 -->
-      <g style="fill: #262626" transform="translate(44.153125 366.627191) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 366.512481) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-7518" d="M 1775 3650 
 Q 1775 4350 1750 5250 
@@ -2890,13 +3307,13 @@ z
     </g>
     <g id="ytick_21">
      <g id="line2d_26">
-      <path d="M 89.653125 376.684744 
-L 651.583125 376.684744 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 376.564543 
+L 651.583125 376.564543 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_27">
       <!-- 安徽 -->
-      <g style="fill: #262626" transform="translate(44.153125 382.49326) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 382.373058) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-5b89" d="M 2650 3575 
 L 3175 3275 
@@ -3097,13 +3514,13 @@ z
     </g>
     <g id="ytick_22">
      <g id="line2d_27">
-      <path d="M 89.653125 392.615266 
-L 651.583125 392.615266 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 392.489573 
+L 651.583125 392.489573 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_28">
       <!-- 广东 -->
-      <g style="fill: #262626" transform="translate(44.153125 398.456008) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 398.330315) scale(0.165 -0.165)">
        <use xlink:href="#SimSun-5e7f"/>
        <use xlink:href="#SimSun-4e1c" transform="translate(100 0)"/>
       </g>
@@ -3111,13 +3528,13 @@ L 651.583125 392.615266
     </g>
     <g id="ytick_23">
      <g id="line2d_28">
-      <path d="M 89.653125 408.545787 
-L 651.583125 408.545787 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 408.414604 
+L 651.583125 408.414604 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_29">
       <!-- 青海 -->
-      <g style="fill: #262626" transform="translate(44.153125 414.450983) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 414.319799) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-9752" d="M 1925 1475 
 L 1925 825 
@@ -3192,13 +3609,13 @@ z
     </g>
     <g id="ytick_24">
      <g id="line2d_29">
-      <path d="M 89.653125 424.476309 
-L 651.583125 424.476309 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 424.339634 
+L 651.583125 424.339634 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_30">
       <!-- 陕西 -->
-      <g style="fill: #262626" transform="translate(44.153125 430.252598) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 430.115923) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-9655" d="M 2575 4575 
 L 2350 4450 
@@ -3289,13 +3706,13 @@ z
     </g>
     <g id="ytick_25">
      <g id="line2d_30">
-      <path d="M 89.653125 440.406831 
-L 651.583125 440.406831 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 440.264665 
+L 651.583125 440.264665 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_31">
       <!-- 海南 -->
-      <g style="fill: #262626" transform="translate(44.153125 446.150893) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 446.008727) scale(0.165 -0.165)">
        <use xlink:href="#SimSun-6d77"/>
        <use xlink:href="#SimSun-5357" transform="translate(100 0)"/>
       </g>
@@ -3303,13 +3720,13 @@ L 651.583125 440.406831
     </g>
     <g id="ytick_26">
      <g id="line2d_31">
-      <path d="M 89.653125 456.337352 
-L 651.583125 456.337352 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 456.189695 
+L 651.583125 456.189695 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_32">
       <!-- 贵州 -->
-      <g style="fill: #262626" transform="translate(44.153125 462.210321) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 462.062664) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-8d35" d="M 1600 4400 
 L 1600 3675 
@@ -3457,13 +3874,13 @@ z
     </g>
     <g id="ytick_27">
      <g id="line2d_32">
-      <path d="M 89.653125 472.267874 
-L 651.583125 472.267874 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 472.114726 
+L 651.583125 472.114726 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_33">
       <!-- 云南 -->
-      <g style="fill: #262626" transform="translate(44.153125 477.996468) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 477.84332) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-4e91" d="M 1200 4450 
 L 4500 4450 
@@ -3507,13 +3924,13 @@ z
     </g>
     <g id="ytick_28">
      <g id="line2d_33">
-      <path d="M 89.653125 488.198396 
-L 651.583125 488.198396 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 488.039756 
+L 651.583125 488.039756 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_34">
       <!-- 新疆 -->
-      <g style="fill: #262626" transform="translate(44.153125 493.926989) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 493.76835) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-65b0" d="M 5225 2775 
 L 5225 475 
@@ -3775,13 +4192,13 @@ z
     </g>
     <g id="ytick_29">
      <g id="line2d_34">
-      <path d="M 89.653125 504.128917 
-L 651.583125 504.128917 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 503.964787 
+L 651.583125 503.964787 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_35">
       <!-- 江西 -->
-      <g style="fill: #262626" transform="translate(44.153125 509.857511) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 509.693381) scale(0.165 -0.165)">
        <use xlink:href="#SimSun-6c5f"/>
        <use xlink:href="#SimSun-897f" transform="translate(100 0)"/>
       </g>
@@ -3789,13 +4206,13 @@ L 651.583125 504.128917
     </g>
     <g id="ytick_30">
      <g id="line2d_35">
-      <path d="M 89.653125 520.059439 
-L 651.583125 520.059439 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
+      <path d="M 89.653125 519.889817 
+L 651.583125 519.889817 
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke: #cccccc; stroke-width: 1.5; stroke-linecap: round"/>
      </g>
      <g id="text_36">
       <!-- 宁夏 -->
-      <g style="fill: #262626" transform="translate(44.153125 525.803502) scale(0.165 -0.165)">
+      <g style="fill: #262626" transform="translate(44.153125 525.63388) scale(0.165 -0.165)">
        <defs>
         <path id="SimSun-590f" d="M 2600 4225 
 Q 2725 4550 2750 4700 
@@ -3875,7 +4292,7 @@ z
     </g>
     <g id="text_37">
      <!-- 省份 -->
-     <g style="fill: #262626" transform="translate(19.802813 307.066875) rotate(-90) scale(0.18 -0.18)">
+     <g style="fill: #262626" transform="translate(19.802813 306.976875) rotate(-90) scale(0.18 -0.18)">
       <defs>
        <path id="SimSun-7701" d="M 2200 2300 
 L 2200 1725 
@@ -4012,263 +4429,263 @@ z
     </g>
    </g>
    <g id="patch_3">
-    <path d="M -2184.721397 51.702102 
-L 441.486494 51.702102 
-L 441.486494 64.44652 
-L -2184.721397 64.44652 
+    <path d="M -2184.721397 51.69392 
+L 441.486494 51.69392 
+L 441.486494 64.433945 
+L -2184.721397 64.433945 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #006227; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #006227; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
-    <path d="M -2184.721397 67.632624 
-L 397.89441 67.632624 
-L 397.89441 80.377041 
-L -2184.721397 80.377041 
+    <path d="M -2184.721397 67.618951 
+L 397.89441 67.618951 
+L 397.89441 80.358975 
+L -2184.721397 80.358975 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #006c2c; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #006c2c; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
-    <path d="M -2184.721397 83.563146 
-L 353.260634 83.563146 
-L 353.260634 96.307563 
-L -2184.721397 96.307563 
+    <path d="M -2184.721397 83.543981 
+L 353.260634 83.543981 
+L 353.260634 96.284006 
+L -2184.721397 96.284006 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #077331; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #077331; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
-    <path d="M -2184.721397 99.493667 
-L 337.628718 99.493667 
-L 337.628718 112.238085 
-L -2184.721397 112.238085 
+    <path d="M -2184.721397 99.469012 
+L 337.628718 99.469012 
+L 337.628718 112.209036 
+L -2184.721397 112.209036 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #107a37; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #107a37; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_7">
-    <path d="M -2184.721397 115.424189 
-L 336.9696 115.424189 
-L 336.9696 128.168606 
-L -2184.721397 128.168606 
+    <path d="M -2184.721397 115.394042 
+L 336.9696 115.394042 
+L 336.9696 128.134067 
+L -2184.721397 128.134067 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #18823d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #18823d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_8">
-    <path d="M -2184.721397 131.354711 
-L 333.155578 131.354711 
-L 333.155578 144.099128 
-L -2184.721397 144.099128 
+    <path d="M -2184.721397 131.319073 
+L 333.155578 131.319073 
+L 333.155578 144.059097 
+L -2184.721397 144.059097 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #218944; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #218944; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_9">
-    <path d="M -2184.721397 147.285232 
-L 313.296645 147.285232 
-L 313.296645 160.02965 
-L -2184.721397 160.02965 
+    <path d="M -2184.721397 147.244103 
+L 313.296645 147.244103 
+L 313.296645 159.984128 
+L -2184.721397 159.984128 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #289049; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #289049; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_10">
-    <path d="M -2184.721397 163.215754 
-L 304.335218 163.215754 
-L 304.335218 175.960171 
-L -2184.721397 175.960171 
+    <path d="M -2184.721397 163.169134 
+L 304.335218 163.169134 
+L 304.335218 175.909158 
+L -2184.721397 175.909158 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #2f984f; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #2f984f; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_11">
-    <path d="M -2184.721397 179.146276 
-L 291.910035 179.146276 
-L 291.910035 191.890693 
-L -2184.721397 191.890693 
+    <path d="M -2184.721397 179.094165 
+L 291.910035 179.094165 
+L 291.910035 191.834189 
+L -2184.721397 191.834189 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #37a055; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #37a055; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_12">
-    <path d="M -2184.721397 195.076797 
-L 288.417951 195.076797 
-L 288.417951 207.821215 
-L -2184.721397 207.821215 
+    <path d="M -2184.721397 195.019195 
+L 288.417951 195.019195 
+L 288.417951 207.759219 
+L -2184.721397 207.759219 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #3fa85b; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #3fa85b; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_13">
-    <path d="M -2184.721397 211.007319 
-L 278.66323 211.007319 
-L 278.66323 223.751736 
-L -2184.721397 223.751736 
+    <path d="M -2184.721397 210.944226 
+L 278.66323 210.944226 
+L 278.66323 223.68425 
+L -2184.721397 223.68425 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #48ae60; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #48ae60; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_14">
-    <path d="M -2184.721397 226.937841 
-L 273.353072 226.937841 
-L 273.353072 239.682258 
-L -2184.721397 239.682258 
+    <path d="M -2184.721397 226.869256 
+L 273.353072 226.869256 
+L 273.353072 239.60928 
+L -2184.721397 239.60928 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #55b567; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #55b567; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_15">
-    <path d="M -2184.721397 242.868362 
-L 264.273787 242.868362 
-L 264.273787 255.61278 
-L -2184.721397 255.61278 
+    <path d="M -2184.721397 242.794287 
+L 264.273787 242.794287 
+L 264.273787 255.534311 
+L -2184.721397 255.534311 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #62bb6d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #62bb6d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_16">
-    <path d="M -2184.721397 258.798884 
-L 261.040303 258.798884 
-L 261.040303 271.543301 
-L -2184.721397 271.543301 
+    <path d="M -2184.721397 258.719317 
+L 261.040303 258.719317 
+L 261.040303 271.459341 
+L -2184.721397 271.459341 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #6ec173; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #6ec173; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_17">
-    <path d="M -2184.721397 274.729406 
-L 247.544201 274.729406 
-L 247.544201 287.473823 
-L -2184.721397 287.473823 
+    <path d="M -2184.721397 274.644348 
+L 247.544201 274.644348 
+L 247.544201 287.384372 
+L -2184.721397 287.384372 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #79c67a; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #79c67a; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_18">
-    <path d="M -2184.721397 290.659927 
-L 241.013055 290.659927 
-L 241.013055 303.404344 
-L -2184.721397 303.404344 
+    <path d="M -2184.721397 290.569378 
+L 241.013055 290.569378 
+L 241.013055 303.309402 
+L -2184.721397 303.309402 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #84cc83; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #84cc83; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_19">
-    <path d="M -2184.721397 306.590449 
-L 239.343331 306.590449 
-L 239.343331 319.334866 
-L -2184.721397 319.334866 
+    <path d="M -2184.721397 306.494409 
+L 239.343331 306.494409 
+L 239.343331 319.234433 
+L -2184.721397 319.234433 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #90d18d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #90d18d; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_20">
-    <path d="M -2184.721397 322.52097 
-L 225.82292 322.52097 
-L 225.82292 335.265388 
-L -2184.721397 335.265388 
+    <path d="M -2184.721397 322.419439 
+L 225.82292 322.419439 
+L 225.82292 335.159463 
+L -2184.721397 335.159463 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #9bd696; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #9bd696; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_21">
-    <path d="M -2184.721397 338.451492 
-L 222.502453 338.451492 
-L 222.502453 351.195909 
-L -2184.721397 351.195909 
+    <path d="M -2184.721397 338.34447 
+L 222.502453 338.34447 
+L 222.502453 351.084494 
+L -2184.721397 351.084494 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #a4da9e; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #a4da9e; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_22">
-    <path d="M -2184.721397 354.382014 
-L 220.811927 354.382014 
-L 220.811927 367.126431 
-L -2184.721397 367.126431 
+    <path d="M -2184.721397 354.2695 
+L 220.811927 354.2695 
+L 220.811927 367.009524 
+L -2184.721397 367.009524 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #aedea7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #aedea7; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_23">
-    <path d="M -2184.721397 370.312535 
-L 220.300117 370.312535 
-L 220.300117 383.056953 
-L -2184.721397 383.056953 
+    <path d="M -2184.721397 370.194531 
+L 220.300117 370.194531 
+L 220.300117 382.934555 
+L -2184.721397 382.934555 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #b7e2b1; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #b7e2b1; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_24">
-    <path d="M -2184.721397 386.243057 
-L 214.402956 386.243057 
-L 214.402956 398.987474 
-L -2184.721397 398.987474 
+    <path d="M -2184.721397 386.119561 
+L 214.402956 386.119561 
+L 214.402956 398.859585 
+L -2184.721397 398.859585 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #c1e6ba; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #c1e6ba; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_25">
-    <path d="M -2184.721397 402.173579 
-L 211.27843 402.173579 
-L 211.27843 414.917996 
-L -2184.721397 414.917996 
+    <path d="M -2184.721397 402.044592 
+L 211.27843 402.044592 
+L 211.27843 414.784616 
+L -2184.721397 414.784616 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #c9eac2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #c9eac2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_26">
-    <path d="M -2184.721397 418.1041 
-L 204.226069 418.1041 
-L 204.226069 430.848518 
-L -2184.721397 430.848518 
+    <path d="M -2184.721397 417.969622 
+L 204.226069 417.969622 
+L 204.226069 430.709647 
+L -2184.721397 430.709647 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #d0edca; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #d0edca; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_27">
-    <path d="M -2184.721397 434.034622 
-L 199.385092 434.034622 
-L 199.385092 446.779039 
-L -2184.721397 446.779039 
+    <path d="M -2184.721397 433.894653 
+L 199.385092 433.894653 
+L 199.385092 446.634677 
+L -2184.721397 446.634677 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #d8f0d2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #d8f0d2; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_28">
-    <path d="M -2184.721397 449.965144 
-L 187.424734 449.965144 
-L 187.424734 462.709561 
-L -2184.721397 462.709561 
+    <path d="M -2184.721397 449.819683 
+L 187.424734 449.819683 
+L 187.424734 462.559708 
+L -2184.721397 462.559708 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #dff3da; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #dff3da; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_29">
-    <path d="M -2184.721397 465.895665 
-L 184.162041 465.895665 
-L 184.162041 478.640083 
-L -2184.721397 478.640083 
+    <path d="M -2184.721397 465.744714 
+L 184.162041 465.744714 
+L 184.162041 478.484738 
+L -2184.721397 478.484738 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #e5f5e1; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #e5f5e1; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_30">
-    <path d="M -2184.721397 481.826187 
-L 180.85781 481.826187 
-L 180.85781 494.570604 
-L -2184.721397 494.570604 
+    <path d="M -2184.721397 481.669744 
+L 180.85781 481.669744 
+L 180.85781 494.409769 
+L -2184.721397 494.409769 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #eaf7e6; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #eaf7e6; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_31">
-    <path d="M -2184.721397 497.756709 
-L 180.345163 497.756709 
-L 180.345163 510.501126 
-L -2184.721397 510.501126 
+    <path d="M -2184.721397 497.594775 
+L 180.345163 497.594775 
+L 180.345163 510.334799 
+L -2184.721397 510.334799 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #eff9eb; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #eff9eb; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="patch_32">
-    <path d="M -2184.721397 513.68723 
-L 151.858339 513.68723 
-L 151.858339 526.431648 
-L -2184.721397 526.431648 
+    <path d="M -2184.721397 513.519805 
+L 151.858339 513.519805 
+L 151.858339 526.25983 
+L -2184.721397 526.25983 
 z
-" clip-path="url(#p5a17e34e28)" style="fill: #f3faf0; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: #f3faf0; stroke: #ffffff; stroke-width: 0.6; stroke-linejoin: miter"/>
    </g>
    <g id="line2d_36">
-    <path d="M 209.357047 550.168125 
+    <path d="M 209.357047 549.988125 
 L 209.357047 27.965625 
-" clip-path="url(#p5a17e34e28)" style="fill: none; stroke-dasharray: 4.44,1.92; stroke-dashoffset: 0; stroke: #666666; stroke-width: 1.2"/>
+" clip-path="url(#p039fa8c6ac)" style="fill: none; stroke-dasharray: 4.44,1.92; stroke-dashoffset: 0; stroke: #666666; stroke-width: 1.2"/>
    </g>
    <g id="patch_33">
-    <path d="M 89.653125 550.168125 
+    <path d="M 89.653125 549.988125 
 L 89.653125 27.965625 
 " style="fill: none; stroke: #cccccc; stroke-width: 1.875; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
    <g id="patch_34">
-    <path d="M 651.583125 550.168125 
+    <path d="M 651.583125 549.988125 
 L 651.583125 27.965625 
 " style="fill: none; stroke: #cccccc; stroke-width: 1.875; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
    <g id="patch_35">
-    <path d="M 89.653125 550.168125 
-L 651.583125 550.168125 
+    <path d="M 89.653125 549.988125 
+L 651.583125 549.988125 
 " style="fill: none; stroke: #cccccc; stroke-width: 1.875; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
    <g id="patch_36">
@@ -4277,8 +4694,8 @@ L 651.583125 27.965625
 " style="fill: none; stroke: #cccccc; stroke-width: 1.875; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
    <g id="text_38">
-    <!-- 各省平均 tfpch 排序图 -->
-    <g style="fill: #262626" transform="translate(284.625938 21.965625) scale(0.18 -0.18)">
+    <!-- 各省平均全要素生产率（tfpch）排序图 -->
+    <g style="fill: #262626" transform="translate(217.125938 21.965625) scale(0.18 -0.18)">
      <defs>
       <path id="SimSun-5404" d="M 4750 4425 
 L 4500 4250 
@@ -4540,16 +4957,22 @@ z
      <use xlink:href="#SimSun-7701" transform="translate(100 0)"/>
      <use xlink:href="#SimSun-5e73" transform="translate(200 0)"/>
      <use xlink:href="#SimSun-5747" transform="translate(300 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-20" transform="translate(400 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-74" transform="translate(425 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-66" transform="translate(452.783203 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-70" transform="translate(486.083984 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-63" transform="translate(536.083984 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-68" transform="translate(580.46875 0)"/>
-     <use xlink:href="#TimesNewRomanPSMT-20" transform="translate(630.46875 0)"/>
-     <use xlink:href="#SimSun-6392" transform="translate(655.46875 0)"/>
-     <use xlink:href="#SimSun-5e8f" transform="translate(755.46875 0)"/>
-     <use xlink:href="#SimSun-56fe" transform="translate(855.46875 0)"/>
+     <use xlink:href="#SimSun-5168" transform="translate(400 0)"/>
+     <use xlink:href="#SimSun-8981" transform="translate(500 0)"/>
+     <use xlink:href="#SimSun-7d20" transform="translate(600 0)"/>
+     <use xlink:href="#SimSun-751f" transform="translate(700 0)"/>
+     <use xlink:href="#SimSun-4ea7" transform="translate(800 0)"/>
+     <use xlink:href="#SimSun-7387" transform="translate(900 0)"/>
+     <use xlink:href="#SimSun-ff08" transform="translate(1000 0)"/>
+     <use xlink:href="#TimesNewRomanPSMT-74" transform="translate(1100 0)"/>
+     <use xlink:href="#TimesNewRomanPSMT-66" transform="translate(1127.783203 0)"/>
+     <use xlink:href="#TimesNewRomanPSMT-70" transform="translate(1161.083984 0)"/>
+     <use xlink:href="#TimesNewRomanPSMT-63" transform="translate(1211.083984 0)"/>
+     <use xlink:href="#TimesNewRomanPSMT-68" transform="translate(1255.46875 0)"/>
+     <use xlink:href="#SimSun-ff09" transform="translate(1305.46875 0)"/>
+     <use xlink:href="#SimSun-6392" transform="translate(1405.46875 0)"/>
+     <use xlink:href="#SimSun-5e8f" transform="translate(1505.46875 0)"/>
+     <use xlink:href="#SimSun-56fe" transform="translate(1605.46875 0)"/>
     </g>
    </g>
    <g id="legend_1">
@@ -4742,6 +5165,7 @@ Q 700 25 575 -100
 L 325 375 
 z
 " transform="scale(0.015625)"/>
+       <path id="TimesNewRomanPSMT-20" transform="scale(0.015625)"/>
        <path id="TimesNewRomanPSMT-79" d="M 38 2863 
 L 1372 2863 
 L 1372 2747 
@@ -4806,8 +5230,8 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p5a17e34e28">
-   <rect x="89.653125" y="27.965625" width="561.93" height="522.2025"/>
+  <clipPath id="p039fa8c6ac">
+   <rect x="89.653125" y="27.965625" width="561.93" height="522.0225"/>
   </clipPath>
  </defs>
 </svg>

@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- opened on:   7 May 2026, 20:57:08
+ opened on:  11 May 2026, 17:14:12
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 SDM 个体 / 时间 / 双固定估计
@@ -121,12 +121,3 @@ Wald 检验
   (4)  [Wx]rd = -[Spatial]rho*[Main]rd
   (5)  [Wx]open = -[Spatial]rho*[Main]open
   (6)  [Wx]es = -[Spatial]rho*[Main]es
-
-               chi2(6) =       15.09
-           Prob > chi2 =        0.0196
-      name:  sdm_economic_geo_nested
-       log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
-> ine/30_空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
-  log type:  text
- closed on:   7 May 2026, 20:57:11
--------------------------------------------------------------------------------
