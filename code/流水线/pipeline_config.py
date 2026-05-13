@@ -1,375 +1,295 @@
 from __future__ import annotations
 
+import json
+import re
 import sys
+from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
-from stage_config import derived_dearun_result_dir, load_stage_config, resolve_project_path
+from stage_config import STAGE_DIRS, derived_dearun_result_dir, load_stage_config, resolve_project_path
 from step_types import InputRequirement, RunnerType, StepDefinition
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PYTHON_EXE = Path(sys.executable)
 LOGO_PATH = PROJECT_ROOT / "releases" / "比赛版" / "图" / "logo.png"
+PIPELINE_STEPS_PATH = PROJECT_ROOT / "code" / "流水线" / "pipeline_steps.json"
+PIPELINE_VERSION = 1
+VALID_PRECHECK_MODES = {"none", "required_inputs", "manual_result"}
+VALID_INPUT_KINDS = {"file", "directory", "csv"}
+TEMPLATE_PATTERN = re.compile(r"\{([^{}]+)\}")
+
+
+class PipelineConfigError(ValueError):
+    pass
 
 
 def root_path(*parts: str) -> Path:
     return PROJECT_ROOT.joinpath(*parts)
 
 
-def py_command(script_relative_path: str) -> tuple[str, ...]:
-    return ("python", script_relative_path)
+def stage_names() -> tuple[str, ...]:
+    return tuple(STAGE_DIRS.keys())
 
 
-def stata_command(script_relative_path: str) -> tuple[str, ...]:
-    return ("stata-do", script_relative_path)
+def load_pipeline_document() -> dict[str, Any]:
+    if not PIPELINE_STEPS_PATH.exists():
+        raise PipelineConfigError(f"流水线配置不存在：{PIPELINE_STEPS_PATH}")
+    try:
+        document = json.loads(PIPELINE_STEPS_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PipelineConfigError(f"流水线配置 JSON 解析失败：{exc}") from exc
+    validate_pipeline_steps(document)
+    return document
 
 
-def open_path_command(target_path: str) -> tuple[str, ...]:
-    return ("open-path", target_path)
+def save_pipeline_document(document: dict[str, Any]) -> None:
+    validate_pipeline_steps(document)
+    PIPELINE_STEPS_PATH.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def _step_output(stage_output_root: Path, folder_name: str) -> Path:
-    return stage_output_root / folder_name
+def list_pipeline_step_configs() -> list[dict[str, Any]]:
+    return deepcopy(load_pipeline_document()["steps"])
+
+
+def resolve_pipeline_template(text: str, stage_configs: dict[str, dict[str, Any]]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        token = match.group(1).strip()
+        if token == "PROJECT_ROOT":
+            return PROJECT_ROOT.as_posix()
+        if "." not in token:
+            raise PipelineConfigError(f"无法解析模板占位符：{token}")
+
+        stage, expression = token.split(".", 1)
+        if stage not in stage_configs:
+            raise PipelineConfigError(f"模板引用了未知阶段：{stage}")
+        value = _resolve_expression(stage_configs[stage], expression, token)
+        if isinstance(value, Path):
+            return value.as_posix()
+        if isinstance(value, (str, int, float)):
+            return str(value)
+        raise PipelineConfigError(f"模板占位符未解析为字符串：{token}")
+
+    return TEMPLATE_PATTERN.sub(replace, text)
 
 
 def build_step_definitions() -> tuple[StepDefinition, ...]:
-    data_cfg = load_stage_config("数据处理")
-    eff_cfg = load_stage_config("效率测算")
-    reg_cfg = load_stage_config("回归分析")
-    spatial_cfg = load_stage_config("空间分析")
-
-    data_output_root = resolve_project_path(data_cfg["output_root"])
-    eff_output_root = resolve_project_path(eff_cfg["output_root"])
-    reg_output_root = resolve_project_path(reg_cfg["output_root"])
-    spatial_output_root = resolve_project_path(spatial_cfg["output_root"])
-
-    first_stage_panel = resolve_project_path(data_cfg["first_stage_panel"])
-    second_stage_panel = resolve_project_path(data_cfg["second_stage_panel"])
-    efficiency_output = resolve_project_path(eff_cfg["efficiency_extract_output"])
-    dearun_result_dir = derived_dearun_result_dir(eff_cfg)
-
-    reg_panel_path = resolve_project_path(reg_cfg["panel_data"])
-    spatial_efficiency_path = resolve_project_path(spatial_cfg["efficiency_data"])
-    spatial_second_panel = resolve_project_path(spatial_cfg["second_stage_panel"])
-
-    return (
-        StepDefinition(
-            id="data_sample",
-            name="样本构建流程与缺失检查",
-            stage="数据处理",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/数据处理/50_样本构建流程缺失检查与变量箱线图.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="none",
-            expected_outputs=(
-                str((_step_output(data_output_root, "50_样本构建流程缺失检查与变量箱线图") / "图5_变量缺失热力图.png").relative_to(PROJECT_ROOT)),
-            ),
-            image_globs=(
-                str((_step_output(data_output_root, "50_样本构建流程缺失检查与变量箱线图") / "图5_变量缺失热力图.png").relative_to(PROJECT_ROOT)),
-            ),
-            description="输出样本缺失热力图。",
-        ),
-        StepDefinition(
-            id="data_energy",
-            name="构建省级能源总量与折标系数",
-            stage="数据处理",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/数据处理/10_构建省级能源总量与折标系数.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="none",
-            required_inputs=(
-                InputRequirement(resolve_project_path(data_cfg["energy_ceads_dir"]), kind="directory"),
-            ),
-            expected_outputs=(
-                str(resolve_project_path(data_cfg["energy_panel_output"]).relative_to(PROJECT_ROOT)),
-            ),
-            primary_csv=resolve_project_path(data_cfg["energy_panel_output"]),
-            description="从原始能源统计资料与折标系数构建省级能源总量与能源结构指标。",
-        ),
-        StepDefinition(
-            id="data_ntl",
-            name="夜间灯光指标检查",
-            stage="数据处理",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/数据处理/20_夜间灯光指标检查.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="none",
-            required_inputs=(
-                InputRequirement(second_stage_panel, kind="csv", required_columns=("province", "year", "lntl")),
-                InputRequirement(resolve_project_path(data_cfg["map_geojson_paths"][0]), kind="file"),
-            ),
-            expected_outputs=(str((_step_output(data_output_root, "20_夜间灯光指标检查") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(data_output_root, "20_夜间灯光指标检查") / "夜间灯光检查数据.csv",
-            image_globs=(str((_step_output(data_output_root, "20_夜间灯光指标检查") / "*.png").relative_to(PROJECT_ROOT)),),
-            markdown_globs=(str((_step_output(data_output_root, "20_夜间灯光指标检查") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="检查夜间灯光指标的分布、趋势与空间分级效果。",
-        ),
-        StepDefinition(
-            id="data_io",
-            name="投入产出关系预检",
-            stage="数据处理",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/数据处理/30_投入产出关系预检.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="none",
-            required_inputs=(InputRequirement(first_stage_panel, kind="csv", required_columns=("province", "year")),),
-            expected_outputs=(str((_step_output(data_output_root, "30_投入产出关系预检") / "*.png").relative_to(PROJECT_ROOT)),),
-            image_globs=(str((_step_output(data_output_root, "30_投入产出关系预检") / "*.png").relative_to(PROJECT_ROOT)),),
-            description="在效率测算前检查投入产出变量关系是否异常。",
-        ),
-        StepDefinition(
-            id="dearun_manual",
-            name="Dearun 效率测算结果回填",
-            stage="效率测算",
-            runner_type=RunnerType.MANUAL,
-            command=open_path_command(r"C:\Program Files (x86)\Dearun"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="manual_result",
-            required_inputs=(
-                InputRequirement(dearun_result_dir, kind="directory", label="Dearun 输出目录"),
-            ),
-            expected_outputs=(
-                str((dearun_result_dir.relative_to(PROJECT_ROOT) / "**/*规模报酬可变VRS_0.xlsx").as_posix()),
-                str((dearun_result_dir.relative_to(PROJECT_ROOT) / "**/*规模报酬不变CRS_0.xlsx").as_posix()),
-            ),
-            description=f"该步骤需人工运行 Dearun，并将结果文件放回 {dearun_result_dir.relative_to(PROJECT_ROOT)}。",
-            notes=(
-                "请先在 Dearun 中完成 SBM / GM 测算。",
-                "结果目录按当前输入文件自动推导为 结果_<文件名>。",
-                "点击“执行”可自动打开 Dearun 安装目录。",
-                "人工完成后点击“检查”确认结果文件已回填。",
-            ),
-        ),
-        StepDefinition(
-            id="eff_extract",
-            name="提取效率测算结果",
-            stage="效率测算",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/效率测算/10_提取效率测算结果.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(dearun_result_dir, kind="directory"),),
-            expected_outputs=(str(efficiency_output.relative_to(PROJECT_ROOT)),),
-            primary_csv=efficiency_output,
-            description=f"从 {dearun_result_dir.relative_to(PROJECT_ROOT)} 提取年度省级效率结果。",
-        ),
-        StepDefinition(
-            id="eff_plot",
-            name="碳排放效率绘图",
-            stage="效率测算",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/效率测算/20_碳排放效率绘图.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(efficiency_output, kind="csv", required_columns=("year", "province", "eff")),),
-            expected_outputs=(str((_step_output(eff_output_root, "10_碳排放效率绘图") / "*").relative_to(PROJECT_ROOT)),),
-            image_globs=(str((_step_output(eff_output_root, "10_碳排放效率绘图") / "*.png").relative_to(PROJECT_ROOT)),),
-            description="输出效率均值、核密度、地图和区域差异图组。",
-        ),
-        StepDefinition(
-            id="eff_ntl_plot",
-            name="效率与灯光排序绘图",
-            stage="效率测算",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/效率测算/30_效率与灯光排序绘图.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(resolve_project_path(eff_cfg["second_stage_panel"]), kind="csv", required_columns=("province", "year", "eff", "lntl")),),
-            expected_outputs=(str((_step_output(eff_output_root, "10_碳排放效率绘图") / "*对比排序图.png").relative_to(PROJECT_ROOT)),),
-            image_globs=(str((_step_output(eff_output_root, "10_碳排放效率绘图") / "*对比排序图.png").relative_to(PROJECT_ROOT)),),
-            description="对比省均效率与夜间灯光强度排序。",
-        ),
-        StepDefinition(
-            id="productivity_plot",
-            name="生产率分解绘图",
-            stage="效率测算",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/效率测算/40_生产率分解绘图.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(dearun_result_dir, kind="directory"),),
-            expected_outputs=(str((_step_output(eff_output_root, "20_GM分解绘图") / "*").relative_to(PROJECT_ROOT)),),
-            image_globs=(str((_step_output(eff_output_root, "20_GM分解绘图") / "*.png").relative_to(PROJECT_ROOT)),),
-            description="渲染 GM 及其分解项的趋势图和比较图。",
-        ),
-        StepDefinition(
-            id="reg_corr",
-            name="相关性与共线性分析",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/10_相关性与共线性分析.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("eff", "lntl", "ind", "urb", "rd", "open", "es")),),
-            expected_outputs=(str((_step_output(reg_output_root, "10_相关性与VIF分析") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "10_相关性与VIF分析") / "皮尔逊相关系数矩阵.csv",
-            image_globs=(str((_step_output(reg_output_root, "10_相关性与VIF分析") / "*.png").relative_to(PROJECT_ROOT)),),
-            markdown_globs=(str((_step_output(reg_output_root, "10_相关性与VIF分析") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="输出相关系数矩阵、VIF 和解释文本。",
-        ),
-        StepDefinition(
-            id="reg_spec",
-            name="模型设定检验",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/20_模型设定检验.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("eff", "lntl")),),
-            expected_outputs=(str((_step_output(reg_output_root, "20_模型设定检验") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "20_模型设定检验") / "模型设定检验结果.csv",
-            markdown_globs=(str((_step_output(reg_output_root, "20_模型设定检验") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="完成回归设定检验并输出说明。",
-        ),
-        StepDefinition(
-            id="reg_unit_root",
-            name="面板单位根检验",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/30_面板单位根检验.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("province", "year", "eff")),),
-            expected_outputs=(str((_step_output(reg_output_root, "30_面板单位根检验") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "30_面板单位根检验") / "面板单位根汇总表.csv",
-            markdown_globs=(str((_step_output(reg_output_root, "30_面板单位根检验") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="输出面板单位根检验表和说明。",
-        ),
-        StepDefinition(
-            id="reg_baseline",
-            name="基准面板回归诊断",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/40_基准面板回归诊断.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("province", "year", "eff", "lntl")),),
-            expected_outputs=(str((_step_output(reg_output_root, "40_基准面板回归诊断") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "40_基准面板回归诊断") / "基准回归系数表.csv",
-            image_globs=(str((_step_output(reg_output_root, "40_基准面板回归诊断") / "*.png").relative_to(PROJECT_ROOT)),),
-            markdown_globs=(str((_step_output(reg_output_root, "40_基准面板回归诊断") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="运行双固定效应模型并输出诊断图组。",
-        ),
-        StepDefinition(
-            id="reg_robust",
-            name="稳健性检验",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/50_稳健性检验.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("province", "year", "eff")),),
-            expected_outputs=(str((_step_output(reg_output_root, "50_稳健性检验") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "50_稳健性检验") / "稳健性核心比较表.csv",
-            image_globs=(str((_step_output(reg_output_root, "50_稳健性检验") / "*.png").relative_to(PROJECT_ROOT)),),
-            markdown_globs=(str((_step_output(reg_output_root, "50_稳健性检验") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="输出稳健性对比表、系数表和森林图。",
-        ),
-        StepDefinition(
-            id="reg_heterogeneity",
-            name="异质性检验",
-            stage="回归分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/回归分析/60_异质性检验.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(reg_panel_path, kind="csv", required_columns=("province", "year", "eff")),),
-            expected_outputs=(str((_step_output(reg_output_root, "60_异质性检验") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(reg_output_root, "60_异质性检验") / "异质性核心结果表.csv",
-            markdown_globs=(str((_step_output(reg_output_root, "60_异质性检验") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="生成异质性模型汇总和解释报告。",
-        ),
-        StepDefinition(
-            id="spatial_adj_matrix",
-            name="构建邻接矩阵",
-            stage="空间分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/空间分析/10_构建邻接矩阵.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(spatial_efficiency_path, kind="csv", required_columns=("province",)),),
-            expected_outputs=(str(resolve_project_path(spatial_cfg["adjacency_matrix"]).relative_to(PROJECT_ROOT)),),
-            primary_csv=resolve_project_path(spatial_cfg["adjacency_matrix"]),
-            description="根据省份顺序生成 0-1 邻接矩阵。",
-        ),
-        StepDefinition(
-            id="spatial_capitals",
-            name="生成省会坐标与距离矩阵",
-            stage="空间分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/空间分析/15_生成省会城市坐标与距离矩阵.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(InputRequirement(spatial_second_panel, kind="csv", required_columns=("province",)),),
-            expected_outputs=(
-                str(resolve_project_path(spatial_cfg["capital_output"]).relative_to(PROJECT_ROOT)),
-                str(resolve_project_path(spatial_cfg["geo_inverse_output"]).relative_to(PROJECT_ROOT)),
-                str(resolve_project_path(spatial_cfg["economic_geo_nested_output"]).relative_to(PROJECT_ROOT)),
-            ),
-            primary_csv=resolve_project_path(spatial_cfg["capital_output"]),
-            description="生成省会坐标表与地理/嵌套空间矩阵。",
-        ),
-        StepDefinition(
-            id="spatial_moran",
-            name="莫兰指数与局部聚类分析",
-            stage="空间分析",
-            runner_type=RunnerType.PYTHON,
-            command=py_command("code/空间分析/20_莫兰指数与局部聚类分析.py"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(
-                InputRequirement(spatial_efficiency_path, kind="csv", required_columns=("year", "province", "eff")),
-                InputRequirement(resolve_project_path(spatial_cfg["economic_matrix"]), kind="csv"),
-                InputRequirement(resolve_project_path(spatial_cfg["province_geojson"]), kind="file"),
-            ),
-            expected_outputs=(str((_step_output(spatial_output_root, "20_莫兰指数与LISA分析") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(spatial_output_root, "20_莫兰指数与LISA分析") / "全局莫兰指数_2015_2022.csv",
-            image_globs=(str((_step_output(spatial_output_root, "20_莫兰指数与LISA分析") / "*.png").relative_to(PROJECT_ROOT)),),
-            markdown_globs=(str((_step_output(spatial_output_root, "20_莫兰指数与LISA分析") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="输出全局莫兰指数、LISA 聚类图和结果说明。",
-        ),
-        StepDefinition(
-            id="reg_spatial_weight_stata",
-            name="空间权重矩阵检验（Stata）",
-            stage="空间分析",
-            runner_type=RunnerType.HYBRID,
-            command=stata_command("code/空间分析/30_空间权重矩阵检验.do"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(
-                InputRequirement(spatial_second_panel, kind="csv", required_columns=("province", "year", "eff")),
-                InputRequirement(resolve_project_path(spatial_cfg["geo_inverse_matrix"]), kind="csv"),
-            ),
-            expected_outputs=(str((_step_output(spatial_output_root, "30_空间权重矩阵检验") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(spatial_output_root, "30_空间权重矩阵检验") / "LR检验结果.csv",
-            markdown_globs=(str((_step_output(spatial_output_root, "30_空间权重矩阵检验") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="优先尝试由 GUI 拉起 Stata；若不可用，则提示手动执行并回检。",
-            notes=(
-                "若 GUI 未找到 Stata，可手动运行 .do 文件。",
-                "运行完成后点击“检查”刷新结果状态。",
-            ),
-        ),
-        StepDefinition(
-            id="reg_sdm_stata",
-            name="空间 SDM 主模型（Stata）",
-            stage="空间分析",
-            runner_type=RunnerType.HYBRID,
-            command=stata_command("code/空间分析/40_空间SDM主模型.do"),
-            working_dir=PROJECT_ROOT,
-            precheck_mode="required_inputs",
-            required_inputs=(
-                InputRequirement(spatial_second_panel, kind="csv", required_columns=("province", "year", "eff", "lntl", "ind", "urb", "rd", "open", "es")),
-                InputRequirement(resolve_project_path(spatial_cfg["economic_geo_nested_matrix"]), kind="csv"),
-            ),
-            expected_outputs=(str((_step_output(spatial_output_root, "40_空间SDM主模型") / "*").relative_to(PROJECT_ROOT)),),
-            primary_csv=_step_output(spatial_output_root, "40_空间SDM主模型") / "主模型系数表.csv",
-            markdown_globs=(str((_step_output(spatial_output_root, "40_空间SDM主模型") / "*.md").relative_to(PROJECT_ROOT)),),
-            description="优先尝试由 GUI 拉起 Stata 运行 SDM 主模型并回收结果。",
-            notes=("若 Stata 不可自动调用，可手动执行 .do 文件后回检。",),
-        ),
-    )
+    return load_pipeline_steps()
 
 
 def build_step_map() -> dict[str, StepDefinition]:
     steps = build_step_definitions()
     return {step.id: step for step in steps}
+
+
+def load_pipeline_steps(include_disabled: bool = False) -> tuple[StepDefinition, ...]:
+    document = load_pipeline_document()
+    stage_configs = _load_stage_configs()
+    steps: list[StepDefinition] = []
+    for raw_step in document["steps"]:
+        if not include_disabled and not raw_step.get("enabled", True):
+            continue
+        steps.append(_build_step_definition(raw_step, stage_configs))
+    return tuple(steps)
+
+
+def validate_pipeline_steps(document: dict[str, Any]) -> None:
+    if not isinstance(document, dict):
+        raise PipelineConfigError("流水线配置顶层必须是对象。")
+    if document.get("version") != PIPELINE_VERSION:
+        raise PipelineConfigError(f"流水线配置版本必须为 {PIPELINE_VERSION}。")
+
+    steps = document.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise PipelineConfigError("流水线配置 steps 必须是非空数组。")
+
+    stage_configs = _load_stage_configs()
+    known_stages = set(stage_names())
+    seen_ids: set[str] = set()
+    enabled_count = 0
+
+    for index, raw_step in enumerate(steps):
+        if not isinstance(raw_step, dict):
+            raise PipelineConfigError(f"第 {index + 1} 个步骤不是对象。")
+
+        step_id = raw_step.get("id")
+        if not isinstance(step_id, str) or not step_id.strip():
+            raise PipelineConfigError(f"第 {index + 1} 个步骤缺少有效 id。")
+        if step_id in seen_ids:
+            raise PipelineConfigError(f"步骤 id 重复：{step_id}")
+        seen_ids.add(step_id)
+
+        stage = raw_step.get("stage")
+        if stage not in known_stages:
+            raise PipelineConfigError(f"步骤 {step_id} 的 stage 非法：{stage}")
+
+        runner_type = raw_step.get("runner_type")
+        if runner_type not in {member.value for member in RunnerType}:
+            raise PipelineConfigError(f"步骤 {step_id} 的 runner_type 非法：{runner_type}")
+
+        precheck_mode = raw_step.get("precheck_mode")
+        if precheck_mode not in VALID_PRECHECK_MODES:
+            raise PipelineConfigError(f"步骤 {step_id} 的 precheck_mode 非法：{precheck_mode}")
+
+        enabled = raw_step.get("enabled", True)
+        if not isinstance(enabled, bool):
+            raise PipelineConfigError(f"步骤 {step_id} 的 enabled 必须是布尔值。")
+        if enabled:
+            enabled_count += 1
+
+        command = raw_step.get("command")
+        if not isinstance(command, list) or not command or not all(isinstance(part, str) and part for part in command):
+            raise PipelineConfigError(f"步骤 {step_id} 的 command 必须是非空字符串数组。")
+        if runner_type == RunnerType.PYTHON.value and command[0] != "python":
+            raise PipelineConfigError(f"步骤 {step_id} 的 python 步骤命令必须以 'python' 开头。")
+        if runner_type == RunnerType.HYBRID.value and command[0] != "stata-do":
+            raise PipelineConfigError(f"步骤 {step_id} 的 hybrid 步骤命令必须以 'stata-do' 开头。")
+        if runner_type == RunnerType.MANUAL.value and command[0] != "open-path":
+            raise PipelineConfigError(f"步骤 {step_id} 的 manual 步骤命令必须以 'open-path' 开头。")
+
+        _validate_string_field(raw_step, "name", step_id)
+        _validate_string_field(raw_step, "working_dir", step_id)
+        _validate_optional_string_field(raw_step, "description", step_id)
+        _validate_sequence_field(raw_step, "expected_outputs", step_id)
+        _validate_sequence_field(raw_step, "image_globs", step_id)
+        _validate_sequence_field(raw_step, "markdown_globs", step_id)
+        _validate_sequence_field(raw_step, "notes", step_id)
+        _validate_sequence_field(raw_step, "console_success_markers", step_id)
+
+        primary_csv = raw_step.get("primary_csv")
+        if primary_csv is not None and not isinstance(primary_csv, str):
+            raise PipelineConfigError(f"步骤 {step_id} 的 primary_csv 必须是字符串或 null。")
+
+        required_inputs = raw_step.get("required_inputs", [])
+        if not isinstance(required_inputs, list):
+            raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs 必须是数组。")
+        for req_index, requirement in enumerate(required_inputs):
+            if not isinstance(requirement, dict):
+                raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs[{req_index}] 必须是对象。")
+            path_text = requirement.get("path")
+            if not isinstance(path_text, str) or not path_text:
+                raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs[{req_index}].path 缺失。")
+            kind = requirement.get("kind", "file")
+            if kind not in VALID_INPUT_KINDS:
+                raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs[{req_index}].kind 非法：{kind}")
+            columns = requirement.get("required_columns", [])
+            if not isinstance(columns, list) or not all(isinstance(column, str) for column in columns):
+                raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs[{req_index}].required_columns 必须是字符串数组。")
+            label = requirement.get("label", "")
+            if not isinstance(label, str):
+                raise PipelineConfigError(f"步骤 {step_id} 的 required_inputs[{req_index}].label 必须是字符串。")
+            resolve_pipeline_template(path_text, stage_configs)
+
+        resolve_pipeline_template(raw_step["working_dir"], stage_configs)
+        for key in ("expected_outputs", "image_globs", "markdown_globs", "notes", "console_success_markers"):
+            for value in raw_step.get(key, []):
+                if not isinstance(value, str):
+                    raise PipelineConfigError(f"步骤 {step_id} 的 {key} 必须是字符串数组。")
+                if key in {"expected_outputs", "image_globs", "markdown_globs"}:
+                    resolve_pipeline_template(value, stage_configs)
+        if primary_csv:
+            resolve_pipeline_template(primary_csv, stage_configs)
+        for command_part in command:
+            if "{" in command_part:
+                resolve_pipeline_template(command_part, stage_configs)
+
+    if enabled_count == 0:
+        raise PipelineConfigError("至少需要保留一个启用的流水线步骤。")
+
+
+def _validate_string_field(raw_step: dict[str, Any], key: str, step_id: str) -> None:
+    value = raw_step.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise PipelineConfigError(f"步骤 {step_id} 的 {key} 必须是非空字符串。")
+
+
+def _validate_optional_string_field(raw_step: dict[str, Any], key: str, step_id: str) -> None:
+    value = raw_step.get(key, "")
+    if not isinstance(value, str):
+        raise PipelineConfigError(f"步骤 {step_id} 的 {key} 必须是字符串。")
+
+
+def _validate_sequence_field(raw_step: dict[str, Any], key: str, step_id: str) -> None:
+    value = raw_step.get(key, [])
+    if not isinstance(value, list):
+        raise PipelineConfigError(f"步骤 {step_id} 的 {key} 必须是数组。")
+    if not all(isinstance(item, str) for item in value):
+        raise PipelineConfigError(f"步骤 {step_id} 的 {key} 必须是字符串数组。")
+
+
+def _load_stage_configs() -> dict[str, dict[str, Any]]:
+    configs = {stage: load_stage_config(stage) for stage in stage_names()}
+    efficiency_cfg = dict(configs["效率测算"])
+    efficiency_cfg["dearun_result_dir"] = str(derived_dearun_result_dir(efficiency_cfg).relative_to(PROJECT_ROOT).as_posix())
+    configs["效率测算"] = efficiency_cfg
+    return configs
+
+
+def _resolve_expression(payload: Any, expression: str, token: str) -> Any:
+    current = payload
+    for part in expression.split("."):
+        current = _apply_segment(current, part, token)
+    return current
+
+
+def _apply_segment(current: Any, segment: str, token: str) -> Any:
+    cursor = 0
+    while cursor < len(segment):
+        bracket_index = segment.find("[", cursor)
+        chunk = segment[cursor:] if bracket_index == -1 else segment[cursor:bracket_index]
+        if chunk:
+            if not isinstance(current, dict) or chunk not in current:
+                raise PipelineConfigError(f"模板占位符不存在：{token}")
+            current = current[chunk]
+        if bracket_index == -1:
+            break
+        end_index = segment.find("]", bracket_index)
+        if end_index == -1:
+            raise PipelineConfigError(f"模板占位符数组语法错误：{token}")
+        index_text = segment[bracket_index + 1:end_index]
+        if not index_text.isdigit():
+            raise PipelineConfigError(f"模板占位符数组下标非法：{token}")
+        index = int(index_text)
+        if not isinstance(current, list) or index >= len(current):
+            raise PipelineConfigError(f"模板占位符数组越界：{token}")
+        current = current[index]
+        cursor = end_index + 1
+    return current
+
+
+def _build_step_definition(raw_step: dict[str, Any], stage_configs: dict[str, dict[str, Any]]) -> StepDefinition:
+    required_inputs = tuple(
+        InputRequirement(
+            path=resolve_project_path(resolve_pipeline_template(requirement["path"], stage_configs)),
+            kind=requirement.get("kind", "file"),
+            required_columns=tuple(requirement.get("required_columns", [])),
+            label=requirement.get("label", ""),
+        )
+        for requirement in raw_step.get("required_inputs", [])
+    )
+    command = tuple(resolve_pipeline_template(part, stage_configs) if "{" in part else part for part in raw_step["command"])
+    expected_outputs = tuple(resolve_pipeline_template(pattern, stage_configs) for pattern in raw_step.get("expected_outputs", []))
+    image_globs = tuple(resolve_pipeline_template(pattern, stage_configs) for pattern in raw_step.get("image_globs", []))
+    markdown_globs = tuple(resolve_pipeline_template(pattern, stage_configs) for pattern in raw_step.get("markdown_globs", []))
+    primary_csv_text = raw_step.get("primary_csv")
+    primary_csv = resolve_project_path(resolve_pipeline_template(primary_csv_text, stage_configs)) if primary_csv_text else None
+    working_dir = resolve_project_path(resolve_pipeline_template(raw_step["working_dir"], stage_configs))
+
+    return StepDefinition(
+        id=raw_step["id"],
+        name=raw_step["name"],
+        stage=raw_step["stage"],
+        runner_type=RunnerType(raw_step["runner_type"]),
+        command=command,
+        working_dir=working_dir,
+        precheck_mode=raw_step["precheck_mode"],
+        required_inputs=required_inputs,
+        expected_outputs=expected_outputs,
+        primary_csv=primary_csv,
+        image_globs=image_globs,
+        markdown_globs=markdown_globs,
+        console_success_markers=tuple(raw_step.get("console_success_markers", [])),
+        description=raw_step.get("description", ""),
+        notes=tuple(raw_step.get("notes", [])),
+    )

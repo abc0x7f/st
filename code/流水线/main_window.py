@@ -1,19 +1,27 @@
 from __future__ import annotations
 
 import locale
+import json
+from copy import deepcopy
 
 from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QSize
 from PySide6.QtGui import QAction, QFont, QPixmap
 from PySide6.QtWidgets import (
+    QCheckBox,
     QApplication,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFrame,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -23,7 +31,15 @@ from PySide6.QtWidgets import (
     QMenu,
 )
 
-from pipeline_config import LOGO_PATH, PROJECT_ROOT
+from pipeline_config import (
+    LOGO_PATH,
+    PIPELINE_VERSION,
+    PROJECT_ROOT,
+    PipelineConfigError,
+    list_pipeline_step_configs,
+    save_pipeline_document,
+    stage_names,
+)
 from pipeline_service import (
     available_stage_configs,
     check_step,
@@ -38,7 +54,7 @@ from pipeline_service import (
 )
 from stage_config import get_active_config_name, get_ui_setting, set_active_config_name, set_ui_setting
 from step_types import ArtifactBundle, RunnerType, StepDefinition, StepStatus
-from ui_panels import ConsolePanel, ImagePanel, MarkdownPanel, TablePanel, status_color
+from ui_panels import ConsolePanel, ImagePanel, MarkdownPanel, TablePanel
 
 
 class StepListItemWidget(QFrame):
@@ -92,6 +108,350 @@ class StepListItemWidget(QFrame):
         available_width = max(40, self.title_label.width() - 4)
         elided = self.title_label.fontMetrics().elidedText(self._title_text, Qt.ElideRight, available_width)
         self.title_label.setText(elided)
+
+
+class StepEditorDialog(QDialog):
+    def __init__(self, step_data: dict, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("编辑步骤")
+        self.resize(860, 780)
+        self.result_data: dict | None = None
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        form.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
+
+        self.enabled_check = QCheckBox("启用该步骤")
+        form.addRow("启停", self.enabled_check)
+
+        self.id_edit = QLineEdit()
+        form.addRow("步骤 ID", self.id_edit)
+
+        self.name_edit = QLineEdit()
+        form.addRow("步骤名称", self.name_edit)
+
+        self.stage_combo = QComboBox()
+        self.stage_combo.addItems(stage_names())
+        form.addRow("阶段", self.stage_combo)
+
+        self.runner_combo = QComboBox()
+        self.runner_combo.addItems([member.value for member in RunnerType])
+        form.addRow("执行类型", self.runner_combo)
+
+        self.precheck_combo = QComboBox()
+        self.precheck_combo.addItems(["none", "required_inputs", "manual_result"])
+        form.addRow("检查模式", self.precheck_combo)
+
+        self.working_dir_edit = QLineEdit()
+        form.addRow("工作目录", self.working_dir_edit)
+
+        self.command_edit = QPlainTextEdit()
+        self.command_edit.setPlaceholderText('["python", "code/数据处理/example.py"]')
+        self.command_edit.setFixedHeight(74)
+        form.addRow("命令(JSON)", self.command_edit)
+
+        self.primary_csv_edit = QLineEdit()
+        self.primary_csv_edit.setPlaceholderText("可留空")
+        form.addRow("主表 CSV", self.primary_csv_edit)
+
+        self.description_edit = QPlainTextEdit()
+        self.description_edit.setFixedHeight(82)
+        form.addRow("说明", self.description_edit)
+
+        self.required_inputs_edit = QPlainTextEdit()
+        self.required_inputs_edit.setPlaceholderText('[{"path": "{数据处理.first_stage_panel}", "kind": "csv", "required_columns": ["province"]}]')
+        self.required_inputs_edit.setFixedHeight(120)
+        form.addRow("输入检查(JSON)", self.required_inputs_edit)
+
+        self.expected_outputs_edit = QPlainTextEdit()
+        self.expected_outputs_edit.setFixedHeight(90)
+        form.addRow("输出模式(JSON)", self.expected_outputs_edit)
+
+        self.image_globs_edit = QPlainTextEdit()
+        self.image_globs_edit.setFixedHeight(90)
+        form.addRow("图片模式(JSON)", self.image_globs_edit)
+
+        self.markdown_globs_edit = QPlainTextEdit()
+        self.markdown_globs_edit.setFixedHeight(90)
+        form.addRow("Markdown 模式(JSON)", self.markdown_globs_edit)
+
+        self.console_markers_edit = QPlainTextEdit()
+        self.console_markers_edit.setFixedHeight(74)
+        form.addRow("成功标记(JSON)", self.console_markers_edit)
+
+        self.notes_edit = QPlainTextEdit()
+        self.notes_edit.setFixedHeight(90)
+        form.addRow("备注(JSON)", self.notes_edit)
+
+        layout.addLayout(form)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self._load(step_data)
+
+    def _load(self, step_data: dict) -> None:
+        self.enabled_check.setChecked(step_data.get("enabled", True))
+        self.id_edit.setText(step_data.get("id", ""))
+        self.name_edit.setText(step_data.get("name", ""))
+        self.stage_combo.setCurrentText(step_data.get("stage", stage_names()[0]))
+        self.runner_combo.setCurrentText(step_data.get("runner_type", RunnerType.PYTHON.value))
+        self.precheck_combo.setCurrentText(step_data.get("precheck_mode", "none"))
+        self.working_dir_edit.setText(step_data.get("working_dir", "{PROJECT_ROOT}"))
+        self.command_edit.setPlainText(json.dumps(step_data.get("command", []), ensure_ascii=False, indent=2))
+        self.primary_csv_edit.setText(step_data.get("primary_csv") or "")
+        self.description_edit.setPlainText(step_data.get("description", ""))
+        self.required_inputs_edit.setPlainText(json.dumps(step_data.get("required_inputs", []), ensure_ascii=False, indent=2))
+        self.expected_outputs_edit.setPlainText(json.dumps(step_data.get("expected_outputs", []), ensure_ascii=False, indent=2))
+        self.image_globs_edit.setPlainText(json.dumps(step_data.get("image_globs", []), ensure_ascii=False, indent=2))
+        self.markdown_globs_edit.setPlainText(json.dumps(step_data.get("markdown_globs", []), ensure_ascii=False, indent=2))
+        self.console_markers_edit.setPlainText(json.dumps(step_data.get("console_success_markers", []), ensure_ascii=False, indent=2))
+        self.notes_edit.setPlainText(json.dumps(step_data.get("notes", []), ensure_ascii=False, indent=2))
+
+    def accept(self) -> None:
+        try:
+            self.result_data = self._build_step_data()
+        except ValueError as exc:
+            QMessageBox.warning(self, "步骤配置无效", str(exc))
+            return
+        super().accept()
+
+    def _build_step_data(self) -> dict:
+        step_id = self.id_edit.text().strip()
+        if not step_id:
+            raise ValueError("步骤 ID 不能为空。")
+        name = self.name_edit.text().strip()
+        if not name:
+            raise ValueError("步骤名称不能为空。")
+        working_dir = self.working_dir_edit.text().strip()
+        if not working_dir:
+            raise ValueError("工作目录不能为空。")
+
+        command = self._parse_json(self.command_edit.toPlainText(), "命令")
+        if not isinstance(command, list) or not command or not all(isinstance(part, str) and part.strip() for part in command):
+            raise ValueError("命令必须是非空字符串数组。")
+
+        required_inputs = self._parse_json(self.required_inputs_edit.toPlainText(), "输入检查", default=[])
+        expected_outputs = self._parse_json(self.expected_outputs_edit.toPlainText(), "输出模式", default=[])
+        image_globs = self._parse_json(self.image_globs_edit.toPlainText(), "图片模式", default=[])
+        markdown_globs = self._parse_json(self.markdown_globs_edit.toPlainText(), "Markdown 模式", default=[])
+        console_success_markers = self._parse_json(self.console_markers_edit.toPlainText(), "成功标记", default=[])
+        notes = self._parse_json(self.notes_edit.toPlainText(), "备注", default=[])
+
+        if not isinstance(required_inputs, list) or not all(isinstance(item, dict) for item in required_inputs):
+            raise ValueError("输入检查必须是对象数组。")
+        for field_name, value in {
+            "输出模式": expected_outputs,
+            "图片模式": image_globs,
+            "Markdown 模式": markdown_globs,
+            "成功标记": console_success_markers,
+            "备注": notes,
+        }.items():
+            if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+                raise ValueError(f"{field_name} 必须是字符串数组。")
+
+        primary_csv_text = self.primary_csv_edit.text().strip()
+        return {
+            "id": step_id,
+            "name": name,
+            "stage": self.stage_combo.currentText(),
+            "enabled": self.enabled_check.isChecked(),
+            "runner_type": self.runner_combo.currentText(),
+            "command": command,
+            "working_dir": working_dir,
+            "precheck_mode": self.precheck_combo.currentText(),
+            "required_inputs": required_inputs,
+            "expected_outputs": expected_outputs,
+            "primary_csv": primary_csv_text or None,
+            "image_globs": image_globs,
+            "markdown_globs": markdown_globs,
+            "console_success_markers": console_success_markers,
+            "description": self.description_edit.toPlainText().strip(),
+            "notes": notes,
+        }
+
+    @staticmethod
+    def _parse_json(text: str, label: str, default=None):
+        stripped = text.strip()
+        if not stripped:
+            return default
+        try:
+            return json.loads(stripped)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{label} JSON 解析失败：{exc}") from exc
+
+
+class PipelineManagerDialog(QDialog):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("流水线管理")
+        self.resize(760, 560)
+        document = {"version": PIPELINE_VERSION, "steps": list_pipeline_step_configs()}
+        self.document = document
+
+        root = QVBoxLayout(self)
+        hint = QLabel("管理全部步骤。禁用步骤不会出现在主执行列表中。")
+        hint.setWordWrap(True)
+        root.addWidget(hint)
+
+        content = QHBoxLayout()
+        self.step_list = QListWidget()
+        self.step_list.itemDoubleClicked.connect(lambda _: self._edit_step())
+        content.addWidget(self.step_list, 2)
+
+        controls = QVBoxLayout()
+        controls.setSpacing(10)
+        self.add_button = QPushButton("新增")
+        self.edit_button = QPushButton("编辑")
+        self.copy_button = QPushButton("复制")
+        self.toggle_button = QPushButton("启用/停用")
+        self.up_button = QPushButton("上移")
+        self.down_button = QPushButton("下移")
+        self.delete_button = QPushButton("删除")
+        for button, handler in (
+            (self.add_button, self._add_step),
+            (self.edit_button, self._edit_step),
+            (self.copy_button, self._copy_step),
+            (self.toggle_button, self._toggle_step),
+            (self.up_button, self._move_up),
+            (self.down_button, self._move_down),
+            (self.delete_button, self._delete_step),
+        ):
+            button.clicked.connect(handler)
+            controls.addWidget(button)
+        controls.addStretch(1)
+        content.addLayout(controls, 1)
+        root.addLayout(content, 1)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        root.addWidget(buttons)
+
+        self._refresh_step_list(0)
+
+    def accept(self) -> None:
+        try:
+            save_pipeline_document(self.document)
+        except PipelineConfigError as exc:
+            QMessageBox.warning(self, "保存失败", str(exc))
+            return
+        super().accept()
+
+    def _refresh_step_list(self, target_index: int | None = None) -> None:
+        self.step_list.clear()
+        for step in self.document["steps"]:
+            prefix = "启用" if step.get("enabled", True) else "停用"
+            item = QListWidgetItem(f"[{prefix}] {step['stage']} | {step['name']} ({step['id']})")
+            self.step_list.addItem(item)
+        if self.document["steps"]:
+            if target_index is None:
+                target_index = min(self.step_list.currentRow(), len(self.document["steps"]) - 1)
+            target_index = max(0, min(target_index, len(self.document["steps"]) - 1))
+            self.step_list.setCurrentRow(target_index)
+
+    def _selected_index(self) -> int:
+        return self.step_list.currentRow()
+
+    def _selected_step(self) -> dict | None:
+        index = self._selected_index()
+        if index < 0 or index >= len(self.document["steps"]):
+            return None
+        return self.document["steps"][index]
+
+    def _add_step(self) -> None:
+        base_stage = self._selected_step()["stage"] if self._selected_step() else stage_names()[0]
+        raw_step = {
+            "id": self._make_unique_id("new_step"),
+            "name": "新步骤",
+            "stage": base_stage,
+            "enabled": True,
+            "runner_type": "python",
+            "command": ["python", "code/待补充.py"],
+            "working_dir": "{PROJECT_ROOT}",
+            "precheck_mode": "none",
+            "required_inputs": [],
+            "expected_outputs": [],
+            "primary_csv": None,
+            "image_globs": [],
+            "markdown_globs": [],
+            "console_success_markers": [],
+            "description": "",
+            "notes": [],
+        }
+        dialog = StepEditorDialog(raw_step, self)
+        if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
+            return
+        self.document["steps"].append(dialog.result_data)
+        self._refresh_step_list(len(self.document["steps"]) - 1)
+
+    def _edit_step(self) -> None:
+        index = self._selected_index()
+        step = self._selected_step()
+        if step is None:
+            return
+        dialog = StepEditorDialog(deepcopy(step), self)
+        if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
+            return
+        self.document["steps"][index] = dialog.result_data
+        self._refresh_step_list(index)
+
+    def _copy_step(self) -> None:
+        index = self._selected_index()
+        step = self._selected_step()
+        if step is None:
+            return
+        copied = deepcopy(step)
+        copied["id"] = self._make_unique_id(f"{step['id']}_copy")
+        copied["name"] = f"{step['name']}（副本）"
+        dialog = StepEditorDialog(copied, self)
+        if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
+            return
+        self.document["steps"].insert(index + 1, dialog.result_data)
+        self._refresh_step_list(index + 1)
+
+    def _toggle_step(self) -> None:
+        step = self._selected_step()
+        if step is None:
+            return
+        step["enabled"] = not step.get("enabled", True)
+        self._refresh_step_list(self._selected_index())
+
+    def _move_up(self) -> None:
+        index = self._selected_index()
+        if index <= 0:
+            return
+        self.document["steps"][index - 1], self.document["steps"][index] = self.document["steps"][index], self.document["steps"][index - 1]
+        self._refresh_step_list(index - 1)
+
+    def _move_down(self) -> None:
+        index = self._selected_index()
+        if index < 0 or index >= len(self.document["steps"]) - 1:
+            return
+        self.document["steps"][index + 1], self.document["steps"][index] = self.document["steps"][index], self.document["steps"][index + 1]
+        self._refresh_step_list(index + 1)
+
+    def _delete_step(self) -> None:
+        index = self._selected_index()
+        step = self._selected_step()
+        if step is None:
+            return
+        answer = QMessageBox.question(self, "确认删除", f"删除步骤：{step['name']} ({step['id']})？")
+        if answer != QMessageBox.Yes:
+            return
+        self.document["steps"].pop(index)
+        self._refresh_step_list(index)
+
+    def _make_unique_id(self, base_id: str) -> str:
+        existing = {step["id"] for step in self.document["steps"]}
+        if base_id not in existing:
+            return base_id
+        suffix = 2
+        while f"{base_id}_{suffix}" in existing:
+            suffix += 1
+        return f"{base_id}_{suffix}"
 
 
 class MainWindow(QMainWindow):
@@ -257,8 +617,13 @@ class MainWindow(QMainWindow):
         settings_menu.addAction(self.render_existing_outputs_action)
         self.settings_button.setMenu(settings_menu)
 
+        self.pipeline_button = QPushButton("流水线管理")
+        self.pipeline_button.setMinimumHeight(42)
+        self.pipeline_button.clicked.connect(self._open_pipeline_manager)
+
         layout.addWidget(logo_label, 0)
         layout.addWidget(title_block, 1)
+        layout.addWidget(self.pipeline_button, 0, Qt.AlignTop)
         layout.addWidget(self.settings_button, 0, Qt.AlignTop)
         return frame
 
@@ -414,12 +779,33 @@ class MainWindow(QMainWindow):
                 widget.set_selected(row == current_row)
 
     def _refresh_executable_summary(self) -> None:
-        self.version_label.setText("GUI v0.2 | PySide6")
+        self.version_label.setText("GUI v0.3 | PySide6")
 
     def _on_render_existing_outputs_toggled(self, checked: bool) -> None:
         self.render_existing_outputs = checked
         set_ui_setting(self.RENDER_EXISTING_OUTPUTS_KEY, checked)
         self._refresh_detail_views()
+
+    def _open_pipeline_manager(self) -> None:
+        current_step_id = self.steps[self.current_step_index].id if self.steps else None
+        current_stage = self.steps[self.current_step_index].stage if self.steps else None
+        dialog = PipelineManagerDialog(self)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        self._reload_steps(current_step_id, current_stage)
+
+    def _reload_steps(self, preferred_step_id: str | None = None, preferred_stage: str | None = None) -> None:
+        self.steps = list(list_steps())
+        self.statuses = {step.id: detect_status(step.id) for step in self.steps}
+        self._populate_step_list()
+        if not self.steps:
+            return
+        target_index = next((idx for idx, step in enumerate(self.steps) if step.id == preferred_step_id), -1)
+        if target_index < 0 and preferred_stage:
+            target_index = next((idx for idx, step in enumerate(self.steps) if step.stage == preferred_stage), -1)
+        if target_index < 0:
+            target_index = 0
+        self.step_list.setCurrentRow(target_index)
 
     def _sync_stage_config_combo(self, stage: str) -> None:
         self._config_refreshing = True
@@ -440,11 +826,7 @@ class MainWindow(QMainWindow):
         stage = self.steps[self.current_step_index].stage
         current_step_id = self.steps[self.current_step_index].id
         set_active_config_name(stage, config_name)
-        self.steps = list(list_steps())
-        self.statuses = {step.id: detect_status(step.id) for step in self.steps}
-        self._populate_step_list()
-        target_index = next((idx for idx, step in enumerate(self.steps) if step.id == current_step_id), 0)
-        self.step_list.setCurrentRow(target_index)
+        self._reload_steps(current_step_id, stage)
 
     def _on_step_changed(self, row: int) -> None:
         if row < 0 or row >= len(self.steps):
