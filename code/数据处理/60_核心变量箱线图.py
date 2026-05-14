@@ -1,21 +1,79 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "核心变量箱线图",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/数据处理/60_核心变量箱线图.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{数据处理.first_stage_panel}",
+            "kind": "csv",
+            "required_columns": [
+                "Population",
+                "Capital",
+                "energy_total",
+                "GDP_constant",
+                "Carbon"
+            ],
+            "label": ""
+        },
+        {
+            "path": "{数据处理.second_stage_panel}",
+            "kind": "csv",
+            "required_columns": [
+                "lntl",
+                "ind",
+                "urb",
+                "rd",
+                "open",
+                "es"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": []
+        },
+        "images": {
+            "primary": "图6_核心变量箱线图.png",
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "对第一阶段与第二阶段核心变量绘制对数坐标箱线图。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import colors, font_manager, patches, ticker
+from matplotlib.font_manager import FontProperties
 import pandas as pd
 import seaborn as sns
 
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
-OUT_DIR = stage_output_dir(CONFIG, "60_核心变量箱线图")
+OUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 FIRST_STAGE_PANEL = resolve_project_path(CONFIG["first_stage_panel"])
 SECOND_STAGE_PANEL = resolve_project_path(CONFIG["second_stage_panel"])
@@ -23,18 +81,18 @@ SECOND_STAGE_PANEL = resolve_project_path(CONFIG["second_stage_panel"])
 FIRST_STAGE_VARS = ["Population", "Capital", "energy_total", "GDP_constant", "Carbon"]
 SECOND_STAGE_VARS = ["lntl", "ind", "urb", "rd", "open", "es"]
 VAR_ORDER = [*FIRST_STAGE_VARS, *SECOND_STAGE_VARS]
-STAGE_LABELS = {
-    "Population": "Population",
-    "Capital": "Capital",
-    "energy_total": "energy_total",
-    "GDP_constant": "GDP_constant",
-    "Carbon": "Carbon",
-    "lntl": "lntl",
-    "ind": "ind",
-    "urb": "urb",
-    "rd": "rd",
-    "open": "open",
-    "es": "es",
+LEGEND_LABELS = {
+    "Population": ("Population", "人口规模"),
+    "Capital": ("Capital", "资本投入"),
+    "energy_total": ("energy_total", "能源投入"),
+    "GDP_constant": ("GDP_constant", "不变价GDP"),
+    "Carbon": ("Carbon", "碳排放"),
+    "lntl": ("lntl", "夜间灯光"),
+    "ind": ("ind", "产业结构"),
+    "urb": ("urb", "城镇化水平"),
+    "rd": ("rd", "研发投入"),
+    "open": ("open", "对外开放"),
+    "es": ("es", "能源结构"),
 }
 
 
@@ -79,6 +137,111 @@ def log_tick_formatter(value: float, _pos: int) -> str:
 def darken_color(color: tuple[float, float, float], factor: float = 0.58) -> tuple[float, float, float]:
     rgb = colors.to_rgb(color)
     return tuple(channel * factor for channel in rgb)
+
+
+def build_bilingual_label(variable: str) -> str:
+    english, chinese = LEGEND_LABELS[variable]
+    return f"{english} {chinese}"
+
+
+def build_legend_font() -> FontProperties:
+    english_candidates = ["Times New Roman", "Times New Roman PS MT", "Nimbus Roman", "DejaVu Serif"]
+    chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC", "Microsoft YaHei"]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    families: list[str] = []
+    english = next((name for name in english_candidates if name in available), None)
+    chinese = next((name for name in chinese_candidates if name in available), None)
+    if english:
+        families.append(english)
+    if chinese and chinese not in families:
+        families.append(chinese)
+    if not families:
+        families = ["DejaVu Serif"]
+    return FontProperties(family=families, size=13)
+
+
+def build_english_legend_font() -> FontProperties:
+    english_candidates = ["Times New Roman", "Times New Roman PS MT", "Nimbus Roman", "DejaVu Serif"]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    family = next((name for name in english_candidates if name in available), "DejaVu Serif")
+    return FontProperties(family=[family], size=13)
+
+
+def build_chinese_legend_font() -> FontProperties:
+    chinese_candidates = ["SimSun", "NSimSun", "Songti SC", "Noto Serif CJK SC", "Microsoft YaHei"]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    family = next((name for name in chinese_candidates if name in available), "DejaVu Sans")
+    return FontProperties(family=[family], size=13)
+
+
+def draw_bilingual_legend(ax, palette: list[tuple[float, float, float]]) -> None:
+    english_font = build_english_legend_font()
+    chinese_font = build_chinese_legend_font()
+
+    left = 0.69
+    right = 0.985
+    top = 0.975
+    row_h = 0.048
+    swatch_x = left + 0.02
+    english_x = left + 0.075
+    chinese_x = right - 0.02
+    swatch_w = 0.028
+    swatch_h = 0.024
+    box_h = row_h * len(VAR_ORDER) + 0.028
+    bottom = top - box_h
+
+    frame = patches.FancyBboxPatch(
+        (left, bottom),
+        right - left,
+        box_h,
+        boxstyle="round,pad=0.012,rounding_size=0.012",
+        transform=ax.transAxes,
+        facecolor=(1, 1, 1, 0.92),
+        edgecolor="#c9d2dc",
+        linewidth=1.1,
+        zorder=4,
+    )
+    ax.add_patch(frame)
+
+    for idx, var in enumerate(VAR_ORDER):
+        color = palette[idx]
+        edge_color = darken_color(color)
+        english, chinese = LEGEND_LABELS[var]
+        y = top - 0.024 - idx * row_h
+
+        swatch = patches.Rectangle(
+            (swatch_x, y - swatch_h / 2),
+            swatch_w,
+            swatch_h,
+            transform=ax.transAxes,
+            facecolor=(*color, 0.35),
+            edgecolor=edge_color,
+            linewidth=1.6,
+            zorder=5,
+        )
+        ax.add_patch(swatch)
+        ax.text(
+            english_x,
+            y,
+            english,
+            transform=ax.transAxes,
+            ha="left",
+            va="center",
+            fontproperties=english_font,
+            color="#18212b",
+            zorder=5,
+        )
+        ax.text(
+            chinese_x,
+            y,
+            chinese,
+            transform=ax.transAxes,
+            ha="right",
+            va="center",
+            fontproperties=chinese_font,
+            color="#18212b",
+            zorder=5,
+        )
 
 
 def create_boxplots() -> None:
@@ -140,25 +303,7 @@ def create_boxplots() -> None:
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    legend_handles = [
-        patches.Patch(
-            facecolor=(*palette[idx], 0.35),
-            edgecolor=darken_color(palette[idx]),
-            linewidth=1.6,
-            label=STAGE_LABELS[var],
-        )
-        for idx, var in enumerate(VAR_ORDER)
-    ]
-    ax.legend(
-        handles=legend_handles,
-        loc="upper right",
-        frameon=True,
-        ncol=1,
-        borderaxespad=0.6,
-        handlelength=1.4,
-        handletextpad=0.5,
-        labelspacing=0.35,
-    )
+    draw_bilingual_legend(ax, palette)
 
     fig.tight_layout()
     fig.savefig(OUT_DIR / "图6_核心变量箱线图.png", dpi=300, bbox_inches="tight")

@@ -1,5 +1,45 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "生成省会坐标与距离矩阵",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/空间分析/15_生成省会城市坐标与距离矩阵.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{空间分析.second_stage_panel}",
+            "kind": "csv",
+            "required_columns": [
+                "province"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "省会城市坐标表.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": []
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "生成省会坐标表与地理/嵌套空间矩阵。",
+    "notes": []
+}
+
 import json
 from math import asin, cos, radians, sin, sqrt
 from pathlib import Path
@@ -11,7 +51,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 PROVINCE_GEOJSON = resolve_project_path(CONFIG["province_geojson"])
@@ -19,9 +59,10 @@ CITY_GEOJSON = resolve_project_path(CONFIG["city_geojson"])
 PANEL_FILE = resolve_project_path(CONFIG["second_stage_panel"])
 ECONOMIC_MATRIX_FILE = resolve_project_path(CONFIG["economic_matrix"])
 
-OUT_CAPITALS = resolve_project_path(CONFIG["capital_output"])
-OUT_MATRIX = resolve_project_path(CONFIG["geo_inverse_output"])
-OUT_NESTED_MATRIX = resolve_project_path(CONFIG["economic_geo_nested_output"])
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
+OUT_CAPITALS = OUTPUT_DIR / "省会城市坐标表.csv"
+OUT_MATRIX = OUTPUT_DIR / "省际地理距离倒数矩阵_省会版.csv"
+OUT_NESTED_MATRIX = OUTPUT_DIR / "省际经济地理嵌套矩阵_省会版.csv"
 
 
 CAPITAL_MAP = {

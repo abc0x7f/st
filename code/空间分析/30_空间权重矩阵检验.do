@@ -3,6 +3,61 @@ clear all
 set more off
 args config_do
 
+* STEP_SPEC_BEGIN
+* {
+*   "name": "空间权重矩阵检验（Stata）",
+*   "runner_type": "hybrid",
+*   "command": [
+*     "stata-do",
+*     "code/空间分析/30_空间权重矩阵检验.do"
+*   ],
+*   "working_dir": "{PROJECT_ROOT}",
+*   "precheck_mode": "required_inputs",
+*   "required_inputs": [
+*     {
+*       "path": "{空间分析.second_stage_panel}",
+*       "kind": "csv",
+*       "required_columns": [
+*         "province",
+*         "year",
+*         "eff"
+*       ],
+*       "label": ""
+*     },
+*     {
+*       "path": "{空间分析.geo_inverse_matrix}",
+*       "kind": "csv",
+*       "required_columns": [],
+*       "label": ""
+*     }
+*   ],
+*   "artifacts": {
+*     "tables": {
+*       "primary": "LR检验结果.csv",
+*       "patterns": [
+*         "*.csv"
+*       ]
+*     },
+*     "images": {
+*       "primary": null,
+*       "patterns": []
+*     },
+*     "markdown": {
+*       "primary": null,
+*       "patterns": [
+*         "*.md"
+*       ]
+*     }
+*   },
+*   "console_success_markers": [],
+*   "description": "优先尝试由 GUI 拉起 Stata；若不可用，则提示手动执行并回检。",
+*   "notes": [
+*     "若 GUI 未找到 Stata，可手动运行 .do 文件。",
+*     "运行完成后点击“检查”刷新结果状态。"
+*   ]
+* }
+* STEP_SPEC_END
+
 * ============================================================
 * 空间权重矩阵检验
 * 参考：docs/参考资料/小鲜烽的空间计量代码.do

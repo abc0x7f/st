@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 from PySide6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, Signal, QUrl
-from PySide6.QtGui import QColor, QTextDocument, QTextOption
+from PySide6.QtGui import QColor, QGuiApplication, QTextDocument, QTextOption
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
@@ -311,7 +311,8 @@ class ArtifactNavigatorPanel(PanelFrame):
 class TablePanel(ArtifactNavigatorPanel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("表格展示区", parent)
-        self.path_label = QLabel("未发现 CSV")
+        self._path_text = "未发现表格"
+        self.path_label = QLabel("未发现表格")
         self.path_label.setStyleSheet("border: none; color: #5b6b7a;")
         self.outer_layout.addWidget(self.path_label)
 
@@ -341,6 +342,9 @@ class TablePanel(ArtifactNavigatorPanel):
         )
         self.model = DataFrameTableModel()
         self.table_view.setModel(self.model)
+        self.table_view.horizontalHeader().setSectionsClickable(True)
+        self.table_view.horizontalHeader().sectionClicked.connect(self._copy_column)
+        self.table_view.horizontalHeader().setToolTip("点击列表头复制整列")
         self.outer_layout.addWidget(self.table_view, 1)
         self.outer_layout.addWidget(self.page_label)
         self.prev_button.setParent(self)
@@ -363,9 +367,21 @@ class TablePanel(ArtifactNavigatorPanel):
 
     def set_table(self, path: Path | None, frame: pd.DataFrame | None, index: int, total: int) -> None:
         self.model.set_frame(frame)
-        self.path_label.setText(format_display_path(path) if path else "未发现 CSV")
+        self._path_text = format_display_path(path) if path else "未发现表格"
+        self.path_label.setText(self._path_text)
         self.update_pager(index, total)
         self.table_view.resizeColumnsToContents()
+
+    def _copy_column(self, section: int) -> None:
+        frame = self.model.frame()
+        if frame.empty or section < 0 or section >= len(frame.columns):
+            return
+        column_name = str(frame.columns[section])
+        series = frame.iloc[:, section]
+        lines = [column_name, *("" if pd.isna(value) else str(value) for value in series.tolist())]
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText("\n".join(lines))
+        self.path_label.setText(f"{self._path_text} | 已复制列：{column_name}")
 
 
 if QWebEngineView is not None:

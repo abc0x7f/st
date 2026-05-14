@@ -1,727 +1,194 @@
 {
-  "version": 1,
+  "version": 2,
   "steps": [
     {
       "id": "data_sample",
-      "name": "样本构建流程与缺失检查",
+      "script": "code/数据处理/50_样本构建流程缺失检查与变量箱线图.py",
       "stage": "数据处理",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/数据处理/50_样本构建流程缺失检查与变量箱线图.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "none",
-      "required_inputs": [],
-      "expected_outputs": [
-        "{数据处理.output_root}/50_样本构建流程缺失检查与变量箱线图/图5_变量缺失热力图.png"
-      ],
-      "primary_csv": null,
-      "image_globs": [
-        "{数据处理.output_root}/50_样本构建流程缺失检查与变量箱线图/图5_变量缺失热力图.png"
-      ],
-      "markdown_globs": [],
-      "description": "输出样本缺失热力图。",
-      "notes": []
-    },
-    {
-      "id": "data_energy",
-      "name": "构建省级能源总量与折标系数",
-      "stage": "数据处理",
-      "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/数据处理/10_构建省级能源总量与折标系数.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "none",
-      "required_inputs": [
-        {
-          "path": "{数据处理.energy_ceads_dir}",
-          "kind": "directory",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{数据处理.energy_panel_output}"
-      ],
-      "primary_csv": "{数据处理.energy_panel_output}",
-      "image_globs": [],
-      "markdown_globs": [],
-      "description": "从原始能源统计资料与折标系数构建省级能源总量与能源结构指标。",
-      "notes": []
-    },
-    {
-      "id": "data_ntl",
-      "name": "夜间灯光指标检查",
-      "stage": "数据处理",
-      "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/数据处理/20_夜间灯光指标检查.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "none",
-      "required_inputs": [
-        {
-          "path": "{数据处理.second_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "lntl"
-          ],
-          "label": ""
-        },
-        {
-          "path": "{数据处理.map_geojson_paths[0]}",
-          "kind": "file",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{数据处理.output_root}/20_夜间灯光指标检查/*"
-      ],
-      "primary_csv": "{数据处理.output_root}/20_夜间灯光指标检查/夜间灯光检查数据.csv",
-      "image_globs": [
-        "{数据处理.output_root}/20_夜间灯光指标检查/*.png"
-      ],
-      "markdown_globs": [
-        "{数据处理.output_root}/20_夜间灯光指标检查/*.md"
-      ],
-      "description": "检查夜间灯光指标的分布、趋势与空间分级效果。",
-      "notes": []
-    },
-    {
-      "id": "data_io",
-      "name": "投入产出关系预检",
-      "stage": "数据处理",
-      "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/数据处理/30_投入产出关系预检.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "none",
-      "required_inputs": [
-        {
-          "path": "{数据处理.first_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{数据处理.output_root}/30_投入产出关系预检/*.png"
-      ],
-      "primary_csv": null,
-      "image_globs": [
-        "{数据处理.output_root}/30_投入产出关系预检/*.png"
-      ],
-      "markdown_globs": [],
-      "description": "在效率测算前检查投入产出变量关系是否异常。",
-      "notes": []
+      "order": 10,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "dearun_manual",
-      "name": "Dearun 效率测算结果回填",
+      "script": "code/流水线/manual/dearun_manual.step.json",
       "stage": "效率测算",
       "enabled": true,
-      "runner_type": "manual",
-      "command": [
-        "open-path",
-        "C:/Program Files (x86)/Dearun"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "manual_result",
-      "required_inputs": [
-        {
-          "path": "{效率测算.dearun_result_dir}",
-          "kind": "directory",
-          "required_columns": [],
-          "label": "Dearun 输出目录"
-        }
-      ],
-      "expected_outputs": [
-        "{效率测算.dearun_result_dir}/**/*规模报酬可变VRS_0.xlsx",
-        "{效率测算.dearun_result_dir}/**/*规模报酬不变CRS_0.xlsx"
-      ],
-      "primary_csv": null,
-      "image_globs": [],
-      "markdown_globs": [],
-      "description": "该步骤需人工运行 Dearun，并将结果文件放回推导得到的结果目录。",
-      "notes": [
-        "请先在 Dearun 中完成 SBM / GM 测算。",
-        "结果目录按当前输入文件自动推导为 结果_<文件名>。",
-        "点击“执行”可自动打开 Dearun 安装目录。",
-        "人工完成后点击“检查”确认结果文件已回填。"
-      ]
+      "order": 20,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "eff_extract",
-      "name": "提取效率测算结果",
+      "script": "code/效率测算/10_提取效率测算结果.py",
       "stage": "效率测算",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/效率测算/10_提取效率测算结果.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{效率测算.dearun_result_dir}",
-          "kind": "directory",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{效率测算.efficiency_extract_output}"
-      ],
-      "primary_csv": "{效率测算.efficiency_extract_output}",
-      "image_globs": [],
-      "markdown_globs": [],
-      "description": "从 Dearun 结果目录提取年度省级效率结果。",
-      "notes": []
+      "order": 30,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "eff_plot",
-      "name": "碳排放效率绘图",
+      "script": "code/效率测算/20_碳排放效率绘图.py",
       "stage": "效率测算",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/效率测算/20_碳排放效率绘图.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{效率测算.efficiency_extract_output}",
-          "kind": "csv",
-          "required_columns": [
-            "year",
-            "province",
-            "eff"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{效率测算.output_root}/10_碳排放效率绘图/*"
-      ],
-      "primary_csv": null,
-      "image_globs": [
-        "{效率测算.output_root}/10_碳排放效率绘图/*.png"
-      ],
-      "markdown_globs": [],
-      "description": "输出效率均值、核密度、地图和区域差异图组。",
-      "notes": []
+      "order": 40,
+      "name_override": null,
+      "description_override": null
+    },
+    {
+      "id": "data_energy",
+      "script": "code/数据处理/10_构建省级能源总量与折标系数.py",
+      "stage": "数据处理",
+      "enabled": true,
+      "order": 50,
+      "name_override": null,
+      "description_override": null
+    },
+    {
+      "id": "data_ntl",
+      "script": "code/数据处理/20_夜间灯光指标检查.py",
+      "stage": "数据处理",
+      "enabled": true,
+      "order": 60,
+      "name_override": null,
+      "description_override": null
+    },
+    {
+      "id": "data_io",
+      "script": "code/数据处理/30_投入产出关系预检.py",
+      "stage": "数据处理",
+      "enabled": true,
+      "order": 70,
+      "name_override": null,
+      "description_override": null
+    },
+    {
+      "id": "data_core_boxplot",
+      "script": "code/数据处理/60_核心变量箱线图.py",
+      "stage": "数据处理",
+      "enabled": true,
+      "order": 80,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "eff_ntl_plot",
-      "name": "效率与灯光排序绘图",
+      "script": "code/效率测算/30_效率与灯光排序绘图.py",
       "stage": "效率测算",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/效率测算/30_效率与灯光排序绘图.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{效率测算.second_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff",
-            "lntl"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{效率测算.output_root}/10_碳排放效率绘图/*对比排序图.png"
-      ],
-      "primary_csv": null,
-      "image_globs": [
-        "{效率测算.output_root}/10_碳排放效率绘图/*对比排序图.png"
-      ],
-      "markdown_globs": [],
-      "description": "对比省均效率与夜间灯光强度排序。",
-      "notes": []
+      "order": 90,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "productivity_plot",
-      "name": "生产率分解绘图",
+      "script": "code/效率测算/40_生产率分解绘图.py",
       "stage": "效率测算",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/效率测算/40_生产率分解绘图.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{效率测算.dearun_result_dir}",
-          "kind": "directory",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{效率测算.output_root}/20_GM分解绘图/*"
-      ],
-      "primary_csv": null,
-      "image_globs": [
-        "{效率测算.output_root}/20_GM分解绘图/*.png"
-      ],
-      "markdown_globs": [],
-      "description": "渲染 GM 及其分解项的趋势图和比较图。",
-      "notes": []
+      "order": 100,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_corr",
-      "name": "相关性与共线性分析",
+      "script": "code/回归分析/10_相关性与共线性分析.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/10_相关性与共线性分析.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "eff",
-            "lntl",
-            "ind",
-            "urb",
-            "rd",
-            "open",
-            "es"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/10_相关性与VIF分析/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/10_相关性与VIF分析/皮尔逊相关系数矩阵.csv",
-      "image_globs": [
-        "{回归分析.output_root}/10_相关性与VIF分析/*.png"
-      ],
-      "markdown_globs": [
-        "{回归分析.output_root}/10_相关性与VIF分析/*.md"
-      ],
-      "description": "输出相关系数矩阵、VIF 和解释文本。",
-      "notes": []
+      "order": 110,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_spec",
-      "name": "模型设定检验",
+      "script": "code/回归分析/20_模型设定检验.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/20_模型设定检验.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "eff",
-            "lntl"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/20_模型设定检验/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/20_模型设定检验/模型设定检验结果.csv",
-      "image_globs": [],
-      "markdown_globs": [
-        "{回归分析.output_root}/20_模型设定检验/*.md"
-      ],
-      "description": "完成回归设定检验并输出说明。",
-      "notes": []
+      "order": 120,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_unit_root",
-      "name": "面板单位根检验",
+      "script": "code/回归分析/30_面板单位根检验.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/30_面板单位根检验.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/30_面板单位根检验/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/30_面板单位根检验/面板单位根汇总表.csv",
-      "image_globs": [],
-      "markdown_globs": [
-        "{回归分析.output_root}/30_面板单位根检验/*.md"
-      ],
-      "description": "输出面板单位根检验表和说明。",
-      "notes": []
+      "order": 130,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_baseline",
-      "name": "基准面板回归诊断",
+      "script": "code/回归分析/40_基准面板回归诊断.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/40_基准面板回归诊断.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff",
-            "lntl"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/40_基准面板回归诊断/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/40_基准面板回归诊断/基准回归系数表.csv",
-      "image_globs": [
-        "{回归分析.output_root}/40_基准面板回归诊断/*.png"
-      ],
-      "markdown_globs": [
-        "{回归分析.output_root}/40_基准面板回归诊断/*.md"
-      ],
-      "description": "运行双固定效应模型并输出诊断图组。",
-      "notes": []
+      "order": 140,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_robust",
-      "name": "稳健性检验",
+      "script": "code/回归分析/50_稳健性检验.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/50_稳健性检验.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/50_稳健性检验/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/50_稳健性检验/稳健性核心比较表.csv",
-      "image_globs": [
-        "{回归分析.output_root}/50_稳健性检验/*.png"
-      ],
-      "markdown_globs": [
-        "{回归分析.output_root}/50_稳健性检验/*.md"
-      ],
-      "description": "输出稳健性对比表、系数表和森林图。",
-      "notes": []
+      "order": 150,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_heterogeneity",
-      "name": "异质性检验",
+      "script": "code/回归分析/60_异质性检验.py",
       "stage": "回归分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/回归分析/60_异质性检验.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{回归分析.panel_data}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{回归分析.output_root}/60_异质性检验/*"
-      ],
-      "primary_csv": "{回归分析.output_root}/60_异质性检验/异质性核心结果表.csv",
-      "image_globs": [],
-      "markdown_globs": [
-        "{回归分析.output_root}/60_异质性检验/*.md"
-      ],
-      "description": "生成异质性模型汇总和解释报告。",
-      "notes": []
+      "order": 160,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "spatial_adj_matrix",
-      "name": "构建邻接矩阵",
+      "script": "code/空间分析/10_构建邻接矩阵.py",
       "stage": "空间分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/空间分析/10_构建邻接矩阵.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{空间分析.efficiency_data}",
-          "kind": "csv",
-          "required_columns": [
-            "province"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{空间分析.adjacency_matrix}"
-      ],
-      "primary_csv": "{空间分析.adjacency_matrix}",
-      "image_globs": [],
-      "markdown_globs": [],
-      "description": "根据省份顺序生成 0-1 邻接矩阵。",
-      "notes": []
+      "order": 170,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "spatial_capitals",
-      "name": "生成省会坐标与距离矩阵",
+      "script": "code/空间分析/15_生成省会城市坐标与距离矩阵.py",
       "stage": "空间分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/空间分析/15_生成省会城市坐标与距离矩阵.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{空间分析.second_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province"
-          ],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{空间分析.capital_output}",
-        "{空间分析.geo_inverse_output}",
-        "{空间分析.economic_geo_nested_output}"
-      ],
-      "primary_csv": "{空间分析.capital_output}",
-      "image_globs": [],
-      "markdown_globs": [],
-      "description": "生成省会坐标表与地理/嵌套空间矩阵。",
-      "notes": []
+      "order": 180,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "spatial_moran",
-      "name": "莫兰指数与局部聚类分析",
+      "script": "code/空间分析/20_莫兰指数与局部聚类分析.py",
       "stage": "空间分析",
       "enabled": true,
-      "runner_type": "python",
-      "command": [
-        "python",
-        "code/空间分析/20_莫兰指数与局部聚类分析.py"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{空间分析.efficiency_data}",
-          "kind": "csv",
-          "required_columns": [
-            "year",
-            "province",
-            "eff"
-          ],
-          "label": ""
-        },
-        {
-          "path": "{空间分析.economic_matrix}",
-          "kind": "csv",
-          "required_columns": [],
-          "label": ""
-        },
-        {
-          "path": "{空间分析.province_geojson}",
-          "kind": "file",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{空间分析.output_root}/20_莫兰指数与LISA分析/*"
-      ],
-      "primary_csv": "{空间分析.output_root}/20_莫兰指数与LISA分析/全局莫兰指数_2015_2022.csv",
-      "image_globs": [
-        "{空间分析.output_root}/20_莫兰指数与LISA分析/*.png"
-      ],
-      "markdown_globs": [
-        "{空间分析.output_root}/20_莫兰指数与LISA分析/*.md"
-      ],
-      "description": "输出全局莫兰指数、LISA 聚类图和结果说明。",
-      "notes": []
+      "order": 190,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_spatial_weight_stata",
-      "name": "空间权重矩阵检验（Stata）",
+      "script": "code/空间分析/30_空间权重矩阵检验.do",
       "stage": "空间分析",
       "enabled": true,
-      "runner_type": "hybrid",
-      "command": [
-        "stata-do",
-        "code/空间分析/30_空间权重矩阵检验.do"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{空间分析.second_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff"
-          ],
-          "label": ""
-        },
-        {
-          "path": "{空间分析.geo_inverse_matrix}",
-          "kind": "csv",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{空间分析.output_root}/30_空间权重矩阵检验/*"
-      ],
-      "primary_csv": "{空间分析.output_root}/30_空间权重矩阵检验/LR检验结果.csv",
-      "image_globs": [],
-      "markdown_globs": [
-        "{空间分析.output_root}/30_空间权重矩阵检验/*.md"
-      ],
-      "description": "优先尝试由 GUI 拉起 Stata；若不可用，则提示手动执行并回检。",
-      "notes": [
-        "若 GUI 未找到 Stata，可手动运行 .do 文件。",
-        "运行完成后点击“检查”刷新结果状态。"
-      ]
+      "order": 200,
+      "name_override": null,
+      "description_override": null
     },
     {
       "id": "reg_sdm_stata",
-      "name": "空间 SDM 主模型（Stata）",
+      "script": "code/空间分析/40_空间SDM主模型.do",
       "stage": "空间分析",
       "enabled": true,
-      "runner_type": "hybrid",
-      "command": [
-        "stata-do",
-        "code/空间分析/40_空间SDM主模型.do"
-      ],
-      "working_dir": "{PROJECT_ROOT}",
-      "precheck_mode": "required_inputs",
-      "required_inputs": [
-        {
-          "path": "{空间分析.second_stage_panel}",
-          "kind": "csv",
-          "required_columns": [
-            "province",
-            "year",
-            "eff",
-            "lntl",
-            "ind",
-            "urb",
-            "rd",
-            "open",
-            "es"
-          ],
-          "label": ""
-        },
-        {
-          "path": "{空间分析.economic_geo_nested_matrix}",
-          "kind": "csv",
-          "required_columns": [],
-          "label": ""
-        }
-      ],
-      "expected_outputs": [
-        "{空间分析.output_root}/40_空间SDM主模型/*"
-      ],
-      "primary_csv": "{空间分析.output_root}/40_空间SDM主模型/主模型系数表.csv",
-      "image_globs": [],
-      "markdown_globs": [
-        "{空间分析.output_root}/40_空间SDM主模型/*.md"
-      ],
-      "description": "优先尝试由 GUI 拉起 Stata 运行 SDM 主模型并回收结果。",
-      "notes": [
-        "若 Stata 不可自动调用，可手动执行 .do 文件后回检。"
-      ]
+      "order": 210,
+      "name_override": null,
+      "description_override": null
     }
   ]
 }

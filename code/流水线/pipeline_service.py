@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import glob
 import os
 import sys
 import tempfile
@@ -42,7 +43,8 @@ def resolve_stata_executable() -> Path | None:
 def _glob_paths(patterns: tuple[str, ...]) -> list[Path]:
     paths: list[Path] = []
     for pattern in patterns:
-        for match in PROJECT_ROOT.glob(pattern):
+        for match_text in glob.glob(pattern):
+            match = Path(match_text)
             if match.exists():
                 paths.append(match)
     unique = sorted(set(paths), key=lambda path: (path.suffix.lower(), -path.stat().st_mtime, str(path)))
@@ -51,6 +53,13 @@ def _glob_paths(patterns: tuple[str, ...]) -> list[Path]:
 
 def _describe_path(path: Path, label: str = "") -> str:
     return label or str(path.relative_to(PROJECT_ROOT))
+
+
+def _describe_pattern(pattern: str) -> str:
+    try:
+        return str(Path(pattern).relative_to(PROJECT_ROOT))
+    except ValueError:
+        return pattern
 
 
 def _check_requirement(requirement) -> list[str]:
@@ -92,7 +101,8 @@ def check_step(step_id: str) -> CheckResult:
         messages.extend(_check_requirement(requirement))
 
     if step.precheck_mode == "manual_result":
-        matched_outputs = _glob_paths(step.expected_outputs)
+        artifacts = discover_artifacts(step.id)
+        matched_outputs = [*artifacts.table_files, *artifacts.image_files, *artifacts.markdown_files]
         if matched_outputs:
             messages.append("[通过] 已发现人工步骤产物。")
         else:
@@ -111,25 +121,28 @@ def check_step(step_id: str) -> CheckResult:
 
 def discover_artifacts(step_id: str) -> ArtifactBundle:
     step = get_step(step_id)
-    csv_candidates: list[Path] = []
-    if step.primary_csv and step.primary_csv.exists():
-        csv_candidates.append(step.primary_csv)
+    table_candidates: list[Path] = []
+    if step.primary_table and step.primary_table.exists():
+        table_candidates.append(step.primary_table)
+    image_candidates: list[Path] = []
+    if step.primary_image and step.primary_image.exists():
+        image_candidates.append(step.primary_image)
+    markdown_candidates: list[Path] = []
+    if step.primary_markdown and step.primary_markdown.exists():
+        markdown_candidates.append(step.primary_markdown)
 
-    expected = _glob_paths(step.expected_outputs)
-    image_paths = [path for path in expected if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".bmp"}]
-    markdown_paths = [path for path in expected if path.suffix.lower() == ".md"]
-    csv_paths = [path for path in expected if path.suffix.lower() == ".csv"]
+    table_candidates.extend(_glob_paths(step.table_patterns))
+    image_candidates.extend(_glob_paths(step.image_patterns))
+    markdown_candidates.extend(_glob_paths(step.markdown_patterns))
 
-    if step.image_globs:
-        image_paths.extend(_glob_paths(step.image_globs))
-    if step.markdown_globs:
-        markdown_paths.extend(_glob_paths(step.markdown_globs))
-
-    csv_candidates.extend(csv_paths)
-    csv_unique = _dedupe_paths(csv_candidates, primary=step.primary_csv)
-    image_unique = _dedupe_paths(image_paths)
-    markdown_unique = _dedupe_paths(markdown_paths)
-    return ArtifactBundle(csv_files=csv_unique, image_files=image_unique, markdown_files=markdown_unique)
+    table_unique = _dedupe_paths(table_candidates, primary=step.primary_table)
+    image_unique = _dedupe_paths(image_candidates, primary=step.primary_image)
+    markdown_unique = _dedupe_paths(markdown_candidates, primary=step.primary_markdown)
+    if step.id == "dearun_manual" and not table_unique:
+        eff_cfg = load_stage_config("效率测算")
+        result_dir = derived_dearun_result_dir(eff_cfg)
+        table_unique = _dedupe_paths([path for path in result_dir.rglob("*.xlsx") if path.exists()])
+    return ArtifactBundle(table_files=table_unique, image_files=image_unique, markdown_files=markdown_unique)
 
 
 def _dedupe_paths(paths: list[Path], primary: Path | None = None) -> list[Path]:
@@ -144,12 +157,15 @@ def _dedupe_paths(paths: list[Path], primary: Path | None = None) -> list[Path]:
 
 def load_primary_table(step_id: str, index: int = 0) -> pd.DataFrame | None:
     artifacts = discover_artifacts(step_id)
-    if not artifacts.csv_files:
+    if not artifacts.table_files:
         return None
+    table_path = artifacts.table_files[index]
     try:
-        return pd.read_csv(artifacts.csv_files[index], encoding="utf-8-sig")
+        if table_path.suffix.lower() in {".xlsx", ".xls"}:
+            return pd.read_excel(table_path)
+        return pd.read_csv(table_path, encoding="utf-8-sig")
     except UnicodeDecodeError:
-        return pd.read_csv(artifacts.csv_files[index])
+        return pd.read_csv(table_path)
 
 
 def load_markdown(step_id: str, latest_status: StepStatus = StepStatus.IDLE) -> str:
@@ -176,14 +192,22 @@ def load_markdown(step_id: str, latest_status: StepStatus = StepStatus.IDLE) -> 
     lines.extend(
         [
             "",
-            "## 预计输出",
+            "## 输出目录",
         ]
     )
-    if not step.expected_outputs:
-        lines.append("- 暂无显式输出模式。")
-    else:
-        for pattern in step.expected_outputs:
-            lines.append(f"- `{pattern}`")
+    lines.append(f"- `{step.output_dir.relative_to(PROJECT_ROOT)}`")
+
+    lines.extend(["", "## 产物模式"])
+    if step.primary_table:
+        lines.append(f"- 主表：`{step.primary_table.relative_to(PROJECT_ROOT)}`")
+    if step.primary_image:
+        lines.append(f"- 主图：`{step.primary_image.relative_to(PROJECT_ROOT)}`")
+    if step.primary_markdown:
+        lines.append(f"- 主文档：`{step.primary_markdown.relative_to(PROJECT_ROOT)}`")
+    for label, patterns in (("表格", step.table_patterns), ("图片", step.image_patterns), ("Markdown", step.markdown_patterns)):
+        if patterns:
+            for pattern in patterns:
+                lines.append(f"- {label}：`{_describe_pattern(pattern)}`")
 
     if step.notes:
         lines.extend(["", "## 说明"])
@@ -272,13 +296,13 @@ def detect_status(step_id: str) -> StepStatus:
 def detect_output_health(step_id: str) -> OutputHealth:
     step = get_step(step_id)
     artifacts = discover_artifacts(step_id)
-    artifact_paths = [*artifacts.csv_files, *artifacts.image_files, *artifacts.markdown_files]
+    artifact_paths = [*artifacts.table_files, *artifacts.image_files, *artifacts.markdown_files]
     if not artifact_paths:
         return OutputHealth(OutputState.MISSING, "● 输出为空")
 
     source_paths: list[Path] = []
-    if step.command and step.command[0] in {"python", "stata-do"} and len(step.command) > 1:
-        source_paths.append(PROJECT_ROOT / step.command[1])
+    if step.script_path.exists():
+        source_paths.append(step.script_path)
 
     existing_sources = [path for path in source_paths if path.exists()]
     if not existing_sources:
@@ -303,11 +327,8 @@ def open_external_path(path_text: str) -> None:
 
 def _write_stata_config(step_id: str) -> Path:
     spatial_cfg = load_stage_config("空间分析")
-    output_root = resolve_project_path(spatial_cfg["output_root"])
-    if step_id == "reg_spatial_weight_stata":
-        out_dir = output_root / "30_空间权重矩阵检验"
-    else:
-        out_dir = output_root / "40_空间SDM主模型"
+    step = get_step(step_id)
+    out_dir = step.output_dir
     stata_dir = out_dir / "stata"
 
     lines = [

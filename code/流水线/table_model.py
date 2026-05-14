@@ -16,6 +16,9 @@ class DataFrameTableModel(QAbstractTableModel):
         self._frame = frame if frame is not None else pd.DataFrame()
         self.endResetModel()
 
+    def frame(self) -> pd.DataFrame:
+        return self._frame
+
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         if parent.isValid():
             return 0

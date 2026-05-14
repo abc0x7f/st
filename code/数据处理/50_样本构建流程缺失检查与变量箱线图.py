@@ -1,5 +1,36 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "样本构建流程与缺失检查",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/数据处理/50_样本构建流程缺失检查与变量箱线图.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "none",
+    "required_inputs": [],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": []
+        },
+        "images": {
+            "primary": "图5_变量缺失热力图.png",
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "输出样本缺失热力图。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
@@ -13,10 +44,10 @@ import seaborn as sns
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, stage_output_dir
+from stage_config import load_script_context, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
-OUT_DIR = stage_output_dir(CONFIG, "50_样本构建流程缺失检查与变量箱线图")
+OUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 ENERGY_YEARBOOK_GLOB = CONFIG["energy_yearbook_glob"]
 FONT_SIZE_DELTA = 4

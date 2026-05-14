@@ -37,8 +37,21 @@ class InputRequirement:
 
 
 @dataclass(frozen=True)
+class PipelineEntry:
+    id: str
+    script: str
+    stage: str
+    enabled: bool
+    order: int
+    name_override: str | None = None
+    description_override: str | None = None
+
+
+@dataclass(frozen=True)
 class StepDefinition:
     id: str
+    script_path: Path
+    output_dir: Path
     name: str
     stage: str
     runner_type: RunnerType
@@ -46,10 +59,12 @@ class StepDefinition:
     working_dir: Path
     precheck_mode: str
     required_inputs: tuple[InputRequirement, ...] = ()
-    expected_outputs: tuple[str, ...] = ()
-    primary_csv: Path | None = None
-    image_globs: tuple[str, ...] = ()
-    markdown_globs: tuple[str, ...] = ()
+    primary_table: Path | None = None
+    primary_image: Path | None = None
+    primary_markdown: Path | None = None
+    table_patterns: tuple[str, ...] = ()
+    image_patterns: tuple[str, ...] = ()
+    markdown_patterns: tuple[str, ...] = ()
     console_success_markers: tuple[str, ...] = ()
     description: str = ""
     notes: tuple[str, ...] = ()
@@ -63,7 +78,7 @@ class CheckResult:
 
 @dataclass
 class ArtifactBundle:
-    csv_files: list[Path] = field(default_factory=list)
+    table_files: list[Path] = field(default_factory=list)
     image_files: list[Path] = field(default_factory=list)
     markdown_files: list[Path] = field(default_factory=list)
 

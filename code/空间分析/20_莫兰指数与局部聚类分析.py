@@ -1,5 +1,63 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "莫兰指数与局部聚类分析",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/空间分析/20_莫兰指数与局部聚类分析.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{空间分析.efficiency_data}",
+            "kind": "csv",
+            "required_columns": [
+                "year",
+                "province",
+                "eff"
+            ],
+            "label": ""
+        },
+        {
+            "path": "{空间分析.economic_matrix}",
+            "kind": "csv",
+            "required_columns": [],
+            "label": ""
+        },
+        {
+            "path": "{空间分析.province_geojson}",
+            "kind": "file",
+            "required_columns": [],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "全局莫兰指数_2015_2022.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": [
+                "*.md"
+            ]
+        }
+    },
+    "console_success_markers": [],
+    "description": "输出全局莫兰指数、LISA 聚类图和结果说明。",
+    "notes": []
+}
+
 import json
 from pathlib import Path
 import sys
@@ -18,13 +76,13 @@ import seaborn as sns
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 WEIGHT_PATH = resolve_project_path(CONFIG["economic_matrix"])
 EFF_PATH = resolve_project_path(CONFIG["efficiency_data"])
 GEOJSON_PATH = resolve_project_path(CONFIG["province_geojson"])
-OUT_DIR = stage_output_dir(CONFIG, "20_莫兰指数与LISA分析")
+OUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET_YEARS = list(range(2015, 2023))

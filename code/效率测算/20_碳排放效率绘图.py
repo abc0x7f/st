@@ -1,3 +1,45 @@
+STEP_SPEC = {
+    "name": "碳排放效率绘图",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/效率测算/20_碳排放效率绘图.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{效率测算.efficiency_extract_output}",
+            "kind": "csv",
+            "required_columns": [
+                "year",
+                "province",
+                "eff"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": []
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "输出效率均值、核密度、地图和区域差异图组。",
+    "notes": []
+}
+
 import json
 from pathlib import Path
 import sys
@@ -16,13 +58,13 @@ from matplotlib.patches import Patch, Polygon, Rectangle
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
 STAGE1_DATA_PATH = resolve_project_path(CONFIG["first_stage_panel"])
 MAP_PATH = resolve_project_path(CONFIG["map_geojson"])
-OUTPUT_DIR = stage_output_dir(CONFIG, "10_碳排放效率绘图")
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 MAP_YEAR = 2022
 KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]

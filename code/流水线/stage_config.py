@@ -150,6 +150,10 @@ def stage_output_dir(config: dict[str, Any], leaf_dir: str) -> Path:
     return resolve_project_path(config["output_root"]) / leaf_dir
 
 
+def script_output_dir(script_path: Path, config: dict[str, Any]) -> Path:
+    return stage_output_dir(config, script_path.stem)
+
+
 def derived_dearun_result_dir(efficiency_config: dict[str, Any]) -> Path:
     panel_path = resolve_project_path(efficiency_config["dearun_input_panel"])
     return panel_path.parent / f"结果_{panel_path.stem}"

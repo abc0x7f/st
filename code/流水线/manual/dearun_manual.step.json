@@ -1,0 +1,42 @@
+{
+  "name": "Dearun 效率测算结果回填",
+  "runner_type": "manual",
+  "command": [
+    "open-path",
+    "C:/Program Files (x86)/Dearun"
+  ],
+  "working_dir": "{PROJECT_ROOT}",
+  "precheck_mode": "manual_result",
+  "required_inputs": [
+    {
+      "path": "{效率测算.dearun_result_dir}",
+      "kind": "directory",
+      "required_columns": [],
+      "label": "Dearun 输出目录"
+    }
+  ],
+  "artifacts": {
+    "tables": {
+      "primary": null,
+      "patterns": [
+        "*.xlsx"
+      ]
+    },
+    "images": {
+      "primary": null,
+      "patterns": []
+    },
+    "markdown": {
+      "primary": null,
+      "patterns": []
+    }
+  },
+  "console_success_markers": [],
+  "description": "该步骤需人工运行 Dearun，并将结果文件放回推导得到的结果目录。",
+  "notes": [
+    "请先在 Dearun 中完成 SBM / GM 测算。",
+    "结果目录按当前输入文件自动推导为 结果_<文件名>。",
+    "点击“执行”可自动打开 Dearun 安装目录。",
+    "人工完成后点击“检查”确认结果文件已回填。"
+  ]
+}

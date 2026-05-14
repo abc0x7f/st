@@ -1,5 +1,43 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "构建省级能源总量与折标系数",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/数据处理/10_构建省级能源总量与折标系数.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "none",
+    "required_inputs": [
+        {
+            "path": "{数据处理.energy_ceads_dir}",
+            "kind": "directory",
+            "required_columns": [],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "省级能源energy与es_ceads(暂未启用).csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": []
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "从原始能源统计资料与折标系数构建省级能源总量与能源结构指标。",
+    "notes": []
+}
+
 from dataclasses import dataclass, asdict
 from pathlib import Path
 import re
@@ -13,12 +51,13 @@ STANDARD_COAL_MJ_PER_KG = 29.3076
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 CEADS_DIR = resolve_project_path(CONFIG["energy_ceads_dir"])
-FACTOR_OUTPUT = resolve_project_path(CONFIG["energy_factor_output"])
-PANEL_OUTPUT = resolve_project_path(CONFIG["energy_panel_output"])
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
+FACTOR_OUTPUT = OUTPUT_DIR / "省级能源折标准煤系数_ceads.csv"
+PANEL_OUTPUT = OUTPUT_DIR / "省级能源energy与es_ceads(暂未启用).csv"
 
 
 PROVINCE_MAP = {

@@ -3,8 +3,8 @@
   "first_stage_panel": "data/最终数据/第一阶段_基础.csv",
   "second_stage_panel": "data/最终数据/第二阶段_基础.csv",
   "energy_ceads_dir": "data/原始数据/各省能源清单CEADS",
-  "energy_factor_output": "data/外部资料/省级能源折标准煤系数_ceads.csv",
-  "energy_panel_output": "data/中间数据/省级能源energy与es_ceads(暂未启用).csv",
+  "energy_factor_output": "outputs/数据处理/default/10_构建省级能源总量与折标系数/省级能源折标准煤系数_ceads.csv",
+  "energy_panel_output": "outputs/数据处理/default/10_构建省级能源总量与折标系数/省级能源energy与es_ceads(暂未启用).csv",
   "energy_yearbook_glob": "各省能源结构2003-2022.xlsx",
   "map_geojson_paths": [
     "data/外部资料/中国省级地图.geojson",

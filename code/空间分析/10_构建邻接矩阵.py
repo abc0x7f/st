@@ -1,5 +1,45 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "构建邻接矩阵",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/空间分析/10_构建邻接矩阵.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{空间分析.efficiency_data}",
+            "kind": "csv",
+            "required_columns": [
+                "province"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "省际01邻接矩阵.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": []
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "根据省份顺序生成 0-1 邻接矩阵。",
+    "notes": []
+}
+
 import csv
 from collections import OrderedDict
 from pathlib import Path
@@ -8,12 +48,13 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 INPUT_PATH = resolve_project_path(CONFIG["efficiency_data"])
 ECONOMIC_INPUT_PATH = resolve_project_path(CONFIG["first_stage_panel"])
-ADJ_OUTPUT_PATH = resolve_project_path(CONFIG["adjacency_matrix"])
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
+ADJ_OUTPUT_PATH = OUTPUT_DIR / "省际01邻接矩阵.csv"
 ECONOMIC_OUTPUT_PATH = resolve_project_path(CONFIG["economic_matrix"])
 
 

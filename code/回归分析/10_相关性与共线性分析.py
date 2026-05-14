@@ -1,5 +1,55 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "相关性与共线性分析",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/回归分析/10_相关性与共线性分析.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{回归分析.panel_data}",
+            "kind": "csv",
+            "required_columns": [
+                "eff",
+                "lntl",
+                "ind",
+                "urb",
+                "rd",
+                "open",
+                "es"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "皮尔逊相关系数矩阵.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": [
+                "*.md"
+            ]
+        }
+    },
+    "console_success_markers": [],
+    "description": "输出相关系数矩阵、VIF 和解释文本。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
@@ -16,11 +66,11 @@ from statsmodels.tools.tools import add_constant
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["panel_data"])
-OUT_DIR = stage_output_dir(CONFIG, "10_相关性与VIF分析")
+OUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DEP_VAR = str(CONFIG["dep_var"])

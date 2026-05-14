@@ -3,6 +3,66 @@ clear all
 set more off
 args config_do
 
+* STEP_SPEC_BEGIN
+* {
+*   "name": "空间 SDM 主模型（Stata）",
+*   "runner_type": "hybrid",
+*   "command": [
+*     "stata-do",
+*     "code/空间分析/40_空间SDM主模型.do"
+*   ],
+*   "working_dir": "{PROJECT_ROOT}",
+*   "precheck_mode": "required_inputs",
+*   "required_inputs": [
+*     {
+*       "path": "{空间分析.second_stage_panel}",
+*       "kind": "csv",
+*       "required_columns": [
+*         "province",
+*         "year",
+*         "eff",
+*         "lntl",
+*         "ind",
+*         "urb",
+*         "rd",
+*         "open",
+*         "es"
+*       ],
+*       "label": ""
+*     },
+*     {
+*       "path": "{空间分析.economic_geo_nested_matrix}",
+*       "kind": "csv",
+*       "required_columns": [],
+*       "label": ""
+*     }
+*   ],
+*   "artifacts": {
+*     "tables": {
+*       "primary": "主模型系数表.csv",
+*       "patterns": [
+*         "*.csv"
+*       ]
+*     },
+*     "images": {
+*       "primary": null,
+*       "patterns": []
+*     },
+*     "markdown": {
+*       "primary": null,
+*       "patterns": [
+*         "*.md"
+*       ]
+*     }
+*   },
+*   "console_success_markers": [],
+*   "description": "优先尝试由 GUI 拉起 Stata 运行 SDM 主模型并回收结果。",
+*   "notes": [
+*     "若 Stata 不可自动调用，可手动执行 .do 文件后回检。"
+*   ]
+* }
+* STEP_SPEC_END
+
 * ============================================================
 * 空间 SDM 主模型估计与效应分解
 * 主模型：经济倒数权重矩阵 + 双固定效应 SDM

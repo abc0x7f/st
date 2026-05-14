@@ -1,3 +1,55 @@
+STEP_SPEC = {
+    "name": "夜间灯光指标检查",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/数据处理/20_夜间灯光指标检查.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "none",
+    "required_inputs": [
+        {
+            "path": "{数据处理.second_stage_panel}",
+            "kind": "csv",
+            "required_columns": [
+                "province",
+                "year",
+                "lntl"
+            ],
+            "label": ""
+        },
+        {
+            "path": "{数据处理.map_geojson_paths[0]}",
+            "kind": "file",
+            "required_columns": [],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "夜间灯光检查数据.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": [
+                "*.md"
+            ]
+        }
+    },
+    "console_success_markers": [],
+    "description": "检查夜间灯光指标的分布、趋势与空间分级效果。",
+    "notes": []
+}
+
 import json
 from pathlib import Path
 import sys
@@ -15,11 +67,11 @@ from matplotlib.lines import Line2D
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
-OUTPUT_DIR = stage_output_dir(CONFIG, "20_夜间灯光指标检查")
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 MAP_PATHS = [resolve_project_path(path) for path in CONFIG["map_geojson_paths"]]
 MAP_YEAR = 2022
 FONT_SIZE_DELTA = 4

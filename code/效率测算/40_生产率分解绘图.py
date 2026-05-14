@@ -1,3 +1,41 @@
+STEP_SPEC = {
+    "name": "生产率分解绘图",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/效率测算/40_生产率分解绘图.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{效率测算.dearun_result_dir}",
+            "kind": "directory",
+            "required_columns": [],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": []
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "渲染 GM 及其分解项的趋势图和比较图。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
@@ -11,11 +49,11 @@ import seaborn as sns
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import derived_dearun_result_dir, load_script_context, stage_output_dir
+from stage_config import derived_dearun_result_dir, load_script_context, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 RESULT_DIR = derived_dearun_result_dir(CONFIG)
-OUTPUT_DIR = stage_output_dir(CONFIG, "20_GM分解绘图")
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 
 TERM_LABELS = {
     "tfpch": "全要素生产率（tfpch）",

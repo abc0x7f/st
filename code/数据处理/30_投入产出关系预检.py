@@ -1,3 +1,44 @@
+STEP_SPEC = {
+    "name": "投入产出关系预检",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/数据处理/30_投入产出关系预检.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "none",
+    "required_inputs": [
+        {
+            "path": "{数据处理.first_stage_panel}",
+            "kind": "csv",
+            "required_columns": [
+                "province",
+                "year"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": []
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "在效率测算前检查投入产出变量关系是否异常。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
@@ -9,11 +50,11 @@ import seaborn as sns
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from stage_config import load_script_context, resolve_project_path, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["first_stage_panel"])
-OUTPUT_DIR = stage_output_dir(CONFIG, "30_投入产出关系预检")
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUTPUT_PATH = OUTPUT_DIR / "09_投入产出关系散点图.png"
 FONT_SIZE_DELTA = 4
 

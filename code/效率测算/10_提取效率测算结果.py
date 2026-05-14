@@ -1,3 +1,41 @@
+STEP_SPEC = {
+    "name": "提取效率测算结果",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/效率测算/10_提取效率测算结果.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{效率测算.dearun_result_dir}",
+            "kind": "directory",
+            "required_columns": [],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": "碳排放效率结果_2015_2022.csv",
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": []
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": []
+        }
+    },
+    "console_success_markers": [],
+    "description": "从 Dearun 结果目录提取年度省级效率结果。",
+    "notes": []
+}
+
 from pathlib import Path
 import sys
 
@@ -6,11 +44,12 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
-from stage_config import derived_dearun_result_dir, load_script_context, resolve_project_path
+from stage_config import derived_dearun_result_dir, load_script_context, script_output_dir
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 RESULT_DIR = derived_dearun_result_dir(CONFIG)
-OUTPUT_PATH = resolve_project_path(CONFIG["efficiency_extract_output"])
+OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
+OUTPUT_PATH = OUTPUT_DIR / "碳排放效率结果_2015_2022.csv"
 
 
 def find_source_file() -> Path:

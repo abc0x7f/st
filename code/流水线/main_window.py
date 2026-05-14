@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import locale
-import json
 from copy import deepcopy
+from pathlib import Path
 
-from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QSize
+from PySide6.QtCore import QByteArray, QProcess, QProcessEnvironment, Qt, QSize
 from PySide6.QtGui import QAction, QFont, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -64,12 +64,12 @@ class StepListItemWidget(QFrame):
         self._title_text = title
         self.setStyleSheet("QFrame { border: none; border-radius: 6px; }")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(6)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(4)
 
         self.title_label = QLabel(title)
         self.title_label.setStyleSheet(
-            "border: none; color: #18212b; font-size: 14px; font-weight: 700; min-height: 22px;"
+            "border: none; color: #18212b; font-size: 14px; font-weight: 700; min-height: 20px;"
         )
         self.title_label.setWordWrap(False)
         self.title_label.setTextFormat(Qt.PlainText)
@@ -77,7 +77,7 @@ class StepListItemWidget(QFrame):
         layout.addWidget(self.title_label)
 
         self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setMinimumHeight(20)
+        self.subtitle_label.setMinimumHeight(18)
         self.subtitle_label.setWordWrap(True)
         layout.addWidget(self.subtitle_label)
         self.set_status(subtitle, subtitle_color)
@@ -114,7 +114,7 @@ class StepEditorDialog(QDialog):
     def __init__(self, step_data: dict, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("编辑步骤")
-        self.resize(860, 780)
+        self.resize(860, 420)
         self.result_data: dict | None = None
 
         layout = QVBoxLayout(self)
@@ -127,61 +127,23 @@ class StepEditorDialog(QDialog):
         self.id_edit = QLineEdit()
         form.addRow("步骤 ID", self.id_edit)
 
-        self.name_edit = QLineEdit()
-        form.addRow("步骤名称", self.name_edit)
+        self.script_edit = QLineEdit()
+        form.addRow("脚本路径", self.script_edit)
 
         self.stage_combo = QComboBox()
         self.stage_combo.addItems(stage_names())
         form.addRow("阶段", self.stage_combo)
 
-        self.runner_combo = QComboBox()
-        self.runner_combo.addItems([member.value for member in RunnerType])
-        form.addRow("执行类型", self.runner_combo)
+        self.order_edit = QLineEdit()
+        form.addRow("排序", self.order_edit)
 
-        self.precheck_combo = QComboBox()
-        self.precheck_combo.addItems(["none", "required_inputs", "manual_result"])
-        form.addRow("检查模式", self.precheck_combo)
-
-        self.working_dir_edit = QLineEdit()
-        form.addRow("工作目录", self.working_dir_edit)
-
-        self.command_edit = QPlainTextEdit()
-        self.command_edit.setPlaceholderText('["python", "code/数据处理/example.py"]')
-        self.command_edit.setFixedHeight(74)
-        form.addRow("命令(JSON)", self.command_edit)
-
-        self.primary_csv_edit = QLineEdit()
-        self.primary_csv_edit.setPlaceholderText("可留空")
-        form.addRow("主表 CSV", self.primary_csv_edit)
+        self.name_override_edit = QLineEdit()
+        self.name_override_edit.setPlaceholderText("可留空，默认使用脚本 STEP_SPEC.name")
+        form.addRow("名称覆盖", self.name_override_edit)
 
         self.description_edit = QPlainTextEdit()
         self.description_edit.setFixedHeight(82)
-        form.addRow("说明", self.description_edit)
-
-        self.required_inputs_edit = QPlainTextEdit()
-        self.required_inputs_edit.setPlaceholderText('[{"path": "{数据处理.first_stage_panel}", "kind": "csv", "required_columns": ["province"]}]')
-        self.required_inputs_edit.setFixedHeight(120)
-        form.addRow("输入检查(JSON)", self.required_inputs_edit)
-
-        self.expected_outputs_edit = QPlainTextEdit()
-        self.expected_outputs_edit.setFixedHeight(90)
-        form.addRow("输出模式(JSON)", self.expected_outputs_edit)
-
-        self.image_globs_edit = QPlainTextEdit()
-        self.image_globs_edit.setFixedHeight(90)
-        form.addRow("图片模式(JSON)", self.image_globs_edit)
-
-        self.markdown_globs_edit = QPlainTextEdit()
-        self.markdown_globs_edit.setFixedHeight(90)
-        form.addRow("Markdown 模式(JSON)", self.markdown_globs_edit)
-
-        self.console_markers_edit = QPlainTextEdit()
-        self.console_markers_edit.setFixedHeight(74)
-        form.addRow("成功标记(JSON)", self.console_markers_edit)
-
-        self.notes_edit = QPlainTextEdit()
-        self.notes_edit.setFixedHeight(90)
-        form.addRow("备注(JSON)", self.notes_edit)
+        form.addRow("说明覆盖", self.description_edit)
 
         layout.addLayout(form)
 
@@ -195,20 +157,11 @@ class StepEditorDialog(QDialog):
     def _load(self, step_data: dict) -> None:
         self.enabled_check.setChecked(step_data.get("enabled", True))
         self.id_edit.setText(step_data.get("id", ""))
-        self.name_edit.setText(step_data.get("name", ""))
+        self.script_edit.setText(step_data.get("script", ""))
         self.stage_combo.setCurrentText(step_data.get("stage", stage_names()[0]))
-        self.runner_combo.setCurrentText(step_data.get("runner_type", RunnerType.PYTHON.value))
-        self.precheck_combo.setCurrentText(step_data.get("precheck_mode", "none"))
-        self.working_dir_edit.setText(step_data.get("working_dir", "{PROJECT_ROOT}"))
-        self.command_edit.setPlainText(json.dumps(step_data.get("command", []), ensure_ascii=False, indent=2))
-        self.primary_csv_edit.setText(step_data.get("primary_csv") or "")
-        self.description_edit.setPlainText(step_data.get("description", ""))
-        self.required_inputs_edit.setPlainText(json.dumps(step_data.get("required_inputs", []), ensure_ascii=False, indent=2))
-        self.expected_outputs_edit.setPlainText(json.dumps(step_data.get("expected_outputs", []), ensure_ascii=False, indent=2))
-        self.image_globs_edit.setPlainText(json.dumps(step_data.get("image_globs", []), ensure_ascii=False, indent=2))
-        self.markdown_globs_edit.setPlainText(json.dumps(step_data.get("markdown_globs", []), ensure_ascii=False, indent=2))
-        self.console_markers_edit.setPlainText(json.dumps(step_data.get("console_success_markers", []), ensure_ascii=False, indent=2))
-        self.notes_edit.setPlainText(json.dumps(step_data.get("notes", []), ensure_ascii=False, indent=2))
+        self.order_edit.setText(str(step_data.get("order", 10)))
+        self.name_override_edit.setText(step_data.get("name_override") or "")
+        self.description_edit.setPlainText(step_data.get("description_override", ""))
 
     def accept(self) -> None:
         try:
@@ -222,65 +175,25 @@ class StepEditorDialog(QDialog):
         step_id = self.id_edit.text().strip()
         if not step_id:
             raise ValueError("步骤 ID 不能为空。")
-        name = self.name_edit.text().strip()
-        if not name:
-            raise ValueError("步骤名称不能为空。")
-        working_dir = self.working_dir_edit.text().strip()
-        if not working_dir:
-            raise ValueError("工作目录不能为空。")
-
-        command = self._parse_json(self.command_edit.toPlainText(), "命令")
-        if not isinstance(command, list) or not command or not all(isinstance(part, str) and part.strip() for part in command):
-            raise ValueError("命令必须是非空字符串数组。")
-
-        required_inputs = self._parse_json(self.required_inputs_edit.toPlainText(), "输入检查", default=[])
-        expected_outputs = self._parse_json(self.expected_outputs_edit.toPlainText(), "输出模式", default=[])
-        image_globs = self._parse_json(self.image_globs_edit.toPlainText(), "图片模式", default=[])
-        markdown_globs = self._parse_json(self.markdown_globs_edit.toPlainText(), "Markdown 模式", default=[])
-        console_success_markers = self._parse_json(self.console_markers_edit.toPlainText(), "成功标记", default=[])
-        notes = self._parse_json(self.notes_edit.toPlainText(), "备注", default=[])
-
-        if not isinstance(required_inputs, list) or not all(isinstance(item, dict) for item in required_inputs):
-            raise ValueError("输入检查必须是对象数组。")
-        for field_name, value in {
-            "输出模式": expected_outputs,
-            "图片模式": image_globs,
-            "Markdown 模式": markdown_globs,
-            "成功标记": console_success_markers,
-            "备注": notes,
-        }.items():
-            if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
-                raise ValueError(f"{field_name} 必须是字符串数组。")
-
-        primary_csv_text = self.primary_csv_edit.text().strip()
+        script_text = self.script_edit.text().strip()
+        if not script_text:
+            raise ValueError("脚本路径不能为空。")
+        order_text = self.order_edit.text().strip()
+        if not order_text:
+            raise ValueError("排序不能为空。")
+        try:
+            order = int(order_text)
+        except ValueError as exc:
+            raise ValueError("排序必须是整数。") from exc
         return {
             "id": step_id,
-            "name": name,
+            "script": script_text,
             "stage": self.stage_combo.currentText(),
             "enabled": self.enabled_check.isChecked(),
-            "runner_type": self.runner_combo.currentText(),
-            "command": command,
-            "working_dir": working_dir,
-            "precheck_mode": self.precheck_combo.currentText(),
-            "required_inputs": required_inputs,
-            "expected_outputs": expected_outputs,
-            "primary_csv": primary_csv_text or None,
-            "image_globs": image_globs,
-            "markdown_globs": markdown_globs,
-            "console_success_markers": console_success_markers,
-            "description": self.description_edit.toPlainText().strip(),
-            "notes": notes,
+            "order": order,
+            "name_override": self.name_override_edit.text().strip() or None,
+            "description_override": self.description_edit.toPlainText().strip() or None,
         }
-
-    @staticmethod
-    def _parse_json(text: str, label: str, default=None):
-        stripped = text.strip()
-        if not stripped:
-            return default
-        try:
-            return json.loads(stripped)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"{label} JSON 解析失败：{exc}") from exc
 
 
 class PipelineManagerDialog(QDialog):
@@ -344,7 +257,8 @@ class PipelineManagerDialog(QDialog):
         self.step_list.clear()
         for step in self.document["steps"]:
             prefix = "启用" if step.get("enabled", True) else "停用"
-            item = QListWidgetItem(f"[{prefix}] {step['stage']} | {step['name']} ({step['id']})")
+            label = step.get("name_override") or Path(step["script"]).stem
+            item = QListWidgetItem(f"[{prefix}] {step['stage']} | {label} ({step['id']})")
             self.step_list.addItem(item)
         if self.document["steps"]:
             if target_index is None:
@@ -365,26 +279,18 @@ class PipelineManagerDialog(QDialog):
         base_stage = self._selected_step()["stage"] if self._selected_step() else stage_names()[0]
         raw_step = {
             "id": self._make_unique_id("new_step"),
-            "name": "新步骤",
+            "script": "code/待补充.py",
             "stage": base_stage,
             "enabled": True,
-            "runner_type": "python",
-            "command": ["python", "code/待补充.py"],
-            "working_dir": "{PROJECT_ROOT}",
-            "precheck_mode": "none",
-            "required_inputs": [],
-            "expected_outputs": [],
-            "primary_csv": None,
-            "image_globs": [],
-            "markdown_globs": [],
-            "console_success_markers": [],
-            "description": "",
-            "notes": [],
+            "order": (len(self.document["steps"]) + 1) * 10,
+            "name_override": None,
+            "description_override": None,
         }
         dialog = StepEditorDialog(raw_step, self)
         if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
             return
         self.document["steps"].append(dialog.result_data)
+        self._renumber_orders()
         self._refresh_step_list(len(self.document["steps"]) - 1)
 
     def _edit_step(self) -> None:
@@ -396,6 +302,7 @@ class PipelineManagerDialog(QDialog):
         if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
             return
         self.document["steps"][index] = dialog.result_data
+        self._renumber_orders()
         self._refresh_step_list(index)
 
     def _copy_step(self) -> None:
@@ -405,11 +312,13 @@ class PipelineManagerDialog(QDialog):
             return
         copied = deepcopy(step)
         copied["id"] = self._make_unique_id(f"{step['id']}_copy")
-        copied["name"] = f"{step['name']}（副本）"
+        if copied.get("name_override"):
+            copied["name_override"] = f"{copied['name_override']}（副本）"
         dialog = StepEditorDialog(copied, self)
         if dialog.exec() != QDialog.Accepted or dialog.result_data is None:
             return
         self.document["steps"].insert(index + 1, dialog.result_data)
+        self._renumber_orders()
         self._refresh_step_list(index + 1)
 
     def _toggle_step(self) -> None:
@@ -424,6 +333,7 @@ class PipelineManagerDialog(QDialog):
         if index <= 0:
             return
         self.document["steps"][index - 1], self.document["steps"][index] = self.document["steps"][index], self.document["steps"][index - 1]
+        self._renumber_orders()
         self._refresh_step_list(index - 1)
 
     def _move_down(self) -> None:
@@ -431,6 +341,7 @@ class PipelineManagerDialog(QDialog):
         if index < 0 or index >= len(self.document["steps"]) - 1:
             return
         self.document["steps"][index + 1], self.document["steps"][index] = self.document["steps"][index], self.document["steps"][index + 1]
+        self._renumber_orders()
         self._refresh_step_list(index + 1)
 
     def _delete_step(self) -> None:
@@ -442,6 +353,7 @@ class PipelineManagerDialog(QDialog):
         if answer != QMessageBox.Yes:
             return
         self.document["steps"].pop(index)
+        self._renumber_orders()
         self._refresh_step_list(index)
 
     def _make_unique_id(self, base_id: str) -> str:
@@ -453,13 +365,20 @@ class PipelineManagerDialog(QDialog):
             suffix += 1
         return f"{base_id}_{suffix}"
 
+    def _renumber_orders(self) -> None:
+        for index, step in enumerate(self.document["steps"], start=1):
+            step["order"] = index * 10
+
 
 class MainWindow(QMainWindow):
     RENDER_EXISTING_OUTPUTS_KEY = "render_existing_outputs_without_run"
+    BODY_SPLITTER_STATE_KEY = "main_window_body_splitter_state"
+    LEFT_SPLITTER_STATE_KEY = "main_window_left_splitter_state"
+    RIGHT_SPLITTER_STATE_KEY = "main_window_right_splitter_state"
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("光碳智绘：省域碳排放效率可视分析")
+        self.setWindowTitle("光碳智绘：区域碳效时空分析平台")
         self.resize(1640, 980)
         self.setMinimumSize(QSize(1320, 840))
 
@@ -479,6 +398,7 @@ class MainWindow(QMainWindow):
         self.process.finished.connect(self._on_process_finished)
 
         self._build_ui()
+        self._restore_splitter_states()
         self._populate_step_list()
         self.step_list.setCurrentRow(0)
         self._refresh_executable_summary()
@@ -522,6 +442,22 @@ class MainWindow(QMainWindow):
                 min-height: 28px;
                 min-width: 28px;
             }
+            QSplitter::handle {
+                background: #d8dee6;
+            }
+            QSplitter::handle:hover {
+                background: #b9c6d3;
+            }
+            QSplitter::handle:horizontal {
+                width: 8px;
+                margin: 0 2px;
+                border-radius: 4px;
+            }
+            QSplitter::handle:vertical {
+                height: 8px;
+                margin: 2px 0;
+                border-radius: 4px;
+            }
             """
         )
         self.setCentralWidget(central)
@@ -532,13 +468,16 @@ class MainWindow(QMainWindow):
 
         root_layout.addWidget(self._build_header())
 
-        body_splitter = QSplitter(Qt.Horizontal)
-        body_splitter.setChildrenCollapsible(False)
-        body_splitter.addWidget(self._build_left_column())
-        body_splitter.addWidget(self._build_right_column())
-        body_splitter.setStretchFactor(0, 3)
-        body_splitter.setStretchFactor(1, 5)
-        root_layout.addWidget(body_splitter, 1)
+        self.body_splitter = QSplitter(Qt.Horizontal)
+        self.body_splitter.setChildrenCollapsible(False)
+        self.body_splitter.setHandleWidth(8)
+        self.body_splitter.addWidget(self._build_left_column())
+        self.body_splitter.addWidget(self._build_right_column())
+        self.body_splitter.setStretchFactor(0, 3)
+        self.body_splitter.setStretchFactor(1, 5)
+        self.body_splitter.setSizes([520, 960])
+        self.body_splitter.splitterMoved.connect(self._persist_splitter_states)
+        root_layout.addWidget(self.body_splitter, 1)
 
     def _build_header(self) -> QWidget:
         frame = QFrame()
@@ -560,7 +499,7 @@ class MainWindow(QMainWindow):
         title_block_layout.setContentsMargins(0, 0, 0, 0)
         title_block_layout.setSpacing(4)
 
-        title_label = QLabel("光碳智绘：省域碳排放效率可视分析")
+        title_label = QLabel("光碳智绘：区域碳效时空分析平台")
         title_label.setStyleSheet("border: none; font-size: 32px; font-weight: 800; color: #18212b;")
         title_label.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
 
@@ -628,10 +567,10 @@ class MainWindow(QMainWindow):
         return frame
 
     def _build_left_column(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        self.left_splitter = QSplitter(Qt.Vertical)
+        self.left_splitter.setChildrenCollapsible(False)
+        self.left_splitter.setHandleWidth(8)
+        self.left_splitter.splitterMoved.connect(self._persist_splitter_states)
 
         self.step_list = QListWidget()
         self.step_list.setMinimumHeight(210)
@@ -641,12 +580,12 @@ class MainWindow(QMainWindow):
                 border: 1px solid #d8dee6;
                 border-radius: 8px;
                 background: #fbfcfd;
-                padding: 6px;
+                padding: 4px;
             }
             QListWidget::item {
                 border-radius: 6px;
-                margin: 3px 0px;
-                padding: 10px 12px;
+                margin: 2px 0px;
+                padding: 6px 10px;
             }
             QListWidget::item:selected {
                 background: #e8eef3;
@@ -655,9 +594,10 @@ class MainWindow(QMainWindow):
             """
         )
         self.step_list.currentRowChanged.connect(self._on_step_changed)
-        layout.addWidget(self.step_list)
+        self.left_splitter.addWidget(self.step_list)
 
         execute_frame = QFrame()
+        execute_frame.setMinimumHeight(150)
         execute_frame.setStyleSheet("QFrame { background: #fbfcfd; border: 1px solid #d8dee6; border-radius: 8px; }")
         execute_layout = QVBoxLayout(execute_frame)
         execute_layout.setContentsMargins(14, 10, 14, 12)
@@ -714,32 +654,45 @@ class MainWindow(QMainWindow):
         self.step_hint_label.setWordWrap(True)
         self.step_hint_label.setStyleSheet("border: none; color: #5b6b7a; font-size: 12px;")
         execute_layout.addWidget(self.step_hint_label)
-        layout.addWidget(execute_frame)
+        self.left_splitter.addWidget(execute_frame)
 
         self.console_panel = ConsolePanel()
-        layout.addWidget(self.console_panel, 2)
+        self.console_panel.setMinimumHeight(140)
+        self.left_splitter.addWidget(self.console_panel)
 
         self.table_panel = TablePanel()
+        self.table_panel.setMinimumHeight(160)
         self.table_panel.navigate_previous.connect(lambda: self._change_table(-1))
         self.table_panel.navigate_next.connect(lambda: self._change_table(1))
-        layout.addWidget(self.table_panel, 3)
-        return container
+        self.left_splitter.addWidget(self.table_panel)
+
+        self.left_splitter.setStretchFactor(0, 3)
+        self.left_splitter.setStretchFactor(1, 2)
+        self.left_splitter.setStretchFactor(2, 2)
+        self.left_splitter.setStretchFactor(3, 3)
+        self.left_splitter.setSizes([240, 190, 220, 280])
+        return self.left_splitter
 
     def _build_right_column(self) -> QWidget:
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        self.right_splitter = QSplitter(Qt.Vertical)
+        self.right_splitter.setChildrenCollapsible(False)
+        self.right_splitter.setHandleWidth(8)
+        self.right_splitter.splitterMoved.connect(self._persist_splitter_states)
 
         self.image_panel = ImagePanel()
+        self.image_panel.setMinimumHeight(260)
         self.image_panel.navigate_previous.connect(lambda: self._change_image(-1))
         self.image_panel.navigate_next.connect(lambda: self._change_image(1))
         self.image_panel.reset_requested.connect(self.image_panel.image_view.reset_view)
-        layout.addWidget(self.image_panel, 5)
+        self.right_splitter.addWidget(self.image_panel)
 
         self.markdown_panel = MarkdownPanel()
-        layout.addWidget(self.markdown_panel, 4)
-        return container
+        self.markdown_panel.setMinimumHeight(200)
+        self.right_splitter.addWidget(self.markdown_panel)
+        self.right_splitter.setStretchFactor(0, 5)
+        self.right_splitter.setStretchFactor(1, 4)
+        self.right_splitter.setSizes([520, 360])
+        return self.right_splitter
 
     def _populate_step_list(self) -> None:
         self.step_list.clear()
@@ -747,7 +700,7 @@ class MainWindow(QMainWindow):
             status = self.statuses.get(step.id, StepStatus.IDLE)
             item = QListWidgetItem()
             item.setData(Qt.UserRole, step.id)
-            item.setSizeHint(QSize(260, 84))
+            item.setSizeHint(QSize(260, 68))
             self.step_list.addItem(item)
             self._refresh_step_item_widget(self.step_list.count() - 1)
         self._sync_step_item_selection()
@@ -780,6 +733,36 @@ class MainWindow(QMainWindow):
 
     def _refresh_executable_summary(self) -> None:
         self.version_label.setText("GUI v0.3 | PySide6")
+
+    def _restore_splitter_states(self) -> None:
+        for splitter, key in (
+            (self.body_splitter, self.BODY_SPLITTER_STATE_KEY),
+            (self.left_splitter, self.LEFT_SPLITTER_STATE_KEY),
+            (self.right_splitter, self.RIGHT_SPLITTER_STATE_KEY),
+        ):
+            encoded_state = get_ui_setting(key, "")
+            if not isinstance(encoded_state, str) or not encoded_state:
+                continue
+            try:
+                state = QByteArray.fromHex(encoded_state.encode("ascii"))
+            except Exception:
+                continue
+            if state.isEmpty():
+                continue
+            splitter.restoreState(state)
+
+    def _persist_splitter_states(self) -> None:
+        for splitter, key in (
+            (self.body_splitter, self.BODY_SPLITTER_STATE_KEY),
+            (self.left_splitter, self.LEFT_SPLITTER_STATE_KEY),
+            (self.right_splitter, self.RIGHT_SPLITTER_STATE_KEY),
+        ):
+            state = bytes(splitter.saveState()).hex()
+            set_ui_setting(key, state)
+
+    def closeEvent(self, event) -> None:
+        self._persist_splitter_states()
+        super().closeEvent(event)
 
     def _on_render_existing_outputs_toggled(self, checked: bool) -> None:
         self.render_existing_outputs = checked
@@ -1022,12 +1005,12 @@ class MainWindow(QMainWindow):
         return status == StepStatus.SUCCESS or self.render_existing_outputs
 
     def _render_table(self) -> None:
-        total = len(self.current_artifacts.csv_files)
+        total = len(self.current_artifacts.table_files)
         if total == 0:
             self.table_panel.set_table(None, None, 0, 0)
             return
         self.current_table_index %= total
-        path = self.current_artifacts.csv_files[self.current_table_index]
+        path = self.current_artifacts.table_files[self.current_table_index]
         try:
             frame = load_primary_table(self.steps[self.current_step_index].id, self.current_table_index)
         except Exception as exc:
@@ -1045,9 +1028,9 @@ class MainWindow(QMainWindow):
         self.image_panel.set_image_path(path, self.current_image_index, total)
 
     def _change_table(self, delta: int) -> None:
-        if not self.current_artifacts.csv_files:
+        if not self.current_artifacts.table_files:
             return
-        self.current_table_index = (self.current_table_index + delta) % len(self.current_artifacts.csv_files)
+        self.current_table_index = (self.current_table_index + delta) % len(self.current_artifacts.table_files)
         self._render_table()
 
     def _change_image(self, delta: int) -> None:
