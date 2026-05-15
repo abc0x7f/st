@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- opened on:  13 May 2026, 14:56:25
+ opened on:  15 May 2026, 21:36:52
 
 . 
 . cap which xsmle
@@ -89,8 +89,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -104,12 +104,12 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000001.tmp saved as .dta
 . postfile coef_handle str32 weight_type str20 section str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`coef_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000002.tmp not found)
 
 . postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`effect_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000003.tmp not found)
 
 . 
 . * ------------------------------
@@ -121,60 +121,78 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000001.tmp saved as .dta
   1.     syntax , TAG(string) LABEL(string) WFILE(string)
   2. 
 .     tempname W RTAB
-  3.     local k = 0
-  4. 
-.     quietly build_w_matrix, wfile("`wfile'") wname(`W')
-  5.     local WNAME "`r(wname)'"
-  6. 
-.     use "${TMP_PANEL_RAW}", clear
-  7.     encode province, gen(pid)
-  8.     xtset pid year
-  9. 
-.     capture log close sdm_`tag'
- 10.     log using "${STATA_DIR}/SDM主模型_`tag'.log", text replace name(sdm_`t
-> ag')
+  3.     tempfile province_order
+  4.     local k = 0
+  5. 
+.     preserve
+  6.         import delimited using "`wfile'", clear varnames(1) encoding(utf8)
+>  stringcols(1)
+  7.         gen order_id = _n
+  8.         keep province order_id
+  9.         save "`province_order'", replace
+ 10.     restore
  11. 
+.     quietly build_w_matrix, wfile("`wfile'") wname(`W')
+ 12.     local WNAME "`r(wname)'"
+ 13. 
+.     use "${TMP_PANEL_RAW}", clear
+ 14.     merge m:1 province using "`province_order'"
+ 15.     count if _merge != 3
+ 16.     if r(N) {
+ 17.         display as error "面板省份与空间权重矩阵省份无法完全匹配。"
+ 18.         list province year _merge if _merge != 3 in 1/20
+ 19.         exit 459
+ 20.     }
+ 21.     drop _merge
+ 22.     sort order_id year
+ 23.     gen pid = order_id
+ 24.     xtset pid year
+ 25. 
+.     capture log close sdm_`tag'
+ 26.     log using "${STATA_DIR}/SDM主模型_`tag'.log", text replace name(sdm_`t
+> ag')
+ 27. 
 .     display as text "============================================"
- 12.     display as text "矩阵：`label' (`tag')"
- 13.     display as text "双固定效应 SDM 主模型"
- 14.     display as text "============================================"
- 15. 
+ 28.     display as text "矩阵：`label' (`tag')"
+ 29.     display as text "双固定效应 SDM 主模型"
+ 30.     display as text "============================================"
+ 31. 
 .     quietly xsmle eff lntl ind urb rd open es, ///
 >         wmat(`WNAME') model(sdm) fe type(both) effect nolog
- 16. 
-.     ereturn display
- 17.     return list
- 18.     matrix `RTAB' = r(table)
- 19. 
-.     local cnames : colfullnames e(b)
- 20.     local k = colsof(`RTAB')
- 21. 
-.     forvalues j = 1/`k' {
- 22.         local token : word `j' of `cnames'
- 23.         local clean = subinstr("`token'", ":", " ", .)
- 24.         local section : word 1 of `clean'
- 25.         local variable : word 2 of `clean'
- 26. 
-.         scalar b  = `RTAB'[1,`j']
- 27.         scalar se = `RTAB'[2,`j']
- 28.         scalar zz = `RTAB'[3,`j']
- 29.         scalar pp = `RTAB'[4,`j']
- 30.         scalar ll = `RTAB'[5,`j']
- 31.         scalar ul = `RTAB'[6,`j']
  32. 
+.     ereturn display
+ 33.     return list
+ 34.     matrix `RTAB' = r(table)
+ 35. 
+.     local cnames : colfullnames e(b)
+ 36.     local k = colsof(`RTAB')
+ 37. 
+.     forvalues j = 1/`k' {
+ 38.         local token : word `j' of `cnames'
+ 39.         local clean = subinstr("`token'", ":", " ", .)
+ 40.         local section : word 1 of `clean'
+ 41.         local variable : word 2 of `clean'
+ 42. 
+.         scalar b  = `RTAB'[1,`j']
+ 43.         scalar se = `RTAB'[2,`j']
+ 44.         scalar zz = `RTAB'[3,`j']
+ 45.         scalar pp = `RTAB'[4,`j']
+ 46.         scalar ll = `RTAB'[5,`j']
+ 47.         scalar ul = `RTAB'[6,`j']
+ 48. 
 .         if inlist("`section'", "Main", "Wx", "Spatial", "Variance") {
- 33.             post coef_handle ("`tag'") ("`section'") ("`variable'") ///
+ 49.             post coef_handle ("`tag'") ("`section'") ("`variable'") ///
 >                 (b) (se) (zz) (pp) (ll) (ul)
- 34.         }
- 35.         else if inlist("`section'", "LR_Direct", "LR_Indirect", "LR_Total"
+ 50.         }
+ 51.         else if inlist("`section'", "LR_Direct", "LR_Indirect", "LR_Total"
 > ) {
- 36.             post effect_handle ("`tag'") ("`section'") ("`variable'") ///
+ 52.             post effect_handle ("`tag'") ("`section'") ("`variable'") ///
 >                 (b) (se) (zz) (pp) (ll) (ul)
- 37.         }
- 38.     }
- 39. 
+ 53.         }
+ 54.     }
+ 55. 
 .     log close sdm_`tag'
- 40. end
+ 56. end
 
 . 
 . * ------------------------------
@@ -182,6 +200,17 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_4cc8_000001.tmp saved as .dta
 . * ------------------------------
 . run_sdm_model, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FIL
 > E}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  (_merge==3)
+    -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -191,7 +220,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:  13 May 2026, 14:56:28
+ opened on:  15 May 2026, 21:36:52
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -252,10 +281,21 @@ matrices:
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:  13 May 2026, 14:56:29
+ closed on:  15 May 2026, 21:36:59
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  (_merge==3)
+    -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -265,7 +305,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:  13 May 2026, 14:56:29
+ opened on:  15 May 2026, 21:36:59
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -326,11 +366,22 @@ matrices:
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:  13 May 2026, 14:56:31
+ closed on:  15 May 2026, 21:37:01
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile(
 > "${W_GEO_INV_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  (_merge==3)
+    -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -340,7 +391,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- opened on:  13 May 2026, 14:56:31
+ opened on:  15 May 2026, 21:37:01
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 双固定效应 SDM 主模型
@@ -401,11 +452,22 @@ matrices:
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- closed on:  13 May 2026, 14:56:36
+ closed on:  15 May 2026, 21:37:02
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") w
 > file("${W_ECO_GEO_NEST_FILE}")
+(31 vars, 30 obs)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d254_000004.tmp saved as .dta
+    format
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                               240  (_merge==3)
+    -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -415,7 +477,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:  13 May 2026, 14:56:36
+ opened on:  15 May 2026, 21:37:02
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -476,7 +538,7 @@ matrices:
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:  13 May 2026, 14:56:42
+ closed on:  15 May 2026, 21:37:04
 -------------------------------------------------------------------------------
 
 . 
@@ -540,5 +602,5 @@ C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/40_空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- closed on:  13 May 2026, 14:56:42
+ closed on:  15 May 2026, 21:37:04
 -------------------------------------------------------------------------------

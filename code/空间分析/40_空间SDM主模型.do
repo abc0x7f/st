@@ -170,13 +170,30 @@ program define run_sdm_model
     syntax , TAG(string) LABEL(string) WFILE(string)
 
     tempname W RTAB
+    tempfile province_order
     local k = 0
+
+    preserve
+        import delimited using "`wfile'", clear varnames(1) encoding(utf8) stringcols(1)
+        gen order_id = _n
+        keep province order_id
+        save "`province_order'", replace
+    restore
 
     quietly build_w_matrix, wfile("`wfile'") wname(`W')
     local WNAME "`r(wname)'"
 
     use "${TMP_PANEL_RAW}", clear
-    encode province, gen(pid)
+    merge m:1 province using "`province_order'"
+    count if _merge != 3
+    if r(N) {
+        display as error "面板省份与空间权重矩阵省份无法完全匹配。"
+        list province year _merge if _merge != 3 in 1/20
+        exit 459
+    }
+    drop _merge
+    sort order_id year
+    gen pid = order_id
     xtset pid year
 
     capture log close sdm_`tag'

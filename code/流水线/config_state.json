@@ -1,11 +1,11 @@
 {
   "数据处理": "default",
   "效率测算": "default",
-  "回归分析": "滞后一期",
+  "回归分析": "baseline",
   "空间分析": "baseline",
   "_ui_settings": {
     "render_existing_outputs_without_run": true,
-    "main_window_body_splitter_state": "000000ff000000010000000200000208000003c00000000008010000000100",
+    "main_window_body_splitter_state": "000000ff0000000100000002000002c10000037b0000000008010000000100",
     "main_window_left_splitter_state": "000000ff0000000100000004000000d2000000b70000009f000000ea0000000008010000000200",
     "main_window_right_splitter_state": "000000ff000000010000000200000208000001680000000008010000000200"
   }

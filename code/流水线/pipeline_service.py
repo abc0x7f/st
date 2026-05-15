@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import glob
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -18,6 +19,12 @@ STATA_CANDIDATES = (
     Path(r"C:\Program Files\Stata18\StataMP-64.exe"),
     Path(r"C:\Program Files\Stata17\StataMP-64.exe"),
     Path(r"C:\Program Files\StataNow19\StataSE-64.exe"),
+)
+
+POWERSHELL_CANDIDATES = (
+    Path(r"C:\Scoop\shims\pwsh.exe"),
+    Path(r"C:\Program Files\PowerShell\7\pwsh.exe"),
+    Path(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"),
 )
 
 
@@ -38,6 +45,31 @@ def resolve_stata_executable() -> Path | None:
         if candidate.exists():
             return candidate
     return None
+
+
+def resolve_powershell_executable() -> Path | None:
+    for command in ("pwsh", "powershell"):
+        resolved = shutil.which(command)
+        if resolved:
+            return Path(resolved)
+    for candidate in POWERSHELL_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _powershell_quote(value: str | Path) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _stata_start_process_command(stata_exe: Path, script_path: Path, config_path: Path) -> str:
+    argument_list = ", ".join(_powershell_quote(arg) for arg in ("/b", "do", script_path, config_path))
+    return (
+        "$ErrorActionPreference = 'Stop'; "
+        f"$p = Start-Process -FilePath {_powershell_quote(stata_exe)} "
+        f"-ArgumentList @({argument_list}) -WindowStyle Hidden -Wait -PassThru; "
+        "if ($null -ne $p.ExitCode) { exit $p.ExitCode } else { exit 0 }"
+    )
 
 
 def _glob_paths(patterns: tuple[str, ...]) -> list[Path]:
@@ -268,11 +300,25 @@ def run_step(step_id: str) -> RunPreparation:
                 status=StepStatus.MANUAL_PENDING,
                 message=f"未找到 Stata 可执行文件。请手动运行：{command_text}",
             )
+        powershell_exe = resolve_powershell_executable()
+        if powershell_exe is None:
+            return RunPreparation(
+                allowed=False,
+                status=StepStatus.FAILED,
+                message="未找到 PowerShell，无法以非批处理方式启动 Stata。",
+            )
+        stata_config = _write_stata_config(step.id)
         return RunPreparation(
             allowed=True,
             status=StepStatus.RUNNING,
-            program=str(stata_exe),
-            arguments=["/e", "do", str(script_path), str(_write_stata_config(step.id))],
+            program=str(powershell_exe),
+            arguments=[
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                _stata_start_process_command(stata_exe, script_path, stata_config),
+            ],
             working_dir=step.working_dir,
             message=f"启动 Stata 脚本：{script_path.relative_to(PROJECT_ROOT)}",
         )

@@ -37,8 +37,8 @@
     {
       "name": "lag_custom",
       "label": "滞后一期",
-      "data_path": "data/最终数据/第二阶段_滞后一期.csv",
-      "core_var": "lntl",
+      "data_path": "data/最终数据/第二阶段_基础.csv",
+      "core_var": "lntl_1",
       "mode": "custom"
     }
   ],

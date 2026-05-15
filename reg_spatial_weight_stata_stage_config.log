@@ -35,6 +35,62 @@ Notes:
 . args config_do
 
 . 
+. * STEP_SPEC_BEGIN
+. * {
+. *   "name": "空间权重矩阵检验（Stata）",
+. *   "runner_type": "hybrid",
+. *   "command": [
+. *     "stata-do",
+. *     "code/空间分析/30_空间权重矩阵检验.do"
+. *   ],
+. *   "working_dir": "{PROJECT_ROOT}",
+. *   "precheck_mode": "required_inputs",
+. *   "required_inputs": [
+. *     {
+. *       "path": "{空间分析.second_stage_panel}",
+. *       "kind": "csv",
+. *       "required_columns": [
+. *         "province",
+. *         "year",
+. *         "eff"
+. *       ],
+. *       "label": ""
+. *     },
+. *     {
+. *       "path": "{空间分析.geo_inverse_matrix}",
+. *       "kind": "csv",
+. *       "required_columns": [],
+. *       "label": ""
+. *     }
+. *   ],
+. *   "artifacts": {
+. *     "tables": {
+. *       "primary": "LR检验结果.csv",
+. *       "patterns": [
+. *         "*.csv"
+. *       ]
+. *     },
+. *     "images": {
+. *       "primary": null,
+. *       "patterns": []
+. *     },
+. *     "markdown": {
+. *       "primary": null,
+. *       "patterns": [
+. *         "*.md"
+. *       ]
+. *     }
+. *   },
+. *   "console_success_markers": [],
+. *   "description": "优先尝试由 GUI 拉起 Stata；若不可用，则提示手动执行并回检
+> 。",
+. *   "notes": [
+. *     "若 GUI 未找到 Stata，可手动运行 .do 文件。",
+. *     "运行完成后点击“检查”刷新结果状态。"
+. *   ]
+. * }
+. * STEP_SPEC_END
+. 
 . * ============================================================
 . * 空间权重矩阵检验
 . * 参考：docs/参考资料/小鲜烽的空间计量代码.do
@@ -53,8 +109,8 @@ Notes:
 . global DATA_FILE "C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/data/最终数据/
 > 第二阶段_基础.csv"
 
-. global W_ADJ_FILE "C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/data/最终数据/
-> 省际01邻接矩阵.csv"
+. global W_ADJ_FILE "C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分
+> 析/baseline/10_构建邻接矩阵/省际01邻接矩阵.csv"
 
 . global W_ECO_FILE "C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/data/最终数据/
 > 省际经济距离矩阵.csv"
@@ -103,7 +159,7 @@ C:\Users\abc0x7f\Desktop\PRO\计算机设计大赛
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/空间权重矩阵检验总日志.log
   log type:  text
- opened on:  11 May 2026, 17:13:25
+ opened on:  15 May 2026, 21:34:06
 
 . 
 . display as text "当前工作目录: `c(pwd)'"
@@ -243,8 +299,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -277,15 +333,15 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
 
 . postfile lm_handle str32 weight_type str20 test_name ///
 >     double statistic double df double pvalue using "`lm_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000002.tmp not found)
 
 . postfile lr_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`lr_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000003.tmp not found)
 
 . postfile wald_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`wald_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000004.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000004.tmp not found)
 
 . 
 . * ------------------------------
@@ -313,117 +369,124 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
  13.     local WNAME "`r(wname)'"
  14. 
 .     use "${TMP_PANEL_RAW}", clear
- 15.     merge m:1 province using "`province_order'", keep(match) nogen
- 16.     sort order_id year
- 17. 
+ 15.     merge m:1 province using "`province_order'"
+ 16.     count if _merge != 3
+ 17.     if r(N) {
+ 18.         display as error "面板省份与空间权重矩阵省份无法完全匹配。"
+ 19.         list province year _merge if _merge != 3 in 1/20
+ 20.         exit 459
+ 21.     }
+ 22.     drop _merge
+ 23.     sort order_id year
+ 24. 
 .     gen pid = order_id
- 18.     xtset pid year
- 19. 
+ 25.     xtset pid year
+ 26. 
 .     preserve
- 20.         clear
- 21.         mata: st_matrix("`WLM'", panel_blockdiag(st_matrix("`WNAME'"), ${T
+ 27.         clear
+ 28.         mata: st_matrix("`WLM'", panel_blockdiag(st_matrix("`WNAME'"), ${T
 > _PERIOD}))
- 22.         svmat `WLM', names(col)
- 23.         save "`wdiag_dta'", replace
- 24.     restore
- 25. 
+ 29.         svmat `WLM', names(col)
+ 30.         save "`wdiag_dta'", replace
+ 31.     restore
+ 32. 
 .     capture spatwmat drop `WLM'
- 26.     quietly spatwmat using "`wdiag_dta'", name(`WLM') standardize
- 27. 
+ 33.     quietly spatwmat using "`wdiag_dta'", name(`WLM') standardize
+ 34. 
 .     * ----------------------------------------
 .     * A. LM / Robust LM
 .     * ----------------------------------------
 .     capture log close lm_`tag'
- 28.     log using "${STATA_DIR}/LM_`tag'.log", text replace name(lm_`tag')
- 29. 
+ 35.     log using "${STATA_DIR}/LM_`tag'.log", text replace name(lm_`tag')
+ 36. 
 .     display as text "============================================"
- 30.     display as text "矩阵：`label' (`tag')"
- 31.     display as text "LM / Robust LM 检验"
- 32.     display as text "============================================"
- 33. 
+ 37.     display as text "矩阵：`label' (`tag')"
+ 38.     display as text "LM / Robust LM 检验"
+ 39.     display as text "============================================"
+ 40. 
 .     quietly tabulate pid, generate(pid_d_)
- 34.     quietly tabulate year, generate(year_d_)
- 35. 
+ 41.     quietly tabulate year, generate(year_d_)
+ 42. 
 .     regress eff lntl ind urb rd open es pid_d_2-pid_d_${N_CROSS} year_d_2-yea
 > r_d_${T_PERIOD}
- 36. 
+ 43. 
 .     noisily spatdiag, weights(`WLM')
- 37.     return list
- 38. 
+ 44.     return list
+ 45. 
 .     capture confirm matrix r(stats)
- 39.     if !_rc {
- 40.         matrix list r(stats)
- 41.     }
- 42. 
+ 46.     if !_rc {
+ 47.         matrix list r(stats)
+ 48.     }
+ 49. 
 .     capture confirm matrix r(stats)
- 43.     if !_rc {
- 44.         tempname LMSTAT
- 45.         matrix `LMSTAT' = r(stats)
- 46.         post lm_handle ("`tag'") ("LM Error") (`LMSTAT'[2,1]) (`LMSTAT'[2,
+ 50.     if !_rc {
+ 51.         tempname LMSTAT
+ 52.         matrix `LMSTAT' = r(stats)
+ 53.         post lm_handle ("`tag'") ("LM Error") (`LMSTAT'[2,1]) (`LMSTAT'[2,
 > 2]) (`LMSTAT'[2,3])
- 47.         post lm_handle ("`tag'") ("Robust LM Error") (`LMSTAT'[3,1]) (`LMS
+ 54.         post lm_handle ("`tag'") ("Robust LM Error") (`LMSTAT'[3,1]) (`LMS
 > TAT'[3,2]) (`LMSTAT'[3,3])
- 48.         post lm_handle ("`tag'") ("LM Lag") (`LMSTAT'[4,1]) (`LMSTAT'[4,2]
+ 55.         post lm_handle ("`tag'") ("LM Lag") (`LMSTAT'[4,1]) (`LMSTAT'[4,2]
 > ) (`LMSTAT'[4,3])
- 49.         post lm_handle ("`tag'") ("Robust LM Lag") (`LMSTAT'[5,1]) (`LMSTA
+ 56.         post lm_handle ("`tag'") ("Robust LM Lag") (`LMSTAT'[5,1]) (`LMSTA
 > T'[5,2]) (`LMSTAT'[5,3])
- 50.     }
- 51. 
+ 57.     }
+ 58. 
 .     log close lm_`tag'
- 52. 
+ 59. 
 .     * ----------------------------------------
 .     * B. LR：个体 / 时间 / 双固定 SDM
 .     * ----------------------------------------
 .     capture log close sdm_`tag'
- 53.     log using "${STATA_DIR}/模型结果_`tag'.log", text replace name(sdm_`ta
+ 60.     log using "${STATA_DIR}/模型结果_`tag'.log", text replace name(sdm_`ta
 > g')
- 54. 
+ 61. 
 .     display as text "============================================"
- 55.     display as text "矩阵：`label' (`tag')"
- 56.     display as text "SDM 个体 / 时间 / 双固定估计"
- 57.     display as text "============================================"
- 58. 
+ 62.     display as text "矩阵：`label' (`tag')"
+ 63.     display as text "SDM 个体 / 时间 / 双固定估计"
+ 64.     display as text "============================================"
+ 65. 
 .     quietly xsmle eff lntl ind urb rd open es, ///
 >         wmat(`WNAME') model(sdm) fe type(ind) nolog noeffects
- 59.     estimates store ind_`tag'
- 60.     estimates restore ind_`tag'
- 61.     ereturn display
- 62. 
+ 66.     estimates store ind_`tag'
+ 67.     estimates restore ind_`tag'
+ 68.     ereturn display
+ 69. 
 .     quietly xsmle eff lntl ind urb rd open es, ///
 >         wmat(`WNAME') model(sdm) fe type(time) nolog noeffects
- 63.     estimates store time_`tag'
- 64.     estimates restore time_`tag'
- 65.     ereturn display
- 66. 
+ 70.     estimates store time_`tag'
+ 71.     estimates restore time_`tag'
+ 72.     ereturn display
+ 73. 
 .     quietly xsmle eff lntl ind urb rd open es, ///
 >         wmat(`WNAME') model(sdm) fe type(both) nolog noeffects
- 67.     estimates store both_`tag'
- 68.     estimates restore both_`tag'
- 69.     ereturn display
- 70. 
+ 74.     estimates store both_`tag'
+ 75.     estimates restore both_`tag'
+ 76.     ereturn display
+ 77. 
 .     display as text "--------------------------------------------"
- 71.     display as text "LR 检验"
- 72.     display as text "--------------------------------------------"
- 73. 
+ 78.     display as text "LR 检验"
+ 79.     display as text "--------------------------------------------"
+ 80. 
 .     quietly lrtest both_`tag' ind_`tag', df(`df_time')
- 74.     post lr_handle ("`tag'") ("LR: both vs ind") (r(chi2)) (`df_time') (r(
+ 81.     post lr_handle ("`tag'") ("LR: both vs ind") (r(chi2)) (`df_time') (r(
 > p))
- 75.     noisily lrtest both_`tag' ind_`tag', df(`df_time')
- 76. 
+ 82.     noisily lrtest both_`tag' ind_`tag', df(`df_time')
+ 83. 
 .     quietly lrtest both_`tag' time_`tag', df(`df_ind')
- 77.     post lr_handle ("`tag'") ("LR: both vs time") (r(chi2)) (`df_ind') (r(
+ 84.     post lr_handle ("`tag'") ("LR: both vs time") (r(chi2)) (`df_ind') (r(
 > p))
- 78.     noisily lrtest both_`tag' time_`tag', df(`df_ind')
- 79. 
+ 85.     noisily lrtest both_`tag' time_`tag', df(`df_ind')
+ 86. 
 .     * ----------------------------------------
 .     * C. Wald：SDM -> SAR / SDM -> SEM
 .     * ----------------------------------------
 .     display as text "--------------------------------------------"
- 80.     display as text "Wald 检验"
- 81.     display as text "--------------------------------------------"
- 82. 
+ 87.     display as text "Wald 检验"
+ 88.     display as text "--------------------------------------------"
+ 89. 
 .     quietly estimates restore both_`tag'
- 83. 
+ 90. 
 .     quietly test ///
 >         ([Wx]lntl = 0) ///
 >         ([Wx]ind  = 0) ///
@@ -431,16 +494,16 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
 >         ([Wx]rd   = 0) ///
 >         ([Wx]open = 0) ///
 >         ([Wx]es   = 0)
- 84.     post wald_handle ("`tag'") ("Wald: SDM -> SAR") (r(chi2)) (r(df)) (r(p
+ 91.     post wald_handle ("`tag'") ("Wald: SDM -> SAR") (r(chi2)) (r(df)) (r(p
 > ))
- 85.     noisily test ///
+ 92.     noisily test ///
 >         ([Wx]lntl = 0) ///
 >         ([Wx]ind  = 0) ///
 >         ([Wx]urb  = 0) ///
 >         ([Wx]rd   = 0) ///
 >         ([Wx]open = 0) ///
 >         ([Wx]es   = 0)
- 86. 
+ 93. 
 .     quietly testnl ///
 >         ([Wx]lntl = -[Spatial]rho*[Main]lntl) ///
 >         ([Wx]ind  = -[Spatial]rho*[Main]ind) ///
@@ -448,18 +511,18 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
 >         ([Wx]rd   = -[Spatial]rho*[Main]rd) ///
 >         ([Wx]open = -[Spatial]rho*[Main]open) ///
 >         ([Wx]es   = -[Spatial]rho*[Main]es)
- 87.     post wald_handle ("`tag'") ("Wald: SDM -> SEM") (r(chi2)) (r(df)) (r(p
+ 94.     post wald_handle ("`tag'") ("Wald: SDM -> SEM") (r(chi2)) (r(df)) (r(p
 > ))
- 88.     noisily testnl ///
+ 95.     noisily testnl ///
 >         ([Wx]lntl = -[Spatial]rho*[Main]lntl) ///
 >         ([Wx]ind  = -[Spatial]rho*[Main]ind) ///
 >         ([Wx]urb  = -[Spatial]rho*[Main]urb) ///
 >         ([Wx]rd   = -[Spatial]rho*[Main]rd) ///
 >         ([Wx]open = -[Spatial]rho*[Main]open) ///
 >         ([Wx]es   = -[Spatial]rho*[Main]es)
- 89. 
+ 96. 
 .     log close sdm_`tag'
- 90. end
+ 97. end
 
 . 
 . * ------------------------------
@@ -467,15 +530,16 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000001.tmp saved as .dta
 . * ------------------------------
 . run_one_matrix, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
     -----------------------------------------
     Not matched                             0
-    Matched                               240  
+    Matched                               240  (_merge==3)
     -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -483,15 +547,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_adjacency_01
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- opened on:  11 May 2026, 17:13:26
+ opened on:  15 May 2026, 21:34:07
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 LM / Robust LM 检验
@@ -607,14 +671,14 @@ RLMlag  .22711853          1  .63366868
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- closed on:  11 May 2026, 17:13:29
+ closed on:  15 May 2026, 21:34:13
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- opened on:  11 May 2026, 17:13:29
+ opened on:  15 May 2026, 21:34:13
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 SDM 个体 / 时间 / 双固定估计
@@ -739,21 +803,22 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- closed on:  11 May 2026, 17:13:43
+ closed on:  15 May 2026, 21:34:31
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FI
 > LE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
     -----------------------------------------
     Not matched                             0
-    Matched                               240  
+    Matched                               240  (_merge==3)
     -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -761,15 +826,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- opened on:  11 May 2026, 17:13:43
+ opened on:  15 May 2026, 21:34:31
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 LM / Robust LM 检验
@@ -885,14 +950,14 @@ RLMlag   .70102715           1   .40243877
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- closed on:  11 May 2026, 17:13:45
+ closed on:  15 May 2026, 21:34:33
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- opened on:  11 May 2026, 17:13:45
+ opened on:  15 May 2026, 21:34:33
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -1017,21 +1082,22 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- closed on:  11 May 2026, 17:13:54
+ closed on:  15 May 2026, 21:34:39
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile
 > ("${W_GEO_INV_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
     -----------------------------------------
     Not matched                             0
-    Matched                               240  
+    Matched                               240  (_merge==3)
     -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -1039,15 +1105,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_geographic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- opened on:  11 May 2026, 17:13:54
+ opened on:  15 May 2026, 21:34:39
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 LM / Robust LM 检验
@@ -1163,14 +1229,14 @@ RLMlag  .11466093          1  .73489888
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- closed on:  11 May 2026, 17:13:56
+ closed on:  15 May 2026, 21:34:41
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- opened on:  11 May 2026, 17:13:56
+ opened on:  15 May 2026, 21:34:41
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -1295,21 +1361,22 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- closed on:  11 May 2026, 17:14:10
+ closed on:  15 May 2026, 21:34:51
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") 
 > wfile("${W_ECO_GEO_NEST_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
     -----------------------------------------
     Not matched                             0
-    Matched                               240  
+    Matched                               240  (_merge==3)
     -----------------------------------------
+  0
 
 Panel variable: pid (strongly balanced)
  Time variable: year, 2015 to 2022
@@ -1317,15 +1384,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_5c18_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_d50c_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- opened on:  11 May 2026, 17:14:10
+ opened on:  15 May 2026, 21:34:51
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 LM / Robust LM 检验
@@ -1441,14 +1508,14 @@ RLMlag   .21740152           1     .641027
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- closed on:  11 May 2026, 17:14:12
+ closed on:  15 May 2026, 21:34:52
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- opened on:  11 May 2026, 17:14:12
+ opened on:  15 May 2026, 21:34:52
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 SDM 个体 / 时间 / 双固定估计
@@ -1566,3 +1633,103 @@ Wald 检验
   (4)  [Wx]rd = -[Spatial]rho*[Main]rd
   (5)  [Wx]open = -[Spatial]rho*[Main]open
   (6)  [Wx]es = -[Spatial]rho*[Main]es
+
+               chi2(6) =       15.09
+           Prob > chi2 =        0.0196
+      name:  sdm_economic_geo_nested
+       log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
+> ine/30_空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
+  log type:  text
+ closed on:  15 May 2026, 21:34:59
+-------------------------------------------------------------------------------
+
+. 
+. postclose lm_handle
+
+. postclose lr_handle
+
+. postclose wald_handle
+
+. 
+. use "`lm_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/LM与RobustLM检验结果.csv", replace
+file C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+> 空间权重矩阵检验/LM与RobustLM检验结果.csv saved
+
+. save "${STATA_DIR}/LM与RobustLM检验结果.dta", replace
+file
+    C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+    > 空间权重矩阵检验/stata/LM与RobustLM检验结果.dta saved
+
+. 
+. use "`lr_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/LR检验结果.csv", replace
+file C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+> 空间权重矩阵检验/LR检验结果.csv saved
+
+. save "${STATA_DIR}/LR检验结果.dta", replace
+file
+    C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+    > 空间权重矩阵检验/stata/LR检验结果.dta saved
+
+. 
+. use "`wald_results'", clear
+
+. sort weight_type test_name
+
+. export delimited using "${OUT_DIR}/Wald检验结果.csv", replace
+file C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+> 空间权重矩阵检验/Wald检验结果.csv saved
+
+. save "${STATA_DIR}/Wald检验结果.dta", replace
+file
+    C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_
+    > 空间权重矩阵检验/stata/Wald检验结果.dta saved
+
+. 
+. display as text "============================================"
+============================================
+
+. display as text "结果文件已输出："
+结果文件已输出：
+
+. display as text "${OUT_DIR}/LM与RobustLM检验结果.csv"
+C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_空间权
+> 重矩阵检验/LM与RobustLM检验结果.csv
+
+. display as text "${OUT_DIR}/LR检验结果.csv"
+C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_空间权
+> 重矩阵检验/LR检验结果.csv
+
+. display as text "${OUT_DIR}/Wald检验结果.csv"
+C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_空间权
+> 重矩阵检验/Wald检验结果.csv
+
+. display as text "${STATA_DIR}/LM_*.log"
+C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_空间权
+> 重矩阵检验/stata/LM_*.log
+
+. display as text "${STATA_DIR}/模型结果_*.log"
+C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/baseline/30_空间权
+> 重矩阵检验/stata/模型结果_*.log
+
+. display as text "============================================"
+============================================
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
+> ine/30_空间权重矩阵检验/stata/空间权重矩阵检验总日志.log
+  log type:  text
+ closed on:  15 May 2026, 21:34:59
+-------------------------------------------------------------------------------
+
+. 
+end of do-file

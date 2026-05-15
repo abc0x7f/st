@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- opened on:  11 May 2026, 17:13:43
+ opened on:  15 May 2026, 21:34:31
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 LM / Robust LM 检验
@@ -119,5 +119,5 @@ RLMlag   .70102715           1   .40243877
        log:  C:/Users/abc0x7f/Desktop/PRO/计算机设计大赛/outputs/空间分析/basel
 > ine/30_空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- closed on:  11 May 2026, 17:13:45
+ closed on:  15 May 2026, 21:34:33
 -------------------------------------------------------------------------------

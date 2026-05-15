@@ -113,6 +113,7 @@ def build_adjacency_pairs() -> dict[str, set[str]]:
 
 
 def write_matrix(provinces: list[str], adjacency: dict[str, set[str]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["province", *provinces])
@@ -161,6 +162,7 @@ def write_economic_distance_matrix(
     avg_gdp: dict[str, float],
     path: Path,
 ) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["province", *provinces])

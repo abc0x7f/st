@@ -229,7 +229,14 @@ program define run_one_matrix
     local WNAME "`r(wname)'"
 
     use "${TMP_PANEL_RAW}", clear
-    merge m:1 province using "`province_order'", keep(match) nogen
+    merge m:1 province using "`province_order'"
+    count if _merge != 3
+    if r(N) {
+        display as error "面板省份与空间权重矩阵省份无法完全匹配。"
+        list province year _merge if _merge != 3 in 1/20
+        exit 459
+    }
+    drop _merge
     sort order_id year
 
     gen pid = order_id
