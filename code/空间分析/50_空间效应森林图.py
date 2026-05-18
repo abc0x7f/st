@@ -22,6 +22,7 @@ from matplotlib.patches import Rectangle
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
 from stage_config import load_script_context, resolve_project_path, stage_output_dir
+from light_var_labels import light_var_label
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 OUT_DIR = stage_output_dir(CONFIG, "50_空间效应森林图")
@@ -53,7 +54,7 @@ NETWORK_LABEL_TOP_N = 10
 NETWORK_TARGET_VARS = ["lntl", "es"]
 NETWORK_PANEL_YEARS = [2015, 2018, 2022]
 NETWORK_VAR_LABEL_MAP = {
-    "lntl": "夜间灯光强度",
+    "lntl": light_var_label("lntl"),
     "es": "能源结构",
 }
 EFFECT_TITLE_MAP = {
@@ -62,7 +63,7 @@ EFFECT_TITLE_MAP = {
     "LR_Total": "总效应",
 }
 VAR_LABEL_MAP = {
-    "lntl": "夜间灯光聚集度",
+    "lntl": light_var_label("lntl"),
     "ind": "产业结构",
     "urb": "城镇化水平",
     "rd": "研发投入",

@@ -65,6 +65,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
 from stage_config import load_script_context, resolve_project_path, script_output_dir
+from light_var_labels import light_var_label
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["panel_data"])
@@ -77,7 +78,6 @@ CONTROL_VARS = list(CONFIG["control_vars"])
 MODEL_FORMULA = f"{DEP_VAR} ~ {CORE_VAR} + {' + '.join(CONTROL_VARS)} + C(province) + C(year)"
 DISPLAY_NAME_MAP = {
     "eff": "碳排放效率",
-    "lntl": "夜间灯光强度",
 }
 
 
@@ -100,11 +100,13 @@ def format_decimal(value: float, digits: int = 4) -> str:
 
 
 def core_display_name() -> str:
-    return DISPLAY_NAME_MAP.get(CORE_VAR, f"核心变量 {CORE_VAR}")
+    return var_display_name(CORE_VAR)
 
 
 def var_display_name(var_name: str) -> str:
-    return DISPLAY_NAME_MAP.get(var_name, var_name)
+    if var_name in DISPLAY_NAME_MAP:
+        return DISPLAY_NAME_MAP[var_name]
+    return light_var_label(var_name, DATA_PATH.name)
 
 
 def configure_matplotlib() -> None:
@@ -471,7 +473,7 @@ def plot_coefficient_forest(result) -> Path:
     coef_table = build_regression_table(result)
     coef_table = coef_table.loc[coef_table["variable"].isin([CORE_VAR, *CONTROL_VARS])].copy()
     label_map = {
-        "lntl": "夜间灯光强度",
+        "lntl": light_var_label("lntl", DATA_PATH.name),
         "ind": "产业结构",
         "urb": "城镇化水平",
         "rd": "研发投入",

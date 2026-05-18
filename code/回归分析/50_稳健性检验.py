@@ -62,6 +62,7 @@ import seaborn as sns
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
 from stage_config import load_script_context, resolve_project_path, script_output_dir
+from light_var_labels import light_var_label
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 OUT_DIR = script_output_dir(Path(__file__), CONFIG)
@@ -94,8 +95,16 @@ def format_decimal(value: float, digits: int = 4) -> str:
     return f"{rounded:.{digits}f}"
 
 
-def core_description(core_var: str) -> str:
-    return "主灯光变量" if core_var == "lntl" else f"核心变量 {core_var}"
+def core_description(core_var: str, data_file: str) -> str:
+    label = light_var_label(core_var, data_file)
+    return label if label != core_var else f"核心变量 {core_var}"
+
+
+def format_var_with_label(var_name: str, data_file: str) -> str:
+    label = light_var_label(var_name, data_file)
+    if label == var_name:
+        return f"`{var_name}`"
+    return f"`{var_name}`（{label}）"
 
 
 def plot_core_robustness_forest(summary_df: pd.DataFrame) -> Path:
@@ -266,11 +275,13 @@ def safe_float(value) -> float:
 
 def extract_model_summary(result, model_name: str, core_var: str, df: pd.DataFrame) -> dict[str, float | str]:
     conf_int = result.conf_int()
+    data_file = str(df.attrs.get("data_file", ""))
     return {
         "model": model_name,
         "model_label": df.attrs.get("model_label", model_name),
-        "data_file": df.attrs.get("data_file", ""),
+        "data_file": data_file,
         "core_var": core_var,
+        "core_var_cn": light_var_label(core_var, data_file),
         "nobs": int(result.nobs),
         "n_provinces": int(df[ENTITY_COL].nunique()),
         "n_years": int(df[TIME_COL].nunique()),
@@ -313,7 +324,7 @@ def df_to_md(df: pd.DataFrame) -> str:
 
 
 def build_core_comparison(summary_df: pd.DataFrame) -> pd.DataFrame:
-    cols = ["model", "core_var", "coef_core", "se_core", "t_core", "p_core", "stars_core", "r2_model", "nobs"]
+    cols = ["model", "model_label", "data_file", "core_var", "core_var_cn", "coef_core", "se_core", "t_core", "p_core", "stars_core", "r2_model", "nobs"]
     return summary_df[cols].copy()
 
 
@@ -325,16 +336,16 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         "## 结果分析",
         "",
         (
-            f"基准模型中，核心解释变量 `{baseline['core_var']}` 的系数为 "
+            f"基准模型中，核心解释变量{format_var_with_label(str(baseline['core_var']), str(baseline['data_file']))}的系数为 "
             f"`{baseline['coef_core']:.4f}`，显著性为 `{baseline['stars_core'] or 'ns'}`，"
-            f"表明{core_description(str(baseline['core_var']))}对 `{DEP_VAR}` 存在正向影响。"
+            f"表明{core_description(str(baseline['core_var']), str(baseline['data_file']))}对 `{DEP_VAR}` 存在正向影响。"
         ),
     ]
     for _, row in other_rows.iterrows():
         lines.extend(
             [
                 (
-                    f"`{row['model_label']}` 下，核心变量 `{row['core_var']}` 的系数为 "
+                    f"`{row['model_label']}` 下，核心变量{format_var_with_label(str(row['core_var']), str(row['data_file']))}的系数为 "
                     f"`{row['coef_core']:.4f}`，显著性为 `{row['stars_core'] or 'ns'}`。"
                     "若方向与基准模型一致，说明主结论在该稳健性设定下保持稳定。"
                 )
@@ -377,7 +388,10 @@ def main() -> None:
             threshold_frames.append(threshold_df)
             spec_descriptions.append(f"- `{model_label}`：基于 `{data_path.relative_to(ROOT).as_posix()}`，按 `{winsor_rate:.0%}` 双侧缩尾。")
         else:
-            spec_descriptions.append(f"- `{model_label}`：使用 `{data_path.relative_to(ROOT).as_posix()}`，核心变量为 `{core_var}`。")
+            spec_descriptions.append(
+                f"- `{model_label}`：使用 `{data_path.relative_to(ROOT).as_posix()}`，"
+                f"核心变量为 {format_var_with_label(core_var, data_path.name)}。"
+            )
         model_specs.append((model_name, df, core_var))
 
     summaries: list[dict[str, float | str]] = []
@@ -386,7 +400,10 @@ def main() -> None:
     for model_name, df, core_var in model_specs:
         result = fit_twfe(df, core_var)
         summaries.append(extract_model_summary(result, model_name, core_var, df))
-        coef_tables.append(extract_coefficients(result, model_name))
+        coef_table = extract_coefficients(result, model_name)
+        coef_table["data_file"] = str(df.attrs.get("data_file", ""))
+        coef_table["variable_cn"] = coef_table["variable"].map(lambda value: light_var_label(str(value), str(df.attrs.get("data_file", ""))))
+        coef_tables.append(coef_table)
 
     summary_df = pd.DataFrame(summaries)
     coef_df = pd.concat(coef_tables, ignore_index=True)
@@ -406,7 +423,7 @@ def main() -> None:
         "## 检验口径",
         "",
         f"- 当前配置：`{CONFIG['config_name']}`",
-        f"- 因变量：`{DEP_VAR}`；基准核心变量：`{BASE_CORE_VAR}`；控制变量：`{', '.join(CONTROL_VARS)}`。",
+        f"- 因变量：`{DEP_VAR}`；基准核心变量：{format_var_with_label(BASE_CORE_VAR, resolve_project_path(CONFIG['panel_data']).name)}；控制变量：`{', '.join(CONTROL_VARS)}`。",
         "- 模型均采用双向固定效应与 `Driscoll-Kraay` 稳健标准误。",
         *spec_descriptions,
         "",

@@ -2,7 +2,7 @@
 
 ## 数据来源
 
-- `C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs\空间分析\baseline\40_空间SDM主模型\空间效应分解表.csv`
+- `C:\Users\abc0x7f\Desktop\PRO\统计建模\outputs\空间分析\滞后一期\40_空间SDM主模型\空间效应分解表.csv`
 - 权重矩阵：`经济倒数权重矩阵`
 - 节点属性年份：`2022`
 - 节点大小：`eff` 水平

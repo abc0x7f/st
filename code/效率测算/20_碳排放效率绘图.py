@@ -59,6 +59,7 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "code" / "流水线"))
 from stage_config import load_script_context, resolve_project_path, script_output_dir
+from light_var_labels import light_var_label
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
@@ -70,7 +71,7 @@ KDE_YEARS = None
 WEST_PROVINCES = ["内蒙古", "广西", "重庆", "四川", "贵州", "云南", "西藏", "陕西", "甘肃", "青海", "宁夏", "新疆"]
 MAP_FONT_SIZE_DELTA = 8
 DISPLAY_NAME_MAP = {
-    "lntl": "夜间灯光强度",
+    "lntl": light_var_label("lntl"),
     "mean_eff": "平均碳排放效率",
 }
 

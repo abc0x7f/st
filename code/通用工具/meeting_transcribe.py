@@ -20,7 +20,7 @@ TERMS_PROMPT = (
     "面板回归、双固定效应、随机效应、Hausman检验、Pooled OLS、"
     "空间计量、空间相关性、莫兰指数、Moran's I、LISA、"
     "空间杜宾模型、SDM、SAR、SEM、LM检验、Wald检验、LR检验、"
-    "Driscoll-Kraay标准误、夜间灯光聚合度、碳排放效率。"
+    "Driscoll-Kraay标准误、夜间灯光强度、碳排放效率。"
 )
 
 TERM_REPLACEMENTS: list[tuple[re.Pattern[str], str]] = [

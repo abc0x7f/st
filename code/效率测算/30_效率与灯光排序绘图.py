@@ -182,7 +182,7 @@ def draw_plot(df: pd.DataFrame) -> Path:
     fig.text(0.5, 0.02, "注：省份顺序按平均碳排放效率由高到低排列。", ha="center", fontsize=10)
     fig.subplots_adjust(left=0.05, right=0.97, top=0.93, bottom=0.06, wspace=0.005)
 
-    output_path = OUT_DIR / "各省平均效率与平均lntl对比排序图.png"
+    output_path = OUT_DIR / "各省平均效率与平均夜间灯光强度对比排序图.png"
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return output_path

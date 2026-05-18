@@ -57,6 +57,7 @@ from linearmodels.panel import PanelOLS
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "code" / "流水线"))
 from stage_config import load_script_context, resolve_project_path, script_output_dir
+from light_var_labels import light_var_label
 
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["panel_data"])
@@ -107,6 +108,10 @@ def format_decimal(value: float, digits: int = 4) -> str:
 
 def core_prefix() -> str:
     return CORE_VAR
+
+
+def core_display_name() -> str:
+    return light_var_label(CORE_VAR, DATA_PATH.name)
 
 
 def format_numeric(value) -> str:
@@ -291,7 +296,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         ),
         (
             f"其中，影响最强的是 `{strongest['region']}`，最弱的是 `{weakest['region']}`。"
-            "如果同为正值，说明夜间灯光集聚度对绿色经济效率的促进作用主要体现为强弱差异；"
+            f"如果同为正值，说明{core_display_name()}对绿色经济效率的促进作用主要体现为强弱差异；"
             "如果存在负值，则说明部分区域可能存在扩张型增长对绿色效率的挤出。"
         ),
     ]
@@ -323,7 +328,7 @@ def build_analysis(summary_df: pd.DataFrame) -> list[str]:
         )
 
     lines.append(
-        f"从论文写作角度，正文应优先比较 `{CORE_VAR}` 的系数方向、大小和显著性，再结合东中西东北在"
+        f"从论文写作角度，正文应优先比较 `{CORE_VAR}`（{core_display_name()}）的系数方向、大小和显著性，再结合东中西东北在"
         "经济基础、产业结构、创新投入、能源结构和开放水平上的差异解释区域异质性。"
     )
     return lines
@@ -346,6 +351,8 @@ def save_report(
         "Covariance: Driscoll-Kraay",
         "Sample split: 东部 / 中部 / 西部 / 东北",
         "```",
+        "",
+        f"- 核心解释变量：`{CORE_VAR}`（{core_display_name()}）",
         "",
         "## 核心结果表",
         "",

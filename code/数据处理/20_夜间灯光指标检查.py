@@ -1,5 +1,5 @@
 STEP_SPEC = {
-    "name": "夜间灯光指标检查",
+    "name": "夜间灯光强度检查",
     "runner_type": "python",
     "command": [
         "python",
@@ -46,7 +46,7 @@ STEP_SPEC = {
         }
     },
     "console_success_markers": [],
-    "description": "检查夜间灯光指标的分布、趋势与空间分级效果。",
+    "description": "检查夜间灯光强度的分布、趋势与空间分级效果。",
     "notes": []
 }
 
@@ -181,7 +181,7 @@ def save_distribution_plot(df):
                             "Blues", "#1F4E79", clip_negative=True)
     draw_gradient_histogram(axes[1], df["lntl"], "夜间灯光强度分布", "夜间灯光强度",
                             "Oranges", "#C65D00", force_xlim_left=0)
-    fig.suptitle("夜间灯光指标分布检验")
+    fig.suptitle("夜间灯光强度分布检验")
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(OUTPUT_DIR / "01_指标分布图.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -465,7 +465,7 @@ def save_lntl_map(df):
     fig.savefig(OUTPUT_DIR / f"05_夜间灯光强度分级地图_{MAP_YEAR}.png",
                 dpi=300, bbox_inches="tight")
     plt.close(fig)
-    return f"已生成省级地图: {OUTPUT_DIR / f'05_夜间灯光强度分级地图_{MAP_YEAR}.png'}"
+    return f"已生成省级地图: 05_夜间灯光强度分级地图_{MAP_YEAR}.png"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -489,7 +489,7 @@ def build_summary(df, map_message):
     province_mean = df.groupby("province")["ntl"].mean().sort_values(ascending=False).round(4)
 
     lines = [
-        "# 夜间灯光指标检查摘要", "",
+        "# 夜间灯光强度检查摘要", "",
         "## 1. 样本概况",
         f"- 样本量: {len(df)}",
         f"- 年份范围: {df['year'].min()}-{df['year'].max()}",
