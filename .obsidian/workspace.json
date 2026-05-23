@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/约定/项目文件新旧路径对照表.md",
+                "file": "docs/分析报告/论文写作大纲.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "项目文件新旧路径对照表"
+              "title": "论文写作大纲"
+            }
+          },
+          {
+            "id": "46c6de4b89866bcf",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/分析报告/第一章_绪论_缩减字数.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "第一章_绪论_缩减字数"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -78,7 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 658.5
+    "width": 421.5
   },
   "right": {
     "id": "a56dc6f9d81ef24a",
@@ -183,8 +198,17 @@
       "bases:新建数据库": false
     }
   },
-  "active": "358c725288169ea4",
+  "active": "46c6de4b89866bcf",
   "lastOpenFiles": [
+    "docs/分析报告/论文写作大纲.md",
+    "docs/分析报告/第一章_绪论_缩减字数.md",
+    "docs/分析报告/第一章_绪论_原始 - 副本.md",
+    "docs/分析报告/第一章_绪论 - 副本.md",
+    "docs/分析报告/第一章_绪论__原始 - 副本.md",
+    "docs/分析报告/第一章_绪论 - 副本 (2).md",
+    "docs/分析报告/第一章_绪论.md",
+    "1-s2.0-S0306261922002227-main.pdf",
+    "docs/约定/项目文件新旧路径对照表.md",
     "data/最终数据/省际经济距离矩阵.csv",
     "outputs/回归分析/50_稳健性检验/稳健性核心森林图.png",
     "outputs/回归分析/10_相关性与VIF分析/相关椭圆矩阵组合图.png",
@@ -196,8 +220,6 @@
     "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/FGNZ指数分解结果_超效率SBM Malmquist 指数 -全局参比_0.xlsx",
     "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/R&D指数分解结果_超效率SBM Malmquist 指数 -全局参比_0.xlsx",
     "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比",
-    "outputs/效率测算/模型输出/第一阶段效率测算原始结果/分解_超效率SBM Malmquist 指数 -全局参比/~$结果_超效率SBM Malmquist 指数 -全局参比_规模报酬可变VRS_0.xlsx",
-    "outputs/效率测算/模型输出/~$效率测算结果.xlsx",
     "outputs/效率测算/20_GM分解绘图/16_RD分解趋势图.png",
     "outputs/效率测算/10_碳排放效率绘图/13-2_西部各省单位GDP碳排放对比图.png",
     "outputs/效率测算/20_GM分解绘图/14-3_各省平均tfpch排序图.png",
@@ -223,13 +245,6 @@
     "docs/对话记录/100_memory0_样本构建流程变量缺失与箱线图.md",
     "docs/对话记录/60_论文框架6_codex.md",
     "docs/对话记录/50_论文框架5_codex.md",
-    "docs/对话记录/40_论文框架4_codex.md",
-    "docs/对话记录/30_论文框架3_cursor_auto.md",
-    "docs/对话记录/20_论文框架2.md",
-    "docs/对话记录/10_论文框架1.md",
-    "outputs/回归分析/40_基准面板回归诊断/基准面板回归报告.md",
-    "outputs/回归分析/20_模型设定检验/模型设定检验说明.md",
-    "docs/概念解释/密度图与分级地图说明.md",
-    "docs/分析报告/灯光聚合度讨论整理.md"
+    "docs/对话记录/40_论文框架4_codex.md"
   ]
 }
