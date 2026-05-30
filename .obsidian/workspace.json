@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/分析报告/论文写作大纲.md",
+                "file": "模型建立前准备.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "论文写作大纲"
+              "title": "模型建立前准备"
             }
           },
           {
@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/分析报告/第一章_绪论_缩减字数.md",
+                "file": "模型建立前准备.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "第一章_绪论_缩减字数"
+              "title": "模型建立前准备"
             }
           }
         ],
@@ -93,7 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 421.5
+    "width": 396.5
   },
   "right": {
     "id": "a56dc6f9d81ef24a",
@@ -200,26 +200,35 @@
   },
   "active": "46c6de4b89866bcf",
   "lastOpenFiles": [
+    "文献综述准备.md.tmp.32264.ccb1275c2661",
+    "文献综述_v1.md",
+    "模型建立前准备.md",
+    "理论机制与研究假设.md",
+    "文献综述/集聚经济_duranton2004.pdf",
+    "创新点1 - 副本.md",
+    "创新点1.md",
+    "_tmp_read_ntl.py",
+    "_tmp_read_pdf2.py",
+    "_tmp_read_pdf.py",
+    "创新点1.md.tmp.17960.3544e47ca531",
+    "文献综述_v1.md.tmp.17960.e8688417baa7",
+    "文献综述准备.md.tmp.17960.cca661763be2",
+    "文献综述准备.md.tmp.17960.0662d0a92347",
+    "文献综述准备.md.tmp.17960.ec5b285f7743",
+    "文献综述/空间计量/What drives urban carbon emission efficiency-Spatial analysis based on .pdf",
     "docs/分析报告/论文写作大纲.md",
+    "影响因素.md",
+    "docs/分析报告/第一章_绪论_人工修改.md",
     "docs/分析报告/第一章_绪论_缩减字数.md",
+    "docs/分析报告/第一章_绪论_缩减字数_v2.md",
     "docs/分析报告/第一章_绪论_原始 - 副本.md",
     "docs/分析报告/第一章_绪论 - 副本.md",
     "docs/分析报告/第一章_绪论__原始 - 副本.md",
     "docs/分析报告/第一章_绪论 - 副本 (2).md",
     "docs/分析报告/第一章_绪论.md",
-    "1-s2.0-S0306261922002227-main.pdf",
     "docs/约定/项目文件新旧路径对照表.md",
-    "data/最终数据/省际经济距离矩阵.csv",
     "outputs/回归分析/50_稳健性检验/稳健性核心森林图.png",
     "outputs/回归分析/10_相关性与VIF分析/相关椭圆矩阵组合图.png",
-    "archive/旧版文件/效率测算结果_整理版副本.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/结果_超效率SBM Malmquist 指数 -全局参比_规模报酬可变VRS_0.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/参数设置_超效率SBM Malmquist 指数 -全局参比_规模报酬不变CRS_0.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/结果_超效率SBM Malmquist 指数 -全局参比_规模报酬不变CRS_0.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/参数设置日志.log",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/FGNZ指数分解结果_超效率SBM Malmquist 指数 -全局参比_0.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比/R&D指数分解结果_超效率SBM Malmquist 指数 -全局参比_0.xlsx",
-    "outputs/效率测算/模型输出/分解_超效率SBM Malmquist 指数 -全局参比",
     "outputs/效率测算/20_GM分解绘图/16_RD分解趋势图.png",
     "outputs/效率测算/10_碳排放效率绘图/13-2_西部各省单位GDP碳排放对比图.png",
     "outputs/效率测算/20_GM分解绘图/14-3_各省平均tfpch排序图.png",
@@ -236,15 +245,6 @@
     "code/通用工具/密度图与分级地图作图规范.md",
     "code/通用工具/相关椭圆图作图规范.md",
     "code/通用工具/森林图作图规范.md",
-    "docs/对话记录/160_memory6_稳健性与扩展分析计划.md",
-    "docs/对话记录/150_memory5_空间相关性分析.md",
-    "docs/对话记录/140_memory4_基准面板回归与诊断图.md",
-    "docs/对话记录/130_memory3_相关性与共线性检验.md",
-    "docs/对话记录/120_memory2_全局莫兰指数计算与解释.md",
-    "docs/对话记录/110_memory1_效率测算结果提取与图组绘制.md",
-    "docs/对话记录/100_memory0_样本构建流程变量缺失与箱线图.md",
-    "docs/对话记录/60_论文框架6_codex.md",
-    "docs/对话记录/50_论文框架5_codex.md",
-    "docs/对话记录/40_论文框架4_codex.md"
+    "docs/对话记录/160_memory6_稳健性与扩展分析计划.md"
   ]
 }
