@@ -189,6 +189,15 @@
       "order": 210,
       "name_override": null,
       "description_override": null
+    },
+    {
+      "id": "spatial_effect_forest",
+      "script": "code/空间分析/50_空间效应森林图.py",
+      "stage": "空间分析",
+      "enabled": true,
+      "order": 220,
+      "name_override": null,
+      "description_override": null
     }
   ]
 }

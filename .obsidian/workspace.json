@@ -27,16 +27,15 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "模型建立前准备.md",
+                "file": "数据来源.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "模型建立前准备"
+              "title": "数据来源"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -198,24 +197,27 @@
       "bases:新建数据库": false
     }
   },
-  "active": "46c6de4b89866bcf",
+  "active": "358c725288169ea4",
   "lastOpenFiles": [
-    "文献综述准备.md.tmp.32264.ccb1275c2661",
-    "文献综述_v1.md",
+    "data/外部资料/中国_省.geojson",
+    "data/外部资料/中国_市.geojson",
+    "数据来源.md",
+    "未命名.md",
     "模型建立前准备.md",
+    "data/原始数据/各省能源清单CEADS/~$省级能源清单_2014.xlsx",
+    "更换数据以后报告.md",
+    "实证结果综合分析报告.md.tmp.19496.23b3a2136849",
+    "code/空间分析/40_空间SDM主模型.do.tmp.19496.e12baca53eba",
+    "code/空间分析/40_空间SDM主模型.do.tmp.19496.a36840fa019e",
+    "code/空间分析/40_空间SDM主模型.do.tmp.19496.13a035f2c76f",
+    "code/空间分析/40_空间SDM主模型.do.tmp.19496.90c6eb07ae92",
+    "code/空间分析/40_空间SDM主模型.do.tmp.19496.27bd4c95938a",
+    "outputs/空间分析/baseline/40_空间SDM主模型/stata/空间Hausman检验结果.dta",
+    "outputs/空间分析/baseline/40_空间SDM主模型/空间Hausman检验结果.csv",
+    "文献综述_v1.md",
     "理论机制与研究假设.md",
-    "文献综述/集聚经济_duranton2004.pdf",
     "创新点1 - 副本.md",
     "创新点1.md",
-    "_tmp_read_ntl.py",
-    "_tmp_read_pdf2.py",
-    "_tmp_read_pdf.py",
-    "创新点1.md.tmp.17960.3544e47ca531",
-    "文献综述_v1.md.tmp.17960.e8688417baa7",
-    "文献综述准备.md.tmp.17960.cca661763be2",
-    "文献综述准备.md.tmp.17960.0662d0a92347",
-    "文献综述准备.md.tmp.17960.ec5b285f7743",
-    "文献综述/空间计量/What drives urban carbon emission efficiency-Spatial analysis based on .pdf",
     "docs/分析报告/论文写作大纲.md",
     "影响因素.md",
     "docs/分析报告/第一章_绪论_人工修改.md",
@@ -242,9 +244,6 @@
     "outputs/回归分析/60_异质性检验/异质性检验报告.md",
     "outputs/空间分析/20_莫兰指数与LISA分析/全局莫兰指数_2015_2022分析.md",
     "outputs/空间分析/20_莫兰指数与LISA分析/全局莫兰指数_2018_2022分析.md",
-    "code/通用工具/密度图与分级地图作图规范.md",
-    "code/通用工具/相关椭圆图作图规范.md",
-    "code/通用工具/森林图作图规范.md",
-    "docs/对话记录/160_memory6_稳健性与扩展分析计划.md"
+    "code/通用工具/密度图与分级地图作图规范.md"
   ]
 }

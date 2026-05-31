@@ -154,13 +154,16 @@ global TMP_PANEL_RAW "`panel_raw'"
 * ------------------------------
 * 4. 结果收集表
 * ------------------------------
-tempfile coef_results effect_results
+tempfile coef_results effect_results hausman_results
 postfile coef_handle str32 weight_type str20 section str20 variable ///
     double coef double se double zstat double pvalue double ll double ul ///
     using "`coef_results'", replace
 postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
     double coef double se double zstat double pvalue double ll double ul ///
     using "`effect_results'", replace
+postfile hausman_handle str32 weight_type str20 test_name ///
+    double chi2 double df double pvalue ///
+    using "`hausman_results'", replace
 
 * ------------------------------
 * 5. 单个矩阵的模型估计
@@ -204,11 +207,14 @@ program define run_sdm_model
     display as text "双固定效应 SDM 主模型"
     display as text "============================================"
 
+    * -- FE model WITHOUT effects (for Hausman, matches RE parameter set) --
+    quietly xsmle eff lntl ind urb rd open es, ///
+        wmat(`WNAME') model(sdm) fe type(both) nolog noeffects
+    estimates store fe_`tag'
+
+    * -- FE model WITH effects (for coefficient extraction) --
     quietly xsmle eff lntl ind urb rd open es, ///
         wmat(`WNAME') model(sdm) fe type(both) effect nolog
-
-    ereturn display
-    return list
     matrix `RTAB' = r(table)
 
     local cnames : colfullnames e(b)
@@ -237,6 +243,65 @@ program define run_sdm_model
         }
     }
 
+    * -- RE model for spatial Hausman test (after coefficient extraction) --
+    capture noisily xsmle eff lntl ind urb rd open es, ///
+        wmat(`WNAME') model(sdm) re nolog noeffects
+    if _rc == 0 {
+        estimates store re_`tag'
+
+        display as text "--------------------------------------------"
+        display as text "空间 Hausman 检验：FE (both) vs RE"
+        display as text "--------------------------------------------"
+
+        * Standard hausman
+        capture hausman fe_`tag' re_`tag'
+        local hausman_rc = _rc
+        if `hausman_rc' == 0 {
+            local h_chi2 = r(chi2)
+            if `h_chi2' < 0 {
+                * Negative chi2 → try sigmamore
+                display as text "标准 Hausman chi2 为负 (`h_chi2')，尝试 sigmamore……"
+                capture hausman fe_`tag' re_`tag', sigmamore
+                if _rc == 0 {
+                    local h_chi2_sm = r(chi2)
+                    if `h_chi2_sm' < 0 {
+                        display as text "sigmamore 仍为负 (`h_chi2_sm')，报告 VCE 非正定。"
+                        post hausman_handle ("`tag'") ("Hausman: FE vs RE (VCE非正定)") (.) (.) (.)
+                    }
+                    else {
+                        post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamore)") ///
+                            (`h_chi2_sm') (r(df)) (r(p))
+                        noisily hausman fe_`tag' re_`tag', sigmamore
+                    }
+                }
+                else {
+                    post hausman_handle ("`tag'") ("Hausman: FE vs RE (VCE非正定)") (.) (.) (.)
+                }
+            }
+            else {
+                post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") ///
+                    (`h_chi2') (r(df)) (r(p))
+                noisily hausman fe_`tag' re_`tag'
+            }
+        }
+        else {
+            display as text "Hausman 命令执行失败，尝试 sigmamore。"
+            capture hausman fe_`tag' re_`tag', sigmamore
+            if _rc == 0 {
+                post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamore)") ///
+                    (r(chi2)) (r(df)) (r(p))
+                noisily hausman fe_`tag' re_`tag', sigmamore
+            }
+            else {
+                post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) (.) (.)
+            }
+        }
+    }
+    else {
+        display as text "RE 模型估计不收敛，跳过空间 Hausman 检验。"
+        post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) (.) (.)
+    }
+
     log close sdm_`tag'
 end
 
@@ -250,6 +315,7 @@ run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会
 
 postclose coef_handle
 postclose effect_handle
+postclose hausman_handle
 
 use "`coef_results'", clear
 sort weight_type section variable
@@ -261,10 +327,16 @@ sort weight_type effect_type variable
 export delimited using "${OUT_DIR}/空间效应分解表.csv", replace
 save "${STATA_DIR}/空间效应分解表.dta", replace
 
+use "`hausman_results'", clear
+sort weight_type test_name
+export delimited using "${OUT_DIR}/空间Hausman检验结果.csv", replace
+save "${STATA_DIR}/空间Hausman检验结果.dta", replace
+
 display as text "============================================"
 display as text "结果文件已输出："
 display as text "${OUT_DIR}/主模型系数表.csv"
 display as text "${OUT_DIR}/空间效应分解表.csv"
+display as text "${OUT_DIR}/空间Hausman检验结果.csv"
 display as text "${STATA_DIR}/SDM主模型_*.log"
 display as text "============================================"
 

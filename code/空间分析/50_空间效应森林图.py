@@ -1,5 +1,55 @@
 from __future__ import annotations
 
+STEP_SPEC = {
+    "name": "空间效应森林图",
+    "runner_type": "python",
+    "command": [
+        "python",
+        "code/空间分析/50_空间效应森林图.py"
+    ],
+    "working_dir": "{PROJECT_ROOT}",
+    "precheck_mode": "required_inputs",
+    "required_inputs": [
+        {
+            "path": "{空间分析.output_root}/40_空间SDM主模型/空间效应分解表.csv",
+            "kind": "csv",
+            "required_columns": [
+                "weight_type",
+                "effect_type",
+                "variable",
+                "coef",
+                "pvalue",
+                "ll",
+                "ul"
+            ],
+            "label": ""
+        }
+    ],
+    "artifacts": {
+        "tables": {
+            "primary": None,
+            "patterns": [
+                "*.csv"
+            ]
+        },
+        "images": {
+            "primary": None,
+            "patterns": [
+                "*.png"
+            ]
+        },
+        "markdown": {
+            "primary": None,
+            "patterns": [
+                "*.md"
+            ]
+        }
+    },
+    "console_success_markers": [],
+    "description": "根据 SDM 效应分解结果生成效应森林图、堆叠条形图、经济矩阵热力图和空间溢出网络图。",
+    "notes": []
+}
+
 import argparse
 import math
 from pathlib import Path
