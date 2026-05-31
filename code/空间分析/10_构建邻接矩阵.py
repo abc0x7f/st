@@ -54,7 +54,7 @@ CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 INPUT_PATH = resolve_project_path(CONFIG["efficiency_data"])
 ECONOMIC_INPUT_PATH = resolve_project_path(CONFIG["first_stage_panel"])
 OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
-ADJ_OUTPUT_PATH = OUTPUT_DIR / "省际01邻接矩阵.csv"
+ADJ_OUTPUT_PATH = resolve_project_path(CONFIG["adjacency_matrix"])
 ECONOMIC_OUTPUT_PATH = resolve_project_path(CONFIG["economic_matrix"])
 
 

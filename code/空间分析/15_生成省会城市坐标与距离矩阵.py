@@ -61,8 +61,8 @@ ECONOMIC_MATRIX_FILE = resolve_project_path(CONFIG["economic_matrix"])
 
 OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_CAPITALS = OUTPUT_DIR / "省会城市坐标表.csv"
-OUT_MATRIX = OUTPUT_DIR / "省际地理距离倒数矩阵_省会版.csv"
-OUT_NESTED_MATRIX = OUTPUT_DIR / "省际经济地理嵌套矩阵_省会版.csv"
+OUT_MATRIX = resolve_project_path(CONFIG["geo_inverse_matrix"])
+OUT_NESTED_MATRIX = resolve_project_path(CONFIG["economic_geo_nested_matrix"])
 
 
 CAPITAL_MAP = {
