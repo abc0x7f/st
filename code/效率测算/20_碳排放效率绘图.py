@@ -64,7 +64,7 @@ from light_var_labels import light_var_label
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
 STAGE1_DATA_PATH = resolve_project_path(CONFIG["first_stage_panel"])
-MAP_PATH = resolve_project_path(CONFIG["map_geojson"])
+MAP_PATH = PROJECT_ROOT / "data" / "外部资料" / "中国_省.geojson"
 OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
 MAP_YEAR = 2022
 KDE_YEARS = None
@@ -163,6 +163,20 @@ def iter_feature_polygons(geometry: dict) -> list[list[tuple[float, float]]]:
             if polygon:
                 polygons.append([(x, y) for x, y in polygon[0]])
     return polygons
+
+
+def iter_line_strings(geometry: dict) -> list[list[tuple[float, float]]]:
+    gtype = geometry.get("type")
+    coords = geometry.get("coordinates", [])
+    lines: list[list[tuple[float, float]]] = []
+    if gtype == "LineString":
+        if coords:
+            lines.append([(x, y) for x, y in coords])
+    elif gtype == "MultiLineString":
+        for line in coords:
+            if line:
+                lines.append([(x, y) for x, y in line])
+    return lines
 
 
 def save_year_mean_plot(df: pd.DataFrame) -> Path:
@@ -429,6 +443,10 @@ def save_west_carbon_gdp_plot(stage1_df: pd.DataFrame) -> Path:
 
 
 def save_eff_map(df: pd.DataFrame) -> Path:
+    import cartopy.crs as ccrs
+    from collections import defaultdict
+    from shapely.geometry import Polygon as ShapelyPolygon
+
     with MAP_PATH.open("r", encoding="utf-8") as f:
         geo = json.load(f)
 
@@ -455,18 +473,20 @@ def save_eff_map(df: pd.DataFrame) -> Path:
 
     main_features = []
     scs_features = []
+    line_features = []
     hainan_feature = None
     guangdong_feature = None
     guangxi_feature = None
     for feat in geo.get("features", []):
         props = feat.get("properties", {})
         raw_name = (
-            props.get("name")
-            or props.get("NAME")
-            or props.get("province")
-            or props.get("fullname")
-            or ""
+            props.get("name") or props.get("NAME")
+            or props.get("province") or props.get("fullname") or ""
         )
+        gtype = feat.get("geometry", {}).get("type", "")
+        if gtype in ("LineString", "MultiLineString"):
+            line_features.append(feat)
+            continue
         if props.get("adchar") == "JD" or "南海诸岛" in str(raw_name):
             scs_features.append(feat)
             continue
@@ -478,177 +498,115 @@ def save_eff_map(df: pd.DataFrame) -> Path:
         if "广西" in str(raw_name):
             guangxi_feature = feat
 
-    fig = plt.figure(figsize=(18, 14))
-    ax = fig.add_axes([0.08, 0.09, 0.77, 0.84])
+    proj = ccrs.AlbersEqualArea(central_longitude=105, standard_parallels=(25, 47),
+                               false_easting=0, false_northing=0,
+                               globe=ccrs.Globe(ellipse="GRS80"))
+    data_crs = ccrs.PlateCarree()
 
-    patches = []
-    facecolors = []
+    fig = plt.figure(figsize=(18, 14))
+    ax = fig.add_axes([0.08, 0.09, 0.77, 0.84], projection=proj)
+    ax.set_extent([73, 146, 15, 55], crs=data_crs)
+
+    # Draw provinces by color
+    color_geoms = defaultdict(list)
     for feat in main_features:
         props = feat.get("properties", {})
         raw_name = (
-            props.get("name")
-            or props.get("NAME")
-            or props.get("province")
-            or props.get("fullname")
-            or ""
+            props.get("name") or props.get("NAME")
+            or props.get("province") or props.get("fullname") or ""
         )
         province = normalize_province_name(raw_name)
         value = value_map.get(province)
         color = "#D9D9D9" if value is None else cmap(norm(value))
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            patches.append(Polygon(poly, closed=True))
-            facecolors.append(color)
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            color_geoms[color].append(ShapelyPolygon(coords))
 
-    collection = PatchCollection(
-        patches,
-        facecolor=facecolors,
-        edgecolor="black",
-        linewidths=1.2,
-    )
-    ax.add_collection(collection)
+    for color, geoms in color_geoms.items():
+        ax.add_geometries(geoms, crs=data_crs, facecolor=color,
+                          edgecolor="black", linewidth=0.5)
 
-    lon_min, lon_max = 73, 136
-    lat_min, lat_max = 15, 55
-    center_lat = (lat_min + lat_max) / 2
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-    ax.set_aspect(1 / np.cos(np.radians(center_lat)))
-    ax.grid(False)
+    # Nine-dash line
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                    transform=data_crs, zorder=5)
 
-    lon_ticks = np.arange(75, 136, 5)
-    lat_ticks = np.arange(15, 56, 5)
-    lon_minor = np.arange(73, 137, 1)
-    lat_minor = np.arange(15, 56, 1)
-    ax.set_xticks(lon_ticks)
-    ax.set_yticks(lat_ticks)
-    ax.set_xticks(lon_minor, minor=True)
-    ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks], fontsize=map_fs(8))
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks], fontsize=map_fs(8))
-    ax.tick_params(which="major", direction="in", length=6, width=1.2, top=True, bottom=True, left=True, right=True)
-    ax.tick_params(which="minor", direction="in", length=3, width=0.8, top=True, bottom=True, left=True, right=True)
     for spine in ax.spines.values():
-        spine.set_linewidth(2.5)
-        spine.set_color("black")
+        spine.set_linewidth(2.5); spine.set_color("black")
     ax.set_title(f"{MAP_YEAR} 年省际碳排放效率分级地图", fontsize=map_fs(16), fontweight="bold", pad=16)
 
-    ax_scs = fig.add_axes([0.69, 0.13, 0.16, 0.24])
-    scs_patches = []
-    scs_colors = []
-    if guangdong_feature is not None:
-        guangdong_value = value_map.get("广东")
-        guangdong_color = "#D9D9D9" if guangdong_value is None else cmap(norm(guangdong_value))
-        for poly in iter_feature_polygons(guangdong_feature.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append(guangdong_color)
-    if guangxi_feature is not None:
-        guangxi_value = value_map.get("广西")
-        guangxi_color = "#D9D9D9" if guangxi_value is None else cmap(norm(guangxi_value))
-        for poly in iter_feature_polygons(guangxi_feature.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append(guangxi_color)
-    if hainan_feature is not None:
-        hainan_value = value_map.get("海南")
-        hainan_color = "#D9D9D9" if hainan_value is None else cmap(norm(hainan_value))
-        for poly in iter_feature_polygons(hainan_feature.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append(hainan_color)
+    # SCS inset
+    ax_scs = fig.add_axes([0.71, 0.12, 0.12, 0.18], projection=proj)
+    ax_scs.set_extent([104, 123, 2, 23], crs=data_crs)
+    if guangdong_feature:
+        for coords in iter_feature_polygons(guangdong_feature.get("geometry", {})):
+            v = value_map.get("广东"); c = "#D9D9D9" if v is None else cmap(norm(v))
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor=c, edgecolor="black", linewidth=0.6)
+    if guangxi_feature:
+        for coords in iter_feature_polygons(guangxi_feature.get("geometry", {})):
+            v = value_map.get("广西"); c = "#D9D9D9" if v is None else cmap(norm(v))
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor=c, edgecolor="black", linewidth=0.6)
+    if hainan_feature:
+        for coords in iter_feature_polygons(hainan_feature.get("geometry", {})):
+            v = value_map.get("海南"); c = "#D9D9D9" if v is None else cmap(norm(v))
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor=c, edgecolor="black", linewidth=0.6)
     for feat in scs_features:
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append("#D9D9D9")
-    if scs_patches:
-        scs_collection = PatchCollection(
-            scs_patches,
-            facecolor=scs_colors,
-            edgecolor="black",
-            linewidths=0.6,
-        )
-        ax_scs.add_collection(scs_collection)
-    ax_scs.set_xlim(104, 123)
-    ax_scs.set_ylim(2, 23)
-    ax_scs.set_aspect(1 / np.cos(np.radians(14)))
-    ax_scs.set_xticks([])
-    ax_scs.set_yticks([])
-    ax_scs.grid(False)
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor="#D9D9D9", edgecolor="black", linewidth=0.6)
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax_scs.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                        transform=data_crs, zorder=5)
     for spine in ax_scs.spines.values():
-        spine.set_linewidth(1.8)
-        spine.set_color("black")
+        spine.set_linewidth(1.8); spine.set_color("black")
     ax_scs.set_title("南海诸岛", fontsize=map_fs(8), pad=4)
 
-    compass_x = lon_min + 3.2
-    compass_y = lat_max - 5.3
-    ax.annotate(
-        "",
-        xy=(compass_x, compass_y + 2.2),
-        xytext=(compass_x, compass_y),
-        arrowprops=dict(arrowstyle="-|>", color="black", lw=2.5, mutation_scale=15),
-        zorder=6,
-    )
-    ax.text(
-        compass_x,
-        compass_y + 2.55,
-        "N",
-        ha="center",
-        va="bottom",
-        fontsize=map_fs(13),
-        fontweight="bold",
-        zorder=6,
-    )
+    # North arrow (figure-level, top-right area)
+    ax_n = fig.add_axes([0.80, 0.88, 0.06, 0.08])
+    ax_n.set_xlim(-1, 1); ax_n.set_ylim(-1, 1); ax_n.axis("off")
+    ax_n.add_patch(plt.Circle((0, 0), 0.55, fc="none", ec="black", lw=1.2))
+    ax_n.plot([0, 0], [-0.45, 0.55], color="black", lw=0.8)
+    ax_n.plot([-0.45, 0.45], [0, 0], color="black", lw=0.8)
+    ax_n.add_patch(Polygon([[0, 0.45], [-0.18, 0], [0.18, 0]], closed=True,
+                           fc="black", ec="black", lw=0.5))
+    ax_n.text(0, 0.72, "N", ha="center", va="bottom", fontweight="bold", fontsize=10)
 
-    ax_leg = fig.add_axes([0.07, 0.07, 0.24, 0.46])
-    ax_leg.set_xlim(0, 10)
-    ax_leg.set_ylim(0, 26)
-    ax_leg.axis("off")
+    # Scale bar (figure-level)
+    ax_sb = fig.add_axes([0.35, 0.88, 0.20, 0.03])
+    ax_sb.set_xlim(0, 1); ax_sb.set_ylim(0, 1); ax_sb.axis("off")
+    ax_sb.add_patch(Rectangle((0.1, 0.3), 0.4, 0.4, fc="black", ec="black", lw=0.5))
+    ax_sb.add_patch(Rectangle((0.5, 0.3), 0.4, 0.4, fc="white", ec="black", lw=0.5))
+    ax_sb.text(0.1, 0.1, "0", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.5, 0.1, "250", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.9, 0.1, "500 km", ha="center", va="top", fontsize=7)
 
-    fig_width_in, _ = fig.get_size_inches()
-    main_ax_w_in = fig_width_in * ax.get_position().width
-    leg_ax_w_in = fig_width_in * ax_leg.get_position().width
-    lat_ref = 25.0
-    km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
-    bar_km = 500
-    bar_deg = bar_km / km_per_deg
-    map_deg_per_in = (lon_max - lon_min) / main_ax_w_in
-    bar_in = bar_deg / map_deg_per_in
-    bar_leg = bar_in / leg_ax_w_in * 10
-    sx, sy = 1.0, 18.8
-    half_bar = bar_leg / 2
-    bar_h = 0.55
-    ax_leg.add_patch(Rectangle((sx, sy), half_bar, bar_h, fc="black", ec="black", lw=0.8))
-    ax_leg.add_patch(Rectangle((sx + half_bar, sy), half_bar, bar_h, fc="white", ec="black", lw=0.8))
-    label_y = sy - 1.0
-    ax_leg.text(sx, label_y, "0", ha="center", va="top", fontsize=map_fs(6.5), color="black")
-    ax_leg.text(sx + half_bar, label_y, f"{bar_km // 2}", ha="center", va="top", fontsize=map_fs(6.5), color="black")
-    ax_leg.text(sx + bar_leg, label_y, f"{bar_km} km", ha="center", va="top", fontsize=map_fs(6.5), color="black")
-
-    box_w, box_h = 2.2, 1.35
-    lx, ly_start = 1.0, 15
+    # Legend
+    ax_leg = fig.add_axes([0.08, 0.07, 0.20, 0.40])
+    ax_leg.set_xlim(0, 10); ax_leg.set_ylim(0, 26); ax_leg.axis("off")
+    box_w, box_h = 1.6, 0.9; lx, ly_start = 1.0, 20
+    ax_leg.add_patch(Rectangle((lx, ly_start), box_w, box_h, fc="#D9D9D9", ec="black", lw=0.6))
+    ax_leg.text(lx + box_w + 0.35, ly_start + box_h / 2, "无数据", va="center", ha="left",
+                fontsize=map_fs(6.5), color="black")
+    ly_start -= box_h + 0.4
     for idx in range(len(seg_bounds) - 1):
         lo, hi = seg_bounds[idx], seg_bounds[idx + 1]
-        mid_val = (lo + hi) / 2
-        color = cmap(norm(mid_val))
-        y_pos = ly_start - idx * (box_h + 0.4)
-        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.8))
-        ax_leg.text(
-            lx + box_w + 0.45,
-            y_pos + box_h / 2,
-            f"{lo:.2f} – {hi:.2f}",
-            va="center",
-            ha="left",
-            fontsize=map_fs(8),
-            color="black",
-        )
-    ax_leg.text(
-        lx + box_w / 2 + 1.2,
-        4,
-        "碳排放效率",
-        ha="center",
-        va="bottom",
-        fontsize=map_fs(10),
-        fontweight="bold",
-        color="black",
-    )
+        mid_val = (lo + hi) / 2; color = cmap(norm(mid_val))
+        y_pos = ly_start - idx * (box_h + 0.3)
+        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.6))
+        ax_leg.text(lx + box_w + 0.35, y_pos + box_h / 2, f"{lo:.2f} - {hi:.2f}",
+                    va="center", ha="left", fontsize=map_fs(6.5), color="black")
+    ax_leg.text(lx + box_w / 2, ly_start - (len(seg_bounds) - 1) * (box_h + 0.3) - 1.2,
+                "碳排放效率", ha="center", va="top", fontsize=map_fs(8), fontweight="bold", color="black")
 
+    fig.text(0.08, 0.04,
+        '注：底图来源于国家地理信息公共服务平台"天地图"（审图号：GS（2024）0650号），无修改',
+        ha='left', va='bottom', fontsize=13, color='black')
     out = OUTPUT_DIR / "12_省际碳排放效率分级地图.png"
     fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)

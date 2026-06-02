@@ -67,7 +67,10 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
+import cartopy.crs as ccrs
+from collections import defaultdict
 from matplotlib.patches import Patch, Polygon, Rectangle
+from shapely.geometry import Polygon as ShapelyPolygon
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
@@ -81,7 +84,7 @@ from stage_config import load_script_context, resolve_project_path, script_outpu
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 WEIGHT_PATH = resolve_project_path(CONFIG["economic_matrix"])
 EFF_PATH = resolve_project_path(CONFIG["efficiency_data"])
-GEOJSON_PATH = resolve_project_path(CONFIG["province_geojson"])
+GEOJSON_PATH = ROOT / "data" / "外部资料" / "中国_省.geojson"
 OUT_DIR = script_output_dir(Path(__file__), CONFIG)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -711,15 +714,34 @@ def iter_feature_polygons(geometry: dict) -> list[list[tuple[float, float]]]:
     return polygons
 
 
-def split_geo_features(geojson: dict) -> tuple[list[dict], list[dict], dict | None, dict | None, dict | None]:
+def iter_line_strings(geometry: dict) -> list[list[tuple[float, float]]]:
+    gtype = geometry.get("type")
+    coords = geometry.get("coordinates", [])
+    lines: list[list[tuple[float, float]]] = []
+    if gtype == "LineString":
+        if coords:
+            lines.append([(x, y) for x, y in coords])
+    elif gtype == "MultiLineString":
+        for line in coords:
+            if line:
+                lines.append([(x, y) for x, y in line])
+    return lines
+
+
+def split_geo_features(geojson: dict) -> tuple[list[dict], list[dict], list[dict], dict | None, dict | None, dict | None]:
     main_features: list[dict] = []
     scs_features: list[dict] = []
+    line_features: list[dict] = []
     hainan_feature = None
     guangdong_feature = None
     guangxi_feature = None
     for feat in geojson.get("features", []):
         props = feat.get("properties", {})
         raw_name = props.get("name", "")
+        gtype = feat.get("geometry", {}).get("type", "")
+        if gtype in ("LineString", "MultiLineString"):
+            line_features.append(feat)
+            continue
         if props.get("adchar") == "JD" or "南海诸岛" in str(raw_name):
             scs_features.append(feat)
             continue
@@ -730,23 +752,13 @@ def split_geo_features(geojson: dict) -> tuple[list[dict], list[dict], dict | No
             guangdong_feature = feat
         if "广西" in str(raw_name):
             guangxi_feature = feat
-    return main_features, scs_features, hainan_feature, guangdong_feature, guangxi_feature
+    return main_features, scs_features, line_features, hainan_feature, guangdong_feature, guangxi_feature
 
 
-def draw_north_arrow(ax: plt.Axes, lon_min: float, lat_max: float) -> None:
-    compass_x = lon_min + 3.2
-    compass_y = lat_max - 5.3
-    ax.annotate(
-        "",
-        xy=(compass_x, compass_y + 2.2),
-        xytext=(compass_x, compass_y),
-        arrowprops=dict(arrowstyle="-|>", color="black", lw=2.5, mutation_scale=15),
-        zorder=6,
-    )
-    ax.text(compass_x, compass_y + 2.55, "N", ha="center", va="bottom", fontweight="bold", zorder=6)
+def draw_compass_rose(ax, x, y, size=2.5):
+    pass  # replaced by figure-level elements in callers
 
-
-def draw_scale_and_legend(fig: plt.Figure, ref_ax: plt.Axes, cmap_labels: list[tuple[str, str]]) -> None:
+def draw_scale_and_legend(fig: plt.Figure, cmap_labels: list[tuple[str, str]]) -> None:
     leg_left = 0.62
     leg_bottom = 0.18
     leg_width = 0.24
@@ -756,175 +768,98 @@ def draw_scale_and_legend(fig: plt.Figure, ref_ax: plt.Axes, cmap_labels: list[t
     ax_leg.set_ylim(0, 20)
     ax_leg.axis("off")
 
-    lon_min, lon_max = 73, 136
-    lat_ref = 25.0
-    km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
-    bar_km = 2000
-    bar_deg = bar_km / km_per_deg
-    fig_width_in = fig.get_size_inches()[0]
-    main_ax_w_in = ref_ax.get_position().width * fig_width_in
-    leg_ax_w_in = leg_width * fig_width_in
-    map_deg_per_in = (lon_max - lon_min) / main_ax_w_in
-    bar_in = bar_deg / map_deg_per_in
-    bar_leg = bar_in / leg_ax_w_in * 10
-    sx = (10 - bar_leg) / 2
-    sy = 18.2
-    half_bar = bar_leg / 2
-    ax_leg.add_patch(Rectangle((sx, sy), half_bar, 0.40, fc="black", ec="black", lw=0.8))
-    ax_leg.add_patch(Rectangle((sx + half_bar, sy), half_bar, 0.40, fc="white", ec="black", lw=0.8))
-    label_y = sy - 0.95
-    ax_leg.text(sx, label_y, "0", ha="center", va="top")
-    ax_leg.text(sx + half_bar, label_y, f"{bar_km // 2}", ha="center", va="top")
-    ax_leg.text(sx + bar_leg, label_y, f"{bar_km}", ha="center", va="top")
-    ax_leg.text(sx + bar_leg + 0.65, label_y, "km", ha="left", va="top")
-
-    box_w, box_h = 3.0, 1.60
+    box_w, box_h = 2.0, 1.00
     lx = 1.9
-    ly_start = 14.2
+    ly_start = 18.0
+    ax_leg.add_patch(Rectangle((lx, ly_start), box_w, box_h, fc="#D9D9D9", ec="black", lw=0.6))
+    ax_leg.text(lx + box_w + 0.5, ly_start + box_h / 2, "无数据", va="center", ha="left", fontsize=9)
+    ly_start -= box_h + 0.35
     for idx, (label, color) in enumerate(cmap_labels):
-        y_pos = ly_start - idx * (box_h + 0.55)
-        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.8))
-        ax_leg.text(lx + box_w + 0.75, y_pos + box_h / 2, label, va="center", ha="left")
-    ax_leg.text(5.0, 0.95, "LISA 聚类类型", ha="center", va="center", fontweight="bold")
+        y_pos = ly_start - idx * (box_h + 0.35)
+        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=color, ec="black", lw=0.6))
+        ax_leg.text(lx + box_w + 0.5, y_pos + box_h / 2, label, va="center", ha="left", fontsize=9)
+    ax_leg.text(5.0, 0.95, "LISA 聚类类型", ha="center", va="center", fontweight="bold", fontsize=10)
 
 
 def draw_map_legend_inset(ax: plt.Axes, cmap_labels: list[tuple[str, str]]) -> None:
-    ax_leg = ax.inset_axes([0.39, 0.70, 0.22, 0.28])
+    ax_leg = ax.inset_axes([0.39, 0.68, 0.22, 0.30])
     ax_leg.set_xlim(0, 1)
     ax_leg.set_ylim(0, 1)
     ax_leg.axis("off")
     ax_leg.add_patch(
         Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", linewidth=1.0, alpha=0.92, zorder=0)
     )
-    ax_leg.text(0.5, 0.90, "LISA 聚类", ha="center", va="center", fontweight="bold")
-    y = 0.76
+    ax_leg.text(0.5, 0.95, "LISA 聚类", ha="center", va="center", fontweight="bold", fontsize=9)
+    y = 0.84
+    ax_leg.add_patch(Rectangle((0.10, y - 0.035), 0.16, 0.07, facecolor="#D9D9D9", edgecolor="black", linewidth=0.6))
+    ax_leg.text(0.32, y, "无数据", ha="left", va="center", fontsize=7)
+    y -= 0.10
     for label, color in cmap_labels:
-        ax_leg.add_patch(Rectangle((0.10, y - 0.045), 0.18, 0.09, facecolor=color, edgecolor="black", linewidth=0.8))
-        ax_leg.text(0.34, y, label, ha="left", va="center")
-        y -= 0.12
+        ax_leg.add_patch(Rectangle((0.10, y - 0.035), 0.16, 0.07, facecolor=color, edgecolor="black", linewidth=0.6))
+        ax_leg.text(0.32, y, label, ha="left", va="center", fontsize=7)
+        y -= 0.10
 
 
-def draw_map_scale_inset(fig: plt.Figure, ax: plt.Axes) -> None:
-    ax_scale = ax.inset_axes([0.73, 0.06, 0.20, 0.09])
-    ax_scale.set_xlim(0, 1)
-    ax_scale.set_ylim(0, 1)
-    ax_scale.axis("off")
+def draw_map_scale_inset(fig, ax=None):
+    pass  # scale bar is now figure-level in callers
 
-    lon_min, lon_max = 73, 136
-    lat_ref = 25.0
-    km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
-    bar_km = 1000
-    bar_deg = bar_km / km_per_deg
-    fig_width_in = fig.get_size_inches()[0]
-    map_ax_w_in = ax.get_position().width * fig_width_in
-    inset_ax_w_in = ax_scale.get_position().width * fig_width_in
-    map_deg_per_in = (lon_max - lon_min) / map_ax_w_in
-    bar_in = bar_deg / map_deg_per_in
-    bar_w = min(bar_in / inset_ax_w_in, 0.72)
-
-    bar_x = max((1 - bar_w) / 2, 0.08)
-    bar_y = 0.52
-    half_w = bar_w / 2
-    ax_scale.add_patch(Rectangle((bar_x, bar_y), half_w, 0.16, facecolor="black", edgecolor="black", linewidth=0.8))
-    ax_scale.add_patch(
-        Rectangle((bar_x + half_w, bar_y), half_w, 0.16, facecolor="white", edgecolor="black", linewidth=0.8)
-    )
-    ax_scale.text(bar_x, 0.28, "0", ha="center", va="center", fontsize=11)
-    ax_scale.text(bar_x + half_w, 0.28, f"{bar_km // 2}", ha="center", va="center", fontsize=11)
-    ax_scale.text(bar_x + bar_w, 0.28, f"{bar_km}", ha="center", va="center", fontsize=11)
-    ax_scale.text(min(bar_x + bar_w + 0.08, 0.92), 0.28, "km", ha="left", va="center", fontsize=11)
-
-
-def add_map_frame(ax: plt.Axes, title: str | None, tick_labelsize: float = 15) -> None:
-    lon_min, lon_max = 73, 136
-    lat_min, lat_max = 15, 55
-    center_lat = (lat_min + lat_max) / 2
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-    ax.set_aspect(1 / np.cos(np.radians(center_lat)))
-    ax.grid(False)
-
-    lon_ticks = np.arange(75, 136, 5)
-    lat_ticks = np.arange(15, 56, 5)
-    lon_minor = np.arange(73, 137, 1)
-    lat_minor = np.arange(15, 56, 1)
-    ax.set_xticks(lon_ticks)
-    ax.set_yticks(lat_ticks)
-    ax.set_xticks(lon_minor, minor=True)
-    ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks])
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks])
-    ax.tick_params(axis="both", which="major", labelsize=tick_labelsize)
-    ax.tick_params(which="major", direction="in", length=6, width=1.2, top=True, bottom=True, left=True, right=True)
-    ax.tick_params(which="minor", direction="in", length=3, width=0.8, top=True, bottom=True, left=True, right=True)
+def add_map_frame(ax, title=None, tick_labelsize=15):
+    data_crs = ccrs.PlateCarree()
+    ax.set_extent([73, 146, 15, 55], crs=data_crs)
     for spine in ax.spines.values():
         spine.set_linewidth(2.5)
         spine.set_color("black")
     if title:
         ax.set_title(title, fontweight="bold", pad=12)
-    draw_north_arrow(ax, lon_min, lat_max)
 
 
-def draw_scs_inset(
-    ax: plt.Axes,
-    scs_features: list[dict],
-    hainan_feature: dict | None,
-    guangdong_feature: dict | None,
-    guangxi_feature: dict | None,
-    color_lookup: dict[str, str],
-) -> None:
-    ax_scs = ax.inset_axes([0.03, 0.03, 0.17, 0.22])
-    scs_patches: list[Polygon] = []
-    scs_colors: list[str] = []
+def draw_scs_inset(fig, scs_features, line_features, hainan_feature,
+                      guangdong_feature, guangxi_feature, color_lookup, proj=None):
+    import cartopy.crs as ccrs
+    from shapely.geometry import Polygon as ShapelyPolygon
+    data_crs = ccrs.PlateCarree()
+    if proj is None:
+        proj = data_crs
+    ax_scs = fig.add_axes([0.03, 0.02, 0.14, 0.18], projection=proj)
+    ax_scs.set_extent([104, 123, 2, 23], crs=data_crs)
 
-    def append_feature(feat: dict | None, province_key: str) -> None:
+    def _append(feat, province_key):
         if feat is None:
             return
         facecolor = color_lookup.get(province_key, LISA_COLORS["NS"])
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append(facecolor)
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor=facecolor, edgecolor="black", linewidth=0.6)
 
-    append_feature(guangdong_feature, "广东")
-    append_feature(guangxi_feature, "广西")
-    append_feature(hainan_feature, "海南")
+    _append(guangdong_feature, "广东")
+    _append(guangxi_feature, "广西")
+    _append(hainan_feature, "海南")
     for feat in scs_features:
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            scs_patches.append(Polygon(poly, closed=True))
-            scs_colors.append("#D9D9D9")
-
-    if scs_patches:
-        scs_collection = PatchCollection(scs_patches, facecolor=scs_colors, edgecolor="black", linewidths=0.6)
-        ax_scs.add_collection(scs_collection)
-    ax_scs.set_xlim(104, 123)
-    ax_scs.set_ylim(2, 23)
-    ax_scs.set_aspect(1 / np.cos(np.radians(14)))
-    ax_scs.set_xticks([])
-    ax_scs.set_yticks([])
-    ax_scs.grid(False)
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor="#D9D9D9", edgecolor="black", linewidth=0.6)
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax_scs.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                        transform=data_crs, zorder=5)
     for spine in ax_scs.spines.values():
         spine.set_linewidth(1.8)
         spine.set_color("black")
     ax_scs.set_title("南海诸岛", pad=2)
 
 
-def draw_lisa_map_panel(
-    ax: plt.Axes,
-    year: int,
-    local_result: pd.DataFrame,
-    main_features: list[dict],
-    scs_features: list[dict],
-    hainan_feature: dict | None,
-    guangdong_feature: dict | None,
-    guangxi_feature: dict | None,
-    show_year_title: bool = True,
-    tick_labelsize: float = 15,
-) -> None:
+def draw_lisa_map_panel(ax, fig, year, local_result, main_features, scs_features,
+                          line_features, hainan_feature, guangdong_feature,
+                          guangxi_feature, show_year_title=True, tick_labelsize=15, proj=None):
+    import cartopy.crs as ccrs
+    from collections import defaultdict
+    from shapely.geometry import Polygon as ShapelyPolygon
+    data_crs = ccrs.PlateCarree()
     subset = local_result.loc[local_result["year"] == year].set_index("province")
-    color_lookup: dict[str, str] = {}
+    color_lookup = {}
 
-    patches: list[Polygon] = []
-    facecolors: list[str] = []
+    color_geoms = defaultdict(list)
     for feature in main_features:
         name = feature["properties"].get("name", "")
         if name in {"香港特别行政区", "澳门特别行政区", ""}:
@@ -940,62 +875,64 @@ def draw_lisa_map_panel(
             cluster = subset.at[simple_name, "cluster"]
             facecolor = LISA_COLORS[cluster]
         color_lookup[simple_name] = facecolor
-        for poly in iter_feature_polygons(feature.get("geometry", {})):
-            patches.append(Polygon(poly, closed=True))
-            facecolors.append(facecolor)
+        for coords in iter_feature_polygons(feature.get("geometry", {})):
+            color_geoms[facecolor].append(ShapelyPolygon(coords))
         if cluster not in {"NS", "MISSING"}:
             centroid = feature["properties"].get("centroid") or feature["properties"].get("center")
             if centroid and len(centroid) == 2:
                 dx, dy = MAP_LABEL_OFFSETS.get(simple_name, (0.0, 0.0))
-                ax.text(
-                    centroid[0] + dx,
-                    centroid[1] + dy,
+                ax.text(centroid[0] + dx, centroid[1] + dy,
                     f"{simple_name}{significance_marker(float(subset.at[simple_name, 'local_p_value']))}",
-                    ha="center",
-                    va="center",
-                    color="#111827",
-                    bbox={
-                        "boxstyle": "round,pad=0.15",
-                        "facecolor": "white",
-                        "edgecolor": "none",
-                        "alpha": 0.8,
-                    },
-                    zorder=4,
-                )
-    collection = PatchCollection(patches, facecolor=facecolors, edgecolor="black", linewidths=1.2)
-    ax.add_collection(collection)
+                    ha="center", va="center", color="#111827", transform=data_crs,
+                    bbox={"boxstyle": "round,pad=0.15", "facecolor": "white",
+                          "edgecolor": "none", "alpha": 0.8}, zorder=4)
+
+    for facecolor, geoms in color_geoms.items():
+        ax.add_geometries(geoms, crs=data_crs, facecolor=facecolor,
+                          edgecolor="black", linewidth=0.5)
+
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                    transform=data_crs, zorder=5)
+
     add_map_frame(ax, f"{year} 年" if show_year_title else None, tick_labelsize=tick_labelsize)
-    draw_scs_inset(ax, scs_features, hainan_feature, guangdong_feature, guangxi_feature, color_lookup)
+    draw_scs_inset(fig, scs_features, line_features, hainan_feature, guangdong_feature, guangxi_feature, color_lookup, proj=proj)
 
 
 def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
     geojson = load_geojson(GEOJSON_PATH)
-    main_features, scs_features, hainan_feature, guangdong_feature, guangxi_feature = split_geo_features(geojson)
-    fig = plt.figure(figsize=(17.6, 12.4))
-    gs = fig.add_gridspec(2, 2, left=0.055, right=0.95, bottom=0.07, top=0.93, wspace=0.14, hspace=0.20)
+    main_features, scs_features, line_features, hainan_feature, guangdong_feature, guangxi_feature = split_geo_features(geojson)
+    proj = ccrs.AlbersEqualArea(central_longitude=105, standard_parallels=(25, 47),
+                               false_easting=0, false_northing=0,
+                               globe=ccrs.Globe(ellipse="GRS80"))
+    fig = plt.figure(figsize=(17.6, 13.2))
+    gs = fig.add_gridspec(2, 2, left=0.055, right=0.95, bottom=0.08, top=0.91, wspace=0.14, hspace=0.20)
     axes = [
-        fig.add_subplot(gs[0, 0]),
-        fig.add_subplot(gs[0, 1]),
-        fig.add_subplot(gs[1, 0]),
+        fig.add_subplot(gs[0, 0], projection=proj),
+        fig.add_subplot(gs[0, 1], projection=proj),
+        fig.add_subplot(gs[1, 0], projection=proj),
     ]
     note_ax = fig.add_subplot(gs[1, 1])
     note_ax.axis("off")
 
     for ax, year in zip(axes, LOCAL_PLOT_YEARS):
         draw_lisa_map_panel(
-            ax,
+            ax, fig,
             year,
             local_result,
             main_features,
             scs_features,
+            line_features,
             hainan_feature,
             guangdong_feature,
             guangxi_feature,
             tick_labelsize=14,
+            proj=proj,
         )
     draw_scale_and_legend(
         fig,
-        axes[2],
         [
             ("高-高", LISA_COLORS["HH"]),
             ("低-低", LISA_COLORS["LL"]),
@@ -1014,7 +951,28 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
         color="black",
         wrap=True,
     )
-    fig.suptitle(f"图25 {EFF_DISPLAY_NAME}的 LISA 聚类图（2015、2018、2022）", y=0.99)
+    # North arrow (figure-level)
+    ax_n = fig.add_axes([0.47, 0.935, 0.04, 0.04])
+    ax_n.set_xlim(-1, 1); ax_n.set_ylim(-1, 1); ax_n.axis("off")
+    ax_n.add_patch(plt.Circle((0, 0), 0.55, fc="none", ec="black", lw=1.2))
+    ax_n.plot([0, 0], [-0.45, 0.55], color="black", lw=0.8)
+    ax_n.plot([-0.45, 0.45], [0, 0], color="black", lw=0.8)
+    ax_n.add_patch(Polygon([[0, 0.45], [-0.18, 0], [0.18, 0]], closed=True,
+                           fc="black", ec="black", lw=0.5))
+    ax_n.text(0, 0.72, "N", ha="center", va="bottom", fontweight="bold", fontsize=9)
+    # Scale bar
+    ax_sb = fig.add_axes([0.35, 0.94, 0.25, 0.02])
+    ax_sb.set_xlim(0, 1); ax_sb.set_ylim(0, 1); ax_sb.axis("off")
+    ax_sb.add_patch(Rectangle((0.1, 0.3), 0.4, 0.4, fc="black", ec="black", lw=0.5))
+    ax_sb.add_patch(Rectangle((0.5, 0.3), 0.4, 0.4, fc="white", ec="black", lw=0.5))
+    ax_sb.text(0.1, 0.1, "0", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.5, 0.1, "250", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.9, 0.1, "500 km", ha="center", va="top", fontsize=7)
+
+    fig.text(0.055, 0.03,
+        '注：底图来源于国家地理信息公共服务平台"天地图"（审图号：GS（2024）0650号），无修改',
+        ha='left', va='bottom', fontsize=12, color='black')
+    fig.suptitle(f"图25 {EFF_DISPLAY_NAME}的 LISA 聚类图（2015、2018、2022）", y=0.98)
 
     combined_out_path = OUT_DIR / "25_效率局部聚类图_2015_2018_2022.png"
     fig.savefig(combined_out_path, dpi=300, bbox_inches="tight")
@@ -1024,7 +982,7 @@ def save_lisa_cluster_map(local_result: pd.DataFrame) -> Path:
 
 def save_lisa_cluster_maps_split(local_result: pd.DataFrame) -> list[Path]:
     geojson = load_geojson(GEOJSON_PATH)
-    main_features, scs_features, hainan_feature, guangdong_feature, guangxi_feature = split_geo_features(geojson)
+    main_features, scs_features, line_features, hainan_feature, guangdong_feature, guangxi_feature = split_geo_features(geojson)
     outputs: list[Path] = []
     legend_items = [
         ("高-高", LISA_COLORS["HH"]),
@@ -1036,22 +994,27 @@ def save_lisa_cluster_maps_split(local_result: pd.DataFrame) -> list[Path]:
     ]
 
     for idx, year in enumerate(LOCAL_PLOT_YEARS, start=1):
-        fig = plt.figure(figsize=(10.8, 9.8))
-        gs = fig.add_gridspec(2, 1, height_ratios=[12.8, 2.2], left=0.05, right=0.95, bottom=0.05, top=0.93, hspace=0.06)
-        ax = fig.add_subplot(gs[0, 0])
+        proj = ccrs.AlbersEqualArea(central_longitude=105, standard_parallels=(25, 47),
+                               false_easting=0, false_northing=0,
+                               globe=ccrs.Globe(ellipse="GRS80"))
+        fig = plt.figure(figsize=(10.8, 10.5))
+        gs = fig.add_gridspec(2, 1, height_ratios=[12.8, 2.5], left=0.05, right=0.95, bottom=0.06, top=0.90, hspace=0.06)
+        ax = fig.add_subplot(gs[0, 0], projection=proj)
         note_ax = fig.add_subplot(gs[1, 0])
         note_ax.axis("off")
 
         draw_lisa_map_panel(
-            ax,
+            ax, fig,
             year,
             local_result,
             main_features,
             scs_features,
+            line_features,
             hainan_feature,
             guangdong_feature,
             guangxi_feature,
             show_year_title=False,
+            proj=proj,
         )
 
         draw_map_legend_inset(ax, legend_items)
@@ -1065,6 +1028,27 @@ def save_lisa_cluster_maps_split(local_result: pd.DataFrame) -> list[Path]:
             color="black",
             wrap=True,
         )
+        # North arrow
+        ax_n = fig.add_axes([0.47, 0.935, 0.04, 0.04])
+        ax_n.set_xlim(-1, 1); ax_n.set_ylim(-1, 1); ax_n.axis("off")
+        ax_n.add_patch(plt.Circle((0, 0), 0.55, fc="none", ec="black", lw=1.2))
+        ax_n.plot([0, 0], [-0.45, 0.55], color="black", lw=0.8)
+        ax_n.plot([-0.45, 0.45], [0, 0], color="black", lw=0.8)
+        ax_n.add_patch(Polygon([[0, 0.45], [-0.18, 0], [0.18, 0]], closed=True,
+                               fc="black", ec="black", lw=0.5))
+        ax_n.text(0, 0.72, "N", ha="center", va="bottom", fontweight="bold", fontsize=9)
+        # Scale bar
+        ax_sb = fig.add_axes([0.35, 0.94, 0.25, 0.02])
+        ax_sb.set_xlim(0, 1); ax_sb.set_ylim(0, 1); ax_sb.axis("off")
+        ax_sb.add_patch(Rectangle((0.1, 0.3), 0.4, 0.4, fc="black", ec="black", lw=0.5))
+        ax_sb.add_patch(Rectangle((0.5, 0.3), 0.4, 0.4, fc="white", ec="black", lw=0.5))
+        ax_sb.text(0.1, 0.1, "0", ha="center", va="top", fontsize=7)
+        ax_sb.text(0.5, 0.1, "250", ha="center", va="top", fontsize=7)
+        ax_sb.text(0.9, 0.1, "500 km", ha="center", va="top", fontsize=7)
+
+        fig.text(0.05, 0.025,
+            '注：底图来源于国家地理信息公共服务平台"天地图"（审图号：GS（2024）0650号），无修改',
+            ha='left', va='bottom', fontsize=11, color='black')
         fig.suptitle(f"图25-{idx} {EFF_DISPLAY_NAME}的 LISA 聚类图（{year}）", y=0.98)
         out_path = OUT_DIR / f"25-{idx}_效率局部聚类图_{year}.png"
         fig.savefig(out_path, dpi=300, bbox_inches="tight")

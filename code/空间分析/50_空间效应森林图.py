@@ -88,7 +88,7 @@ ADJACENCY_MATRIX_PATH = resolve_project_path(CONFIG["adjacency_matrix"])
 GDP_PANEL_PATH = resolve_project_path(CONFIG["first_stage_panel"])
 EFFICIENCY_PATH = resolve_project_path(CONFIG["efficiency_data"])
 CAPITALS_PATH = resolve_project_path(CONFIG["capital_output"])
-PROVINCE_GEOJSON_PATH = resolve_project_path(CONFIG["province_geojson"])
+PROVINCE_GEOJSON_PATH = ROOT / "data" / "外部资料" / "中国_省.geojson"
 LISA_PATH = (
     resolve_project_path(CONFIG["output_root"]) / "20_莫兰指数与LISA分析" / "局部莫兰指数_2015_2018_2022.csv"
 )

@@ -72,7 +72,7 @@ from stage_config import load_script_context, resolve_project_path, script_outpu
 CONFIG = load_script_context(Path(__file__), sys.argv[1:]).config
 DATA_PATH = resolve_project_path(CONFIG["second_stage_panel"])
 OUTPUT_DIR = script_output_dir(Path(__file__), CONFIG)
-MAP_PATHS = [resolve_project_path(path) for path in CONFIG["map_geojson_paths"]]
+MAP_PATHS = [PROJECT_ROOT / "data" / "外部资料" / "中国_省.geojson"]
 MAP_YEAR = 2022
 FONT_SIZE_DELTA = 4
 
@@ -273,29 +273,29 @@ def iter_feature_polygons(geometry):
     return polys
 
 
-def _draw_compass(ax, x, y, size):
-    """Draw a north arrow (指北针) at data coordinates (x, y)."""
-    arrow_len = size
-    ax.annotate("", xy=(x, y + arrow_len), xytext=(x, y),
-                arrowprops=dict(arrowstyle="-|>", color="black", lw=2))
-    ax.text(x, y + arrow_len + size * 0.18, "N",
-            ha="center", va="bottom", fontweight="bold", color="black")
+def iter_line_strings(geometry: dict) -> list[list[tuple[float, float]]]:
+    gtype = geometry.get("type")
+    coords = geometry.get("coordinates", [])
+    lines: list[list[tuple[float, float]]] = []
+    if gtype == "LineString":
+        if coords:
+            lines.append([(x, y) for x, y in coords])
+    elif gtype == "MultiLineString":
+        for line in coords:
+            if line:
+                lines.append([(x, y) for x, y in line])
+    return lines
 
 
-def _draw_scale_bar(ax, x, y, bar_km, lat_ref):
-    """Draw a scale bar at data coordinates; bar_km = length in km."""
-    km_per_deg_lon = 111.32 * np.cos(np.radians(lat_ref))
-    bar_deg = bar_km / km_per_deg_lon
-    # draw alternating black/white segments (2 segments)
-    half = bar_deg / 2
-    ax.add_patch(Rectangle((x, y), half, 0.35, fc="black", ec="black", lw=0.8))
-    ax.add_patch(Rectangle((x + half, y), half, 0.35, fc="white", ec="black", lw=0.8))
-    ax.text(x, y - 0.3, "0", ha="center", va="top", color="black")
-    ax.text(x + half, y - 0.3, f"{bar_km // 2:.0f}", ha="center", va="top", color="black")
-    ax.text(x + bar_deg, y - 0.3, f"{bar_km:.0f} km", ha="center", va="top", color="black")
+
+
 
 
 def save_lntl_map(df):
+    import cartopy.crs as ccrs
+    from collections import defaultdict
+    from shapely.geometry import Polygon as ShapelyPolygon
+
     map_path = find_map_path()
     if map_path is None:
         return "未生成省级地图: 缺少省级 GeoJSON 底图文件。"
@@ -306,18 +306,19 @@ def save_lntl_map(df):
         return f"未生成省级地图: 数据中没有 {MAP_YEAR} 年。"
 
     value_map = dict(zip(year_df["province"], year_df["lntl"]))
-
-    # ── colour scheme: segmented YlOrRd ──
     seg_bounds = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     cmap = colormaps["YlOrRd"]
     norm = mcolors.BoundaryNorm(seg_bounds, cmap.N)
 
-    # ── classify features ──
-    main_features, scs_features, hainan_feature = [], [], None
+    main_features, scs_features, line_features, hainan_feature = [], [], [], None
     for feat in geo.get("features", []):
         props = feat.get("properties", {})
         raw = (props.get("name") or props.get("NAME")
                or props.get("province") or props.get("fullname") or "")
+        gtype = feat.get("geometry", {}).get("type", "")
+        if gtype in ("LineString", "MultiLineString"):
+            line_features.append(feat)
+            continue
         if props.get("adchar") == "JD" or not raw.strip():
             scs_features.append(feat)
         else:
@@ -325,13 +326,16 @@ def save_lntl_map(df):
             if "海南" in raw:
                 hainan_feature = feat
 
-    # ── figure layout ──
-    fig = plt.figure(figsize=(16.5, 12.8))
-    # main axes with room for ticks
-    ax = fig.add_axes([0.09, 0.10, 0.78, 0.82])
+    proj = ccrs.AlbersEqualArea(central_longitude=105, standard_parallels=(25, 47),
+                               false_easting=0, false_northing=0,
+                               globe=ccrs.Globe(ellipse="GRS80"))
+    data_crs = ccrs.PlateCarree()
 
-    # ── draw main provinces ──
-    patches, fcolors = [], []
+    fig = plt.figure(figsize=(16.5, 13.5))
+    ax = fig.add_axes([0.09, 0.11, 0.78, 0.80], projection=proj)
+    ax.set_extent([73, 146, 15, 55], crs=data_crs)
+
+    color_geoms = defaultdict(list)
     for feat in main_features:
         props = feat.get("properties", {})
         raw = (props.get("name") or props.get("NAME")
@@ -339,138 +343,96 @@ def save_lntl_map(df):
         prov = normalize_province_name(raw)
         val = value_map.get(prov)
         color = "#D9D9D9" if val is None else cmap(norm(val))
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            patches.append(Polygon(poly, closed=True))
-            fcolors.append(color)
-    if not patches:
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            color_geoms[color].append(ShapelyPolygon(coords))
+    if not color_geoms:
         return f"未生成省级地图: {map_path.name} 无法解析。"
 
-    col = PatchCollection(patches, facecolor=fcolors,
-                          edgecolor="black", linewidths=1.2)   # 黑色加粗边框
-    ax.add_collection(col)
+    for color, geoms in color_geoms.items():
+        ax.add_geometries(geoms, crs=data_crs, facecolor=color,
+                          edgecolor="black", linewidth=0.5)
 
-    # ── extent & aspect ──
-    lon_min, lon_max = 73, 136
-    lat_min, lat_max = 15, 55
-    center_lat = (lat_min + lat_max) / 2
-    ax.set_xlim(lon_min, lon_max)
-    ax.set_ylim(lat_min, lat_max)
-    ax.set_aspect(1 / np.cos(np.radians(center_lat)))
-    ax.grid(False)
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                    transform=data_crs, zorder=5)
 
-    # ── lat / lon frame & ticks (四边主刻度 + 小刻度) ──
-    lon_ticks = np.arange(75, 136, 5)
-    lat_ticks = np.arange(15, 56, 5)
-    lon_minor = np.arange(73, 137, 1)
-    lat_minor = np.arange(15, 56, 1)
-    ax.set_xticks(lon_ticks)
-    ax.set_yticks(lat_ticks)
-    ax.set_xticks(lon_minor, minor=True)
-    ax.set_yticks(lat_minor, minor=True)
-    ax.set_xticklabels([f"{int(v)}°E" for v in lon_ticks])
-    ax.set_yticklabels([f"{int(v)}°N" for v in lat_ticks])
-    ax.tick_params(which="major", direction="in", length=6, width=1.2,
-                   top=True, bottom=True, left=True, right=True)
-    ax.tick_params(which="minor", direction="in", length=3, width=0.8,
-                   top=True, bottom=True, left=True, right=True)
+    gl = ax.gridlines(draw_labels=True, linewidth=0.5, color="gray", linestyle="--",
+                      x_inline=False, y_inline=False)
+    gl.top_labels = False; gl.right_labels = False
+    gl.left_labels = True; gl.bottom_labels = True
+    gl.xlabel_style = {"size": fs(0)}; gl.ylabel_style = {"size": fs(0)}
+
     for sp in ax.spines.values():
-        sp.set_linewidth(2.5)
-        sp.set_color("black")
-    ax.set_title(f"{MAP_YEAR} 年各省夜间灯光强度分级图",
-                 fontweight="bold", pad=12)
-    _draw_compass(ax, 78, 49.6, 2.5)
+        sp.set_linewidth(2.5); sp.set_color("black")
+    ax.set_title(f"{MAP_YEAR} 年各省夜间灯光强度分级图", fontweight="bold", pad=12)
 
-    # ══════════════ South China Sea inset (右下角) ══════════════
-    ax_scs = fig.add_axes([0.70, 0.14, 0.14, 0.22])
-    scs_p, scs_fc = [], []
-    # Hainan in inset
+    # SCS inset
+    ax_scs = fig.add_axes([0.72, 0.14, 0.12, 0.20], projection=data_crs)
+    ax_scs.set_extent([104, 123, 2, 23], crs=data_crs)
     if hainan_feature:
-        val = value_map.get("海南")
-        c = "#D9D9D9" if val is None else cmap(norm(val))
-        for poly in iter_feature_polygons(hainan_feature.get("geometry", {})):
-            scs_p.append(Polygon(poly, closed=True)); scs_fc.append(c)
-    # 九段线 islands
+        val = value_map.get("海南"); c = "#D9D9D9" if val is None else cmap(norm(val))
+        for coords in iter_feature_polygons(hainan_feature.get("geometry", {})):
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor=c, edgecolor="black", linewidth=0.6)
     for feat in scs_features:
-        for poly in iter_feature_polygons(feat.get("geometry", {})):
-            scs_p.append(Polygon(poly, closed=True)); scs_fc.append("#D9D9D9")
-    if scs_p:
-        scs_col = PatchCollection(scs_p, facecolor=scs_fc,
-                                  edgecolor="black", linewidths=0.6)
-        ax_scs.add_collection(scs_col)
-    ax_scs.set_xlim(106, 123); ax_scs.set_ylim(2, 26)
-    ax_scs.set_aspect(1 / np.cos(np.radians(14)))
-    ax_scs.set_xticks([]); ax_scs.set_yticks([])
-    ax_scs.grid(False)
+        for coords in iter_feature_polygons(feat.get("geometry", {})):
+            ax_scs.add_geometries([ShapelyPolygon(coords)], crs=data_crs,
+                                  facecolor="#D9D9D9", edgecolor="black", linewidth=0.6)
+    for feat in line_features:
+        for line_coords in iter_line_strings(feat.get("geometry", {})):
+            xs, ys = zip(*line_coords)
+            ax_scs.plot(xs, ys, color="black", linewidth=0.5, linestyle="--",
+                        transform=data_crs, zorder=5)
     for sp in ax_scs.spines.values():
         sp.set_linewidth(1.8); sp.set_color("black")
     ax_scs.set_title("南海诸岛", pad=4)
 
-    # ══════════════ Legend area (左下角) ══════════════
-    # Use a dedicated axes for legend elements
-    ax_leg = fig.add_axes([0.08, 0.09, 0.22, 0.40])
-    ax_leg.set_xlim(0, 10); ax_leg.set_ylim(0, 20)
-    ax_leg.axis("off")
+    # North arrow
+    ax_n = fig.add_axes([0.82, 0.88, 0.06, 0.08])
+    ax_n.set_xlim(-1, 1); ax_n.set_ylim(-1, 1); ax_n.axis("off")
+    ax_n.add_patch(plt.Circle((0, 0), 0.55, fc="none", ec="black", lw=1.2))
+    ax_n.plot([0, 0], [-0.45, 0.55], color="black", lw=0.8)
+    ax_n.plot([-0.45, 0.45], [0, 0], color="black", lw=0.8)
+    ax_n.add_patch(Polygon([[0, 0.45], [-0.18, 0], [0.18, 0]], closed=True,
+                           fc="black", ec="black", lw=0.5))
+    ax_n.text(0, 0.72, "N", ha="center", va="bottom", fontweight="bold", fontsize=10)
 
-    # ── 1) Scale bar (比例尺) — middle ──
-    # At lat_ref ~ 25°N (bottom of main map area), 1° lon ≈ 100.9 km
-    # Map width in degrees = 136 - 73 = 63°  → ~6360 km
-    # Figure main axes width ≈ 0.78 * 14 in ≈ 10.92 in
-    # Scale: 63° per 10.92 in → 1° ≈ 0.173 in
-    # 500 km at 25°N ≈ 500 / 100.9 ≈ 4.96° → 0.86 in on map
-    # In legend axes coords (0-10 over 0.18*14=2.52 in):
-    # 1 legend-unit ≈ 0.252 in;  0.86 in ≈ 3.4 legend-units
-    lat_ref = 25.0
-    km_per_deg = 111.32 * np.cos(np.radians(lat_ref))
-    bar_km = 500
-    bar_deg = bar_km / km_per_deg           # in map degrees
-    # convert map-degrees to legend-axes units
-    map_width_deg = lon_max - lon_min       # 63
-    main_ax_w_in = 0.78 * 14               # ~10.92 inches
-    leg_ax_w_in = 0.18 * 14                # ~2.52 inches
-    leg_units_total = 10                    # x range of legend axes
-    map_deg_per_in = map_width_deg / main_ax_w_in
-    bar_in = bar_deg / map_deg_per_in
-    bar_leg = bar_in / leg_ax_w_in * leg_units_total
-    sy = 13.2
-    sx = 1.0
-    half_b = bar_leg / 2
-    ax_leg.add_patch(Rectangle((sx, sy), half_b, 0.40,
-                               fc="black", ec="black", lw=0.8))
-    ax_leg.add_patch(Rectangle((sx + half_b, sy), half_b, 0.40,
-                               fc="white", ec="black", lw=0.8))
-    ax_leg.text(sx, sy - 0.45, "0", ha="center", color="black")
-    ax_leg.text(sx + half_b, sy - 0.45, f"{bar_km // 2}", ha="center", color="black")
-    ax_leg.text(sx + bar_leg, sy - 0.45, f"{bar_km} km", ha="center", color="black")
+    # Scale bar
+    ax_sb = fig.add_axes([0.38, 0.88, 0.18, 0.03])
+    ax_sb.set_xlim(0, 1); ax_sb.set_ylim(0, 1); ax_sb.axis("off")
+    ax_sb.add_patch(Rectangle((0.1, 0.3), 0.4, 0.4, fc="black", ec="black", lw=0.5))
+    ax_sb.add_patch(Rectangle((0.5, 0.3), 0.4, 0.4, fc="white", ec="black", lw=0.5))
+    ax_sb.text(0.1, 0.1, "0", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.5, 0.1, "250", ha="center", va="top", fontsize=7)
+    ax_sb.text(0.9, 0.1, "500 km", ha="center", va="top", fontsize=7)
 
-    # ── 2) Segmented colour legend ──
-    box_w, box_h = 2.0, 1.1
-    lx = 1.0
-    ly_start = 11.0      # start y for top segment
+    # Legend
+    ax_leg = fig.add_axes([0.09, 0.09, 0.18, 0.38])
+    ax_leg.set_xlim(0, 10); ax_leg.set_ylim(0, 20); ax_leg.axis("off")
+    box_w, box_h = 1.4, 0.75; lx = 1.0; ly_start = 18.0
+    ax_leg.add_patch(Rectangle((lx, ly_start), box_w, box_h, fc="#D9D9D9", ec="black", lw=0.6))
+    ax_leg.text(lx + box_w + 0.3, ly_start + box_h / 2, "无数据", va="center", ha="left", fontsize=8, color="black")
+    ly_start -= box_h + 0.3
     for i in range(len(seg_bounds) - 1):
         lo, hi = seg_bounds[i], seg_bounds[i + 1]
-        mid_val = (lo + hi) / 2
-        c = cmap(norm(mid_val))
-        y_pos = ly_start - i * (box_h + 0.25)
-        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h,
-                                   fc=c, ec="black", lw=0.8))
-        ax_leg.text(lx + box_w + 0.35, y_pos + box_h / 2,
-                    f"{lo:.1f} – {hi:.1f}",
-                    va="center", ha="left", color="black")
-    # ── legend title below segments ──
-    bottom_y = ly_start - (len(seg_bounds) - 2) * (box_h + 0.25)
-    ax_leg.text(lx + box_w, bottom_y - 0.6,
-                "夜间灯光强度", ha="center", va="top",
-                fontweight="bold", color="black")
+        mid_val = (lo + hi) / 2; c = cmap(norm(mid_val))
+        y_pos = ly_start - i * (box_h + 0.2)
+        ax_leg.add_patch(Rectangle((lx, y_pos), box_w, box_h, fc=c, ec="black", lw=0.6))
+        ax_leg.text(lx + box_w + 0.3, y_pos + box_h / 2, f"{lo:.1f} - {hi:.1f}",
+                    va="center", ha="left", fontsize=8, color="black")
+    bottom_y = ly_start - (len(seg_bounds) - 2) * (box_h + 0.2)
+    ax_leg.text(lx + box_w / 2, bottom_y - 0.8, "夜间灯光强度", ha="center", va="top",
+                fontsize=9, fontweight="bold", color="black")
 
-    fig.savefig(OUTPUT_DIR / f"05_夜间灯光强度分级地图_{MAP_YEAR}.png",
-                dpi=300, bbox_inches="tight")
+    fig.text(0.09, 0.035,
+        '注：底图来源于国家地理信息公共服务平台"天地图"（审图号：GS（2024）0650号），无修改',
+        ha='left', va='bottom', fontsize=12, color='black')
+    fig.savefig(OUTPUT_DIR / f"05_夜间灯光强度分级地图_{MAP_YEAR}.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
     return f"已生成省级地图: 05_夜间灯光强度分级地图_{MAP_YEAR}.png"
 
-
-# ═══════════════════════════════════════════════════════════════
-# Summary (unchanged)
-# ═══════════════════════════════════════════════════════════════
 
 def build_summary(df, map_message):
     year_mean = df.groupby("year")["ntl"].mean().round(4)
