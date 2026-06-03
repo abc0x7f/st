@@ -1,0 +1,5 @@
+weight_type,test_name,chi2,df,pvalue
+adjacency_01,Hausman: FE vs RE (V,,,
+economic_geo_nested,Hausman: FE vs RE (V,,,
+economic_inv,Hausman: FE vs RE (s,164.3062136686941,6,7.24684213677e-33
+geographic_inv,Hausman: FE vs RE (V,,,

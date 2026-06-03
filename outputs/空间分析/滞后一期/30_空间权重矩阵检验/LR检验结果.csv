@@ -1,9 +1,9 @@
 weight_type,test_name,statistic,df,pvalue
-adjacency_01,LR: both vs ind,12.47857380405981,7,.0858789445697862
-adjacency_01,LR: both vs time,521.6912347948885,29,9.92847086300e-92
-economic_geo_nested,LR: both vs ind,13.89092203660118,7,.0531557710100102
-economic_geo_nested,LR: both vs time,524.0756749016361,29,3.20432891354e-92
-economic_inv,LR: both vs ind,13.37231538422168,7,.0635401187699638
-economic_inv,LR: both vs time,538.5809658541957,29,3.27637067044e-95
-geographic_inv,LR: both vs ind,17.27212268584844,7,.0157232854481737
-geographic_inv,LR: both vs time,538.6033130264917,29,3.24177392726e-95
+adjacency_01,LR: both vs ind,13.10731134868865,7,.0695365370954888
+adjacency_01,LR: both vs time,544.9681213127109,29,1.57505155269e-96
+economic_geo_nested,LR: both vs ind,17.20767105329458,7,.0161050557916704
+economic_geo_nested,LR: both vs time,556.4254989298513,29,6.77453715822e-99
+economic_inv,LR: both vs ind,13.52724320135042,7,.0602577264191338
+economic_inv,LR: both vs time,547.7833107851086,29,4.13121383211e-97
+geographic_inv,LR: both vs ind,19.95930587809301,7,.0056582553583945
+geographic_inv,LR: both vs time,552.2273702402289,29,4.99178622452e-98

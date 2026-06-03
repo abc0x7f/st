@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 17:00:21
+ opened on:   4 Jun 2026, 03:58:09
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -128,5 +128,5 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 17:00:23
+ closed on:   4 Jun 2026, 03:58:11
 -------------------------------------------------------------------------------

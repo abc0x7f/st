@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:  31 May 2026, 18:50:05
+ opened on:   4 Jun 2026, 03:59:54
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -51,33 +51,10 @@ Variance     |
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_economi~d re_economi~d    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |    .0411922     .0727889       -.0315966        .0396064
-         ind |    .1155981    -.0015297        .1171279        .0385695
-         urb |   -1.091434     -.993617       -.0978171        .2580318
-          rd |    5.850622     6.410023       -.5594008         .941285
-        open |    .4536801     .3457955        .1078846        .0060275
-          es |   -.0304583    -.2068864        .1764281               .
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -6.34
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-6.337772780933631)，尝试 sigmamore……
       name:  sdm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:  31 May 2026, 18:50:08
+ closed on:   4 Jun 2026, 03:59:57
 -------------------------------------------------------------------------------

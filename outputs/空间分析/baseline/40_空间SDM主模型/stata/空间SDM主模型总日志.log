@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- opened on:  31 May 2026, 18:49:57
+ opened on:   4 Jun 2026, 03:59:47
 
 . 
 . cap which xsmle
@@ -89,8 +89,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -104,17 +104,17 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
 . postfile coef_handle str32 weight_type str20 section str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`coef_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000002.tmp not found)
 
 . postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`effect_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000003.tmp not found)
 
 . postfile hausman_handle str32 weight_type str20 test_name ///
 >     double chi2 double df double pvalue ///
 >     using "`hausman_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000004.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000004.tmp not found)
 
 . 
 . * ------------------------------
@@ -209,39 +209,66 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
  59.         display as text "空间 Hausman 检验：FE (both) vs RE"
  60.         display as text "--------------------------------------------"
  61. 
+.         * Standard hausman
 .         capture hausman fe_`tag' re_`tag'
- 62.         if _rc == 0 {
- 63.             post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") 
-> ///
->                 (r(chi2)) (r(df)) (r(p))
- 64.             noisily hausman fe_`tag' re_`tag'
- 65.         }
- 66.         else {
- 67.             * Try with sigmamore option (common fix for non-positive-defin
-> ite VCE difference)
-.             capture hausman fe_`tag' re_`tag', sigmamore
- 68.             if _rc == 0 {
- 69.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamo
+ 62.         local hausman_rc = _rc
+ 63.         if `hausman_rc' == 0 {
+ 64.             local h_chi2 = r(chi2)
+ 65.             if `h_chi2' < 0 {
+ 66.                 * Negative chi2 → try sigmamore
+.                 display as text "标准 Hausman chi2 为负 (`h_chi2')，尝试 sigm
+> amore……"
+ 67.                 capture hausman fe_`tag' re_`tag', sigmamore
+ 68.                 if _rc == 0 {
+ 69.                     local h_chi2_sm = r(chi2)
+ 70.                     if `h_chi2_sm' < 0 {
+ 71.                         display as text "sigmamore 仍为负 (`h_chi2_sm')，
+> 报告 VCE 非正定。"
+ 72.                         post hausman_handle ("`tag'") ("Hausman: FE vs RE 
+> (VCE非正定)") (.) (.) (.)
+ 73.                     }
+ 74.                     else {
+ 75.                         post hausman_handle ("`tag'") ("Hausman: FE vs RE 
+> (sigmamore)") ///
+>                             (`h_chi2_sm') (r(df)) (r(p))
+ 76.                         noisily hausman fe_`tag' re_`tag', sigmamore
+ 77.                     }
+ 78.                 }
+ 79.                 else {
+ 80.                     post hausman_handle ("`tag'") ("Hausman: FE vs RE (VCE
+> 非正定)") (.) (.) (.)
+ 81.                 }
+ 82.             }
+ 83.             else {
+ 84.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
+> )") ///
+>                     (`h_chi2') (r(df)) (r(p))
+ 85.                 noisily hausman fe_`tag' re_`tag'
+ 86.             }
+ 87.         }
+ 88.         else {
+ 89.             display as text "Hausman 命令执行失败，尝试 sigmamore。"
+ 90.             capture hausman fe_`tag' re_`tag', sigmamore
+ 91.             if _rc == 0 {
+ 92.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamo
 > re)") ///
 >                     (r(chi2)) (r(df)) (r(p))
- 70.                 noisily hausman fe_`tag' re_`tag', sigmamore
- 71.             }
- 72.             else {
- 73.                 display as text "Hausman 检验失败（VCE 非正定），报告 chi2
->  与 p 不可用。"
- 74.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
+ 93.                 noisily hausman fe_`tag' re_`tag', sigmamore
+ 94.             }
+ 95.             else {
+ 96.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
 > )") (.) (.) (.)
- 75.             }
- 76.         }
- 77.     }
- 78.     else {
- 79.         display as text "RE 模型估计不收敛，跳过空间 Hausman 检验。"
- 80.         post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) 
+ 97.             }
+ 98.         }
+ 99.     }
+100.     else {
+101.         display as text "RE 模型估计不收敛，跳过空间 Hausman 检验。"
+102.         post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) 
 > (.) (.)
- 81.     }
- 82. 
+103.     }
+104. 
 .     log close sdm_`tag'
- 83. end
+105. end
 
 . 
 . * ------------------------------
@@ -250,8 +277,8 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
 . run_sdm_model, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FIL
 > E}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -269,7 +296,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 18:49:58
+ opened on:   4 Jun 2026, 03:59:47
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -342,13 +369,13 @@ Prob > chi2 = 0.0000
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 18:50:00
+ closed on:   4 Jun 2026, 03:59:50
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -366,7 +393,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:  31 May 2026, 18:50:00
+ opened on:   4 Jun 2026, 03:59:50
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -414,42 +441,19 @@ Variance     |
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_adjace~01 re_adjace~01    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |     .321329     .2159927        .1053363         .022555
-         ind |    .0979863     .0044243        .0935619        .0143123
-         urb |   -1.716266    -1.422792       -.2934737        .1572426
-          rd |    4.713009     7.127292       -2.414283        .9580704
-        open |    .5300995     .3602753        .1698242        .0085555
-          es |    .0279707    -.1041453         .132116               .
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -8.27
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-8.270890051035456)，尝试 sigmamore……
       name:  sdm_adjacency_01
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:  31 May 2026, 18:50:03
+ closed on:   4 Jun 2026, 03:59:52
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile(
 > "${W_GEO_INV_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -467,7 +471,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- opened on:  31 May 2026, 18:50:03
+ opened on:   4 Jun 2026, 03:59:52
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 双固定效应 SDM 主模型
@@ -515,42 +519,19 @@ Variance     |
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_geograp~v re_geograp~v    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |    .1226346     .1072469        .0153877        .0352317
-         ind |    .1149344     -.012494        .1274284        .0368759
-         urb |   -1.157203    -1.075804       -.0813988        .2503221
-          rd |    5.959556     6.552327       -.5927709        .8432732
-        open |     .438318     .3341217        .1041963        .0093641
-          es |    -.019293    -.2149438        .1956508        .0304547
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -15.61
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-15.61069808964942)，尝试 sigmamore……
       name:  sdm_geographic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- closed on:  31 May 2026, 18:50:05
+ closed on:   4 Jun 2026, 03:59:54
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") w
 > file("${W_ECO_GEO_NEST_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fc80_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -568,7 +549,7 @@ Panel variable: pid (strongly balanced)
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:  31 May 2026, 18:50:05
+ opened on:   4 Jun 2026, 03:59:54
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -616,35 +597,12 @@ Variance     |
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_economi~d re_economi~d    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |    .0411922     .0727889       -.0315966        .0396064
-         ind |    .1155981    -.0015297        .1171279        .0385695
-         urb |   -1.091434     -.993617       -.0978171        .2580318
-          rd |    5.850622     6.410023       -.5594008         .941285
-        open |    .4536801     .3457955        .1078846        .0060275
-          es |   -.0304583    -.2068864        .1764281               .
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -6.34
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-6.337772780933631)，尝试 sigmamore……
       name:  sdm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:  31 May 2026, 18:50:08
+ closed on:   4 Jun 2026, 03:59:57
 -------------------------------------------------------------------------------
 
 . 
@@ -728,5 +686,5 @@ C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空�
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- closed on:  31 May 2026, 18:50:08
+ closed on:   4 Jun 2026, 03:59:57
 -------------------------------------------------------------------------------

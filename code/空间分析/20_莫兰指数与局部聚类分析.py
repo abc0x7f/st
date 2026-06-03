@@ -172,7 +172,8 @@ SCATTER_LABEL_OFFSETS = {
     2022: {
         "宁夏": ((-8, 6), "right", "bottom"),
         "上海": ((6, 6), "left", "bottom"),
-        "江苏": ((10, 10), "left", "bottom"),
+        "江苏": ((6, -8), "left", "top"),
+        "广东": ((10, 10), "left", "bottom"),
         "浙江": ((6, 8), "left", "bottom"),
         "贵州": ((8, 8), "left", "bottom"),
         "吉林": ((-8, -8), "right", "top"),

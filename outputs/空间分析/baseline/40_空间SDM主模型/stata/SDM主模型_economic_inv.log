@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 18:49:58
+ opened on:   4 Jun 2026, 03:59:47
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -76,5 +76,5 @@ Prob > chi2 = 0.0000
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 18:50:00
+ closed on:   4 Jun 2026, 03:59:50
 -------------------------------------------------------------------------------

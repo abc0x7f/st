@@ -3,7 +3,7 @@
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/空间权重矩阵检验总日志.log
   log type:  text
- opened on:  31 May 2026, 17:00:14
+ opened on:   4 Jun 2026, 03:58:03
 
 . 
 . display as text "当前工作目录: `c(pwd)'"
@@ -142,8 +142,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -176,15 +176,15 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000001.tmp saved as .dta
 
 . postfile lm_handle str32 weight_type str20 test_name ///
 >     double statistic double df double pvalue using "`lm_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000002.tmp not found)
 
 . postfile lr_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`lr_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000003.tmp not found)
 
 . postfile wald_handle str32 weight_type str30 test_name ///
 >     double statistic double df double pvalue using "`wald_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000004.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000004.tmp not found)
 
 . 
 . * ------------------------------
@@ -373,8 +373,8 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000001.tmp saved as .dta
 . * ------------------------------
 . run_one_matrix, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -390,15 +390,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_adjacency_01
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- opened on:  31 May 2026, 17:00:14
+ opened on:   4 Jun 2026, 03:58:04
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 LM / Robust LM 检验
@@ -514,14 +514,14 @@ RLMlag  .35785689          1  .54969888
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_adjacency_01.log
   log type:  text
- closed on:  31 May 2026, 17:00:16
+ closed on:   4 Jun 2026, 03:58:05
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- opened on:  31 May 2026, 17:00:16
+ opened on:   4 Jun 2026, 03:58:05
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 SDM 个体 / 时间 / 双固定估计
@@ -646,14 +646,14 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_adjacency_01.log
   log type:  text
- closed on:  31 May 2026, 17:00:20
+ closed on:   4 Jun 2026, 03:58:09
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FI
 > LE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -669,15 +669,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 17:00:20
+ opened on:   4 Jun 2026, 03:58:09
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 LM / Robust LM 检验
@@ -793,14 +793,14 @@ RLMlag   .62293068           1   .42996031
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 17:00:21
+ closed on:   4 Jun 2026, 03:58:09
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 17:00:21
+ opened on:   4 Jun 2026, 03:58:09
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -925,14 +925,14 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 17:00:23
+ closed on:   4 Jun 2026, 03:58:11
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile
 > ("${W_GEO_INV_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -948,15 +948,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_geographic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- opened on:  31 May 2026, 17:00:23
+ opened on:   4 Jun 2026, 03:58:12
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 LM / Robust LM 检验
@@ -1072,14 +1072,14 @@ RLMlag  .03337061          1  .85505205
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_geographic_inv.log
   log type:  text
- closed on:  31 May 2026, 17:00:23
+ closed on:   4 Jun 2026, 03:58:12
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- opened on:  31 May 2026, 17:00:23
+ opened on:   4 Jun 2026, 03:58:12
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 SDM 个体 / 时间 / 双固定估计
@@ -1204,14 +1204,14 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_geographic_inv.log
   log type:  text
- closed on:  31 May 2026, 17:00:26
+ closed on:   4 Jun 2026, 03:58:15
 -------------------------------------------------------------------------------
 
 . run_one_matrix, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") 
 > wfile("${W_ECO_GEO_NEST_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -1227,15 +1227,15 @@ Panel variable: pid (strongly balanced)
 number of observations will be reset to 240
 Press any key to continue, or Break to abort
 Number of observations (_N) was 0, now 240.
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_a304_000006.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fba4_000006.tmp saved as .dta
     format
 -------------------------------------------------------------------------------
       name:  lm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- opened on:  31 May 2026, 17:00:26
+ opened on:   4 Jun 2026, 03:58:15
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 LM / Robust LM 检验
@@ -1351,14 +1351,14 @@ RLMlag    .1068544           1   .74375418
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/LM_economic_geo_nested.log
   log type:  text
- closed on:  31 May 2026, 17:00:27
+ closed on:   4 Jun 2026, 03:58:15
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- opened on:  31 May 2026, 17:00:27
+ opened on:   4 Jun 2026, 03:58:15
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 SDM 个体 / 时间 / 双固定估计
@@ -1483,7 +1483,7 @@ Wald 检验
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/模型结果_economic_geo_nested.log
   log type:  text
- closed on:  31 May 2026, 17:00:30
+ closed on:   4 Jun 2026, 03:58:17
 -------------------------------------------------------------------------------
 
 . 
@@ -1571,5 +1571,5 @@ C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30_空�
        log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/30
 > _空间权重矩阵检验/stata/空间权重矩阵检验总日志.log
   log type:  text
- closed on:  31 May 2026, 17:00:30
+ closed on:   4 Jun 2026, 03:58:17
 -------------------------------------------------------------------------------

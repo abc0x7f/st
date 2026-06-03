@@ -110,10 +110,10 @@ Notes:
 . global PROJECT_ROOT "C:/Users/abc0x7f/Desktop/PRO/统计建模"
 
 . global DATA_FILE "C:/Users/abc0x7f/Desktop/PRO/统计建模/data/最终数据/第二阶
-> 段_基础.csv"
+> 段_滞后一期.csv"
 
-. global W_ADJ_FILE "C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/bas
-> eline/10_构建邻接矩阵/省际01邻接矩阵.csv"
+. global W_ADJ_FILE "C:/Users/abc0x7f/Desktop/PRO/统计建模/data/最终数据/省际01
+> 邻接矩阵.csv"
 
 . global W_ECO_FILE "C:/Users/abc0x7f/Desktop/PRO/统计建模/data/最终数据/省际经
 > 济距离矩阵.csv"
@@ -124,11 +124,11 @@ Notes:
 . global W_ECO_GEO_NEST_FILE "C:/Users/abc0x7f/Desktop/PRO/统计建模/data/最终数
 > 据/省际经济地理嵌套矩阵_省会版.csv"
 
-. global OUT_DIR "C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseli
-> ne/40_空间SDM主模型"
+. global OUT_DIR "C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一
+> 期/40_空间SDM主模型"
 
-. global STATA_DIR "C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/base
-> line/40_空间SDM主模型/stata"
+. global STATA_DIR "C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后
+> 一期/40_空间SDM主模型/stata"
 
 . 
 end of do-file
@@ -159,10 +159,10 @@ C:\Users\abc0x7f\Desktop\PRO\统计建模
 . log using "${STATA_DIR}/空间SDM主模型总日志.log", text replace
 -------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- opened on:  31 May 2026, 18:49:57
+ opened on:   4 Jun 2026, 04:05:07
 
 . 
 . cap which xsmle
@@ -248,8 +248,8 @@ es already numeric; no replace
 . sort province year
 
 . save "`panel_raw'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000001.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000001.tmp saved as .dta
     format
 
 . global TMP_PANEL_RAW "`panel_raw'"
@@ -263,17 +263,17 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
 . postfile coef_handle str32 weight_type str20 section str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`coef_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000002.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000002.tmp not found)
 
 . postfile effect_handle str32 weight_type str20 effect_type str20 variable ///
 >     double coef double se double zstat double pvalue double ll double ul ///
 >     using "`effect_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000003.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000003.tmp not found)
 
 . postfile hausman_handle str32 weight_type str20 test_name ///
 >     double chi2 double df double pvalue ///
 >     using "`hausman_results'", replace
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000004.tmp not found)
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000004.tmp not found)
 
 . 
 . * ------------------------------
@@ -368,39 +368,66 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
  59.         display as text "空间 Hausman 检验：FE (both) vs RE"
  60.         display as text "--------------------------------------------"
  61. 
+.         * Standard hausman
 .         capture hausman fe_`tag' re_`tag'
- 62.         if _rc == 0 {
- 63.             post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") 
-> ///
->                 (r(chi2)) (r(df)) (r(p))
- 64.             noisily hausman fe_`tag' re_`tag'
- 65.         }
- 66.         else {
- 67.             * Try with sigmamore option (common fix for non-positive-defin
-> ite VCE difference)
-.             capture hausman fe_`tag' re_`tag', sigmamore
- 68.             if _rc == 0 {
- 69.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamo
+ 62.         local hausman_rc = _rc
+ 63.         if `hausman_rc' == 0 {
+ 64.             local h_chi2 = r(chi2)
+ 65.             if `h_chi2' < 0 {
+ 66.                 * Negative chi2 → try sigmamore
+.                 display as text "标准 Hausman chi2 为负 (`h_chi2')，尝试 sigm
+> amore……"
+ 67.                 capture hausman fe_`tag' re_`tag', sigmamore
+ 68.                 if _rc == 0 {
+ 69.                     local h_chi2_sm = r(chi2)
+ 70.                     if `h_chi2_sm' < 0 {
+ 71.                         display as text "sigmamore 仍为负 (`h_chi2_sm')，
+> 报告 VCE 非正定。"
+ 72.                         post hausman_handle ("`tag'") ("Hausman: FE vs RE 
+> (VCE非正定)") (.) (.) (.)
+ 73.                     }
+ 74.                     else {
+ 75.                         post hausman_handle ("`tag'") ("Hausman: FE vs RE 
+> (sigmamore)") ///
+>                             (`h_chi2_sm') (r(df)) (r(p))
+ 76.                         noisily hausman fe_`tag' re_`tag', sigmamore
+ 77.                     }
+ 78.                 }
+ 79.                 else {
+ 80.                     post hausman_handle ("`tag'") ("Hausman: FE vs RE (VCE
+> 非正定)") (.) (.) (.)
+ 81.                 }
+ 82.             }
+ 83.             else {
+ 84.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
+> )") ///
+>                     (`h_chi2') (r(df)) (r(p))
+ 85.                 noisily hausman fe_`tag' re_`tag'
+ 86.             }
+ 87.         }
+ 88.         else {
+ 89.             display as text "Hausman 命令执行失败，尝试 sigmamore。"
+ 90.             capture hausman fe_`tag' re_`tag', sigmamore
+ 91.             if _rc == 0 {
+ 92.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (sigmamo
 > re)") ///
 >                     (r(chi2)) (r(df)) (r(p))
- 70.                 noisily hausman fe_`tag' re_`tag', sigmamore
- 71.             }
- 72.             else {
- 73.                 display as text "Hausman 检验失败（VCE 非正定），报告 chi2
->  与 p 不可用。"
- 74.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
+ 93.                 noisily hausman fe_`tag' re_`tag', sigmamore
+ 94.             }
+ 95.             else {
+ 96.                 post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial
 > )") (.) (.) (.)
- 75.             }
- 76.         }
- 77.     }
- 78.     else {
- 79.         display as text "RE 模型估计不收敛，跳过空间 Hausman 检验。"
- 80.         post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) 
+ 97.             }
+ 98.         }
+ 99.     }
+100.     else {
+101.         display as text "RE 模型估计不收敛，跳过空间 Hausman 检验。"
+102.         post hausman_handle ("`tag'") ("Hausman: FE vs RE (spatial)") (.) 
 > (.) (.)
- 81.     }
- 82. 
+103.     }
+104. 
 .     log close sdm_`tag'
- 83. end
+105. end
 
 . 
 . * ------------------------------
@@ -409,8 +436,8 @@ file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000001.tmp saved as .dta
 . run_sdm_model, tag(economic_inv) label("经济倒数权重矩阵") wfile("${W_ECO_FIL
 > E}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -425,10 +452,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_economic_inv
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- opened on:  31 May 2026, 18:49:58
+ opened on:   4 Jun 2026, 04:05:08
 ============================================
 矩阵：经济倒数权重矩阵 (economic_inv)
 双固定效应 SDM 主模型
@@ -441,37 +468,37 @@ SDM with random-effects                              Number of obs =       240
 Group variable: pid                               Number of groups =        30
 Time variable: year                                   Panel length =         8
 
-R-sq:    within  = 0.4608
-         between = 0.1716
-         overall = 0.1878
+R-sq:    within  = 0.4566
+         between = 0.1737
+         overall = 0.1901
 
-Log-likelihood =   308.3898
+Log-likelihood =   307.9479
 ------------------------------------------------------------------------------
          eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
 -------------+----------------------------------------------------------------
 Main         |
-        lntl |   .0550009   .0537313     1.02   0.306    -.0503105    .1603123
-         ind |   .0616732   .1173702     0.53   0.599    -.1683681    .2917145
-         urb |   -1.43447   .2936562    -4.88   0.000    -2.010026   -.8589147
-          rd |   8.434403   2.313165     3.65   0.000     3.900682    12.96812
-        open |    .442436   .0933068     4.74   0.000     .2595581     .625314
-          es |  -.1825533   .1327367    -1.38   0.169    -.4427124    .0776057
-       _cons |   1.889812   .4880855     3.87   0.000      .933182    2.846442
+        lntl |   .0648311   .0601916     1.08   0.281    -.0531423    .1828045
+         ind |   .0583464   .1177698     0.50   0.620    -.1724781     .289171
+         urb |  -1.448642   .2989408    -4.85   0.000    -2.034555   -.8627291
+          rd |   8.302828   2.276877     3.65   0.000     3.840232    12.76542
+        open |   .4407004   .0932208     4.73   0.000      .257991    .6234097
+          es |  -.1847223   .1325835    -1.39   0.164    -.4445813    .0751366
+       _cons |   1.906639   .4905128     3.89   0.000     .9452521    2.868027
 -------------+----------------------------------------------------------------
 Wx           |
-        lntl |   .0343038   .0808837     0.42   0.671    -.1242253    .1928329
-         ind |  -.2336876   .2642749    -0.88   0.377    -.7516569    .2842816
-         urb |  -.6992671   .5799484    -1.21   0.228    -1.835945    .4374109
-          rd |   9.000144   4.998505     1.80   0.072    -.7967449    18.79703
-        open |  -.4766131   .2034033    -2.34   0.019    -.8752762     -.07795
-          es |  -.9611114   .2807709    -3.42   0.001    -1.511412   -.4108106
+        lntl |   .0088153   .0865779     0.10   0.919    -.1608743    .1785049
+         ind |  -.3185612   .2538339    -1.25   0.209    -.8160665    .1789442
+         urb |  -.6404204   .5844265    -1.10   0.273    -1.785875    .5050344
+          rd |   8.136235   5.003441     1.63   0.104    -1.670329     17.9428
+        open |  -.4733188   .2029417    -2.33   0.020    -.8710772   -.0755605
+          es |  -.9106063   .2816653    -3.23   0.001     -1.46266   -.3585524
 -------------+----------------------------------------------------------------
 Spatial      |
-         rho |    .100844     .10933     0.92   0.356    -.1134389    .3151269
+         rho |   .1043792   .1089557     0.96   0.338    -.1091701    .3179285
 -------------+----------------------------------------------------------------
 Variance     |
-   lgt_theta |  -2.378502   .1779357   -13.37   0.000     -2.72725   -2.029755
-    sigma2_e |   .0024142   .0002408    10.03   0.000     .0019423     .002886
+   lgt_theta |  -2.366397   .1756466   -13.47   0.000    -2.710658   -2.022136
+    sigma2_e |   .0024295   .0002418    10.05   0.000     .0019556    .0029033
 ------------------------------------------------------------------------------
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
@@ -481,12 +508,12 @@ Variance     |
              |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
              |  fe_economi~v re_economi~v    Difference       Std. err.
 -------------+----------------------------------------------------------------
-        lntl |    .0524318     .0550009        -.002569        .0273412
-         ind |    .0384118     .0616732       -.0232614               .
-         urb |   -1.829582     -1.43447       -.3951114        .1389025
-          rd |    5.342511     8.434403       -3.091891        .5831076
-        open |    .4454576      .442436        .0030215               .
-          es |   -.0464108    -.1825533        .1361425               .
+        lntl |    .0565875     .0648311       -.0082436        .0419973
+         ind |    .0288408     .0583464       -.0295056        .0351286
+         urb |   -1.848884    -1.448642       -.4002416        .1512076
+          rd |    5.884344     8.302828       -2.418485        .9333522
+        open |    .4315746     .4407004       -.0091258        .0175414
+          es |   -.0715946    -.1847223        .1131278               .
 ------------------------------------------------------------------------------
                           b = Consistent under H0 and Ha; obtained from xsmle.
            B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
@@ -494,20 +521,20 @@ Variance     |
 Test of H0: Difference in coefficients not systematic
 
     chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-            =  87.62
+            = 164.31
 Prob > chi2 = 0.0000
 (V_b-V_B is not positive definite)
       name:  sdm_economic_inv
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_economic_inv.log
   log type:  text
- closed on:  31 May 2026, 18:50:00
+ closed on:   4 Jun 2026, 04:05:10
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(adjacency_01) label("0-1邻接矩阵") wfile("${W_ADJ_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -522,10 +549,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_adjacency_01
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- opened on:  31 May 2026, 18:50:00
+ opened on:   4 Jun 2026, 04:05:10
 ============================================
 矩阵：0-1邻接矩阵 (adjacency_01)
 双固定效应 SDM 主模型
@@ -538,77 +565,54 @@ SDM with random-effects                              Number of obs =       240
 Group variable: pid                               Number of groups =        30
 Time variable: year                                   Panel length =         8
 
-R-sq:    within  = 0.4452
-         between = 0.2931
-         overall = 0.2980
+R-sq:    within  = 0.4299
+         between = 0.2930
+         overall = 0.2966
 
-Log-likelihood =   309.6128
+Log-likelihood =   305.9970
 ------------------------------------------------------------------------------
          eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
 -------------+----------------------------------------------------------------
 Main         |
-        lntl |   .2159927   .0773489     2.79   0.005     .0643917    .3675937
-         ind |   .0044243   .1148229     0.04   0.969    -.2206245    .2294732
-         urb |  -1.422792   .4008908    -3.55   0.000    -2.208523   -.6370605
-          rd |   7.127292   2.349559     3.03   0.002      2.52224    11.73234
-        open |   .3602753   .0936092     3.85   0.000     .1768047    .5437459
-          es |  -.1041453   .1318024    -0.79   0.429    -.3624733    .1541827
-       _cons |   .8335208   .3385323     2.46   0.014     .1700097    1.497032
+        lntl |   .1171438   .0869403     1.35   0.178     -.053256    .2875437
+         ind |   .0372811   .1171945     0.32   0.750    -.1924158     .266978
+         urb |   -1.30163   .4191229    -3.11   0.002    -2.123096   -.4801646
+          rd |   8.422445   2.344907     3.59   0.000     3.826512    13.01838
+        open |   .3575824   .0956129     3.74   0.000     .1701846    .5449801
+          es |  -.0973607   .1342475    -0.73   0.468    -.3604811    .1657596
+       _cons |   .7709724   .3378588     2.28   0.022     .1087813    1.433164
 -------------+----------------------------------------------------------------
 Wx           |
-        lntl |  -.2614069   .0888295    -2.94   0.003    -.4355096   -.0873043
-         ind |  -.4555047   .2095058    -2.17   0.030    -.8661285   -.0448809
-         urb |   .5646082   .5643717     1.00   0.317    -.5415399    1.670756
-          rd |   5.719628   3.863846     1.48   0.139    -1.853371    13.29263
-        open |   .2986658   .1399513     2.13   0.033     .0243664    .5729653
-          es |  -.1413295   .2097724    -0.67   0.500    -.5524758    .2698169
+        lntl |  -.1102663   .1012635    -1.09   0.276    -.3087391    .0882066
+         ind |  -.4085816   .2044478    -2.00   0.046    -.8092919   -.0078713
+         urb |   .4536672   .5821763     0.78   0.436    -.6873774    1.594712
+          rd |   3.727116   3.995642     0.93   0.351    -4.104199    11.55843
+        open |   .3488658   .1411081     2.47   0.013      .072299    .6254326
+          es |  -.1407974    .213862    -0.66   0.510    -.5599593    .2783645
 -------------+----------------------------------------------------------------
 Spatial      |
-         rho |    .226645   .0861456     2.63   0.009     .0578028    .3954872
+         rho |   .2107875    .087677     2.40   0.016     .0389437    .3826312
 -------------+----------------------------------------------------------------
 Variance     |
-   lgt_theta |  -2.361038   .1743953   -13.54   0.000    -2.702847    -2.01923
-    sigma2_e |   .0023743   .0002378     9.99   0.000     .0019083    .0028404
+   lgt_theta |  -2.333511   .1792581   -13.02   0.000    -2.684851   -1.982172
+    sigma2_e |   .0024666   .0002473     9.97   0.000     .0019819    .0029513
 ------------------------------------------------------------------------------
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_adjace~01 re_adjace~01    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |     .321329     .2159927        .1053363         .022555
-         ind |    .0979863     .0044243        .0935619        .0143123
-         urb |   -1.716266    -1.422792       -.2934737        .1572426
-          rd |    4.713009     7.127292       -2.414283        .9580704
-        open |    .5300995     .3602753        .1698242        .0085555
-          es |    .0279707    -.1041453         .132116               .
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -8.27
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-46.6375888533057)，尝试 sigmamore……
       name:  sdm_adjacency_01
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_adjacency_01.log
   log type:  text
- closed on:  31 May 2026, 18:50:03
+ closed on:   4 Jun 2026, 04:05:10
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(geographic_inv) label("地理距离倒数矩阵（省会版）") wfile(
 > "${W_GEO_INV_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -623,10 +627,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_geographic_inv
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- opened on:  31 May 2026, 18:50:03
+ opened on:   4 Jun 2026, 04:05:10
 ============================================
 矩阵：地理距离倒数矩阵（省会版） (geographic_inv)
 双固定效应 SDM 主模型
@@ -639,77 +643,54 @@ SDM with random-effects                              Number of obs =       240
 Group variable: pid                               Number of groups =        30
 Time variable: year                                   Panel length =         8
 
-R-sq:    within  = 0.4257
-         between = 0.2652
-         overall = 0.2754
+R-sq:    within  = 0.4163
+         between = 0.2689
+         overall = 0.2787
 
-Log-likelihood =   304.3884
+Log-likelihood =   302.9407
 ------------------------------------------------------------------------------
          eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
 -------------+----------------------------------------------------------------
 Main         |
-        lntl |   .1072469   .0602728     1.78   0.075    -.0108857    .2253795
-         ind |   -.012494   .1242061    -0.10   0.920    -.2559335    .2309455
-         urb |  -1.075804   .3766192    -2.86   0.004    -1.813964   -.3376438
-          rd |   6.552327   2.363632     2.77   0.006     1.919694    11.18496
-        open |   .3341217   .1049534     3.18   0.001     .1284167    .5398266
-          es |  -.2149438    .133396    -1.61   0.107    -.4763951    .0465075
-       _cons |   2.561453   1.065188     2.40   0.016     .4737225    4.649184
+        lntl |   .0840808   .0671833     1.25   0.211     -.047596    .2157577
+         ind |  -.0161823   .1266473    -0.13   0.898    -.2644065    .2320419
+         urb |  -1.091586   .3869988    -2.82   0.005     -1.85009   -.3330824
+          rd |   7.321593   2.343761     3.12   0.002     2.727907    11.91528
+        open |   .3515109   .1048121     3.35   0.001     .1460831    .5569388
+          es |  -.2086323   .1339825    -1.56   0.119    -.4712332    .0539686
+       _cons |   2.608641   1.083119     2.41   0.016     .4857656    4.731516
 -------------+----------------------------------------------------------------
 Wx           |
-        lntl |   -.002757   .1274823    -0.02   0.983    -.2526177    .2471037
-         ind |  -.3807609   .4952438    -0.77   0.442    -1.351421     .589899
-         urb |   -2.49957   1.505602    -1.66   0.097    -5.450496    .4513551
-          rd |   24.62897   9.295091     2.65   0.008      6.41093    42.84702
-        open |  -.0941861   .4327233    -0.22   0.828    -.9423082    .7539361
-          es |  -1.021372   .6129812    -1.67   0.096    -2.222793    .1800491
+        lntl |  -.0152684   .1201849    -0.13   0.899    -.2508265    .2202898
+         ind |  -.5889058   .4680287    -1.26   0.208    -1.506225    .3284137
+         urb |  -2.335305   1.478645    -1.58   0.114    -5.233396    .5627865
+          rd |   20.82141    8.29576     2.51   0.012     4.562019     37.0808
+        open |   .0116992   .4236294     0.03   0.978    -.8185991    .8419975
+          es |  -.9879004   .6181074    -1.60   0.110    -2.199369     .223568
 -------------+----------------------------------------------------------------
 Spatial      |
-         rho |   .0763556   .1977107     0.39   0.699    -.3111502    .4638613
+         rho |   .0543981   .2024478     0.27   0.788    -.3423922    .4511884
 -------------+----------------------------------------------------------------
 Variance     |
-   lgt_theta |  -2.265392   .1690951   -13.40   0.000    -2.596812   -1.933971
-    sigma2_e |    .002565    .000254    10.10   0.000     .0020672    .0030628
+   lgt_theta |  -2.247753   .1706526   -13.17   0.000    -2.582226    -1.91328
+    sigma2_e |   .0026069   .0002584    10.09   0.000     .0021005    .0031134
 ------------------------------------------------------------------------------
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_geograp~v re_geograp~v    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |    .1226346     .1072469        .0153877        .0352317
-         ind |    .1149344     -.012494        .1274284        .0368759
-         urb |   -1.157203    -1.075804       -.0813988        .2503221
-          rd |    5.959556     6.552327       -.5927709        .8432732
-        open |     .438318     .3341217        .1041963        .0093641
-          es |    -.019293    -.2149438        .1956508        .0304547
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -15.61
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-13.18244781306035)，尝试 sigmamore……
       name:  sdm_geographic_inv
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_geographic_inv.log
   log type:  text
- closed on:  31 May 2026, 18:50:05
+ closed on:   4 Jun 2026, 04:05:13
 -------------------------------------------------------------------------------
 
 . run_sdm_model, tag(economic_geo_nested) label("经济地理嵌套矩阵（省会版）") w
 > file("${W_ECO_GEO_NEST_FILE}")
 (31 vars, 30 obs)
-(file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp not found)
-file C:\Users\abc0x7f\AppData\Local\Temp\ST_7328_000005.tmp saved as .dta
+(file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp not found)
+file C:\Users\abc0x7f\AppData\Local\Temp\ST_fd58_000005.tmp saved as .dta
     format
 
     Result                      Number of obs
@@ -724,10 +705,10 @@ Panel variable: pid (strongly balanced)
          Delta: 1 unit
 -------------------------------------------------------------------------------
       name:  sdm_economic_geo_nested
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- opened on:  31 May 2026, 18:50:05
+ opened on:   4 Jun 2026, 04:05:13
 ============================================
 矩阵：经济地理嵌套矩阵（省会版） (economic_geo_nested)
 双固定效应 SDM 主模型
@@ -740,70 +721,47 @@ SDM with random-effects                              Number of obs =       240
 Group variable: pid                               Number of groups =        30
 Time variable: year                                   Panel length =         8
 
-R-sq:    within  = 0.4342
-         between = 0.3056
-         overall = 0.3149
+R-sq:    within  = 0.4247
+         between = 0.3188
+         overall = 0.3267
 
-Log-likelihood =   307.2593
+Log-likelihood =   305.9933
 ------------------------------------------------------------------------------
          eff | Coefficient  Std. err.      z    P>|z|     [95% conf. interval]
 -------------+----------------------------------------------------------------
 Main         |
-        lntl |   .0727889   .0595961     1.22   0.222    -.0440174    .1895951
-         ind |  -.0015297   .1227074    -0.01   0.990    -.2420317    .2389722
-         urb |   -.993617   .3489082    -2.85   0.004    -1.677465   -.3097694
-          rd |   6.410023   2.329021     2.75   0.006     1.845225    10.97482
-        open |   .3457955   .0997402     3.47   0.001     .1503083    .5412827
-          es |  -.2068864   .1335021    -1.55   0.121    -.4685457     .054773
-       _cons |   3.458837   1.056103     3.28   0.001     1.388912    5.528761
+        lntl |   .0580868   .0657323     0.88   0.377    -.0707462    .1869197
+         ind |  -.0173413   .1246235    -0.14   0.889    -.2615989    .2269164
+         urb |  -.9924772   .3589598    -2.76   0.006    -1.696026   -.2889289
+          rd |   7.035318   2.310052     3.05   0.002       2.5077    11.56294
+        open |   .3585923   .1001251     3.58   0.000     .1623508    .5548338
+          es |   -.200347   .1339964    -1.50   0.135    -.4629752    .0622811
+       _cons |    3.59106   1.079029     3.33   0.001     1.476202    5.705917
 -------------+----------------------------------------------------------------
 Wx           |
-        lntl |   .0394272   .1241311     0.32   0.751    -.2038652    .2827196
-         ind |  -.6911131   .5098962    -1.36   0.175    -1.690491    .3082651
-         urb |  -3.652343   1.420502    -2.57   0.010    -6.436475     -.86821
-          rd |   27.77607   9.149798     3.04   0.002     9.842792    45.70934
-        open |  -.1661298   .4245456    -0.39   0.696     -.998224    .6659643
-          es |  -1.459295   .5904713    -2.47   0.013    -2.616598   -.3019925
+        lntl |  -.0187152   .1157989    -0.16   0.872    -.2456769    .2082465
+         ind |  -.9891883   .4837239    -2.04   0.041     -1.93727   -.0411068
+         urb |  -3.530364   1.410882    -2.50   0.012    -6.295642    -.765085
+          rd |   23.75244   8.287294     2.87   0.004     7.509644    39.99524
+        open |  -.0341052   .4139855    -0.08   0.934    -.8455019    .7772916
+          es |  -1.451726   .5973789    -2.43   0.015    -2.622568   -.2808853
 -------------+----------------------------------------------------------------
 Spatial      |
-         rho |   .0947538   .1974961     0.48   0.631    -.2923316    .4818391
+         rho |   .0930142   .1993269     0.47   0.641    -.2976594    .4836878
 -------------+----------------------------------------------------------------
 Variance     |
-   lgt_theta |  -2.227253    .174158   -12.79   0.000    -2.568597    -1.88591
-    sigma2_e |   .0025255    .000251    10.06   0.000     .0020336    .0030174
+   lgt_theta |  -2.205827   .1747534   -12.62   0.000    -2.548338   -1.863317
+    sigma2_e |   .0025647   .0002549    10.06   0.000      .002065    .0030644
 ------------------------------------------------------------------------------
 --------------------------------------------
 空间 Hausman 检验：FE (both) vs RE
 --------------------------------------------
-
-                 ---- Coefficients ----
-             |      (b)          (B)            (b-B)     sqrt(diag(V_b-V_B))
-             |  fe_economi~d re_economi~d    Difference       Std. err.
--------------+----------------------------------------------------------------
-        lntl |    .0411922     .0727889       -.0315966        .0396064
-         ind |    .1155981    -.0015297        .1171279        .0385695
-         urb |   -1.091434     -.993617       -.0978171        .2580318
-          rd |    5.850622     6.410023       -.5594008         .941285
-        open |    .4536801     .3457955        .1078846        .0060275
-          es |   -.0304583    -.2068864        .1764281               .
-------------------------------------------------------------------------------
-                          b = Consistent under H0 and Ha; obtained from xsmle.
-           B = Inconsistent under Ha, efficient under H0; obtained from xsmle.
-
-Test of H0: Difference in coefficients not systematic
-
-chi2(6) = (b-B)'[(V_b-V_B)^(-1)](b-B)
-        = -6.34
-
-Warning: chi2 < 0 ==> model fitted on these data
-         fails to meet the asymptotic assumptions
-         of the Hausman test; see suest for a
-         generalized test.
+标准 Hausman chi2 为负 (-6.761975308592644)，尝试 sigmamore……
       name:  sdm_economic_geo_nested
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/SDM主模型_economic_geo_nested.log
   log type:  text
- closed on:  31 May 2026, 18:50:08
+ closed on:   4 Jun 2026, 04:05:15
 -------------------------------------------------------------------------------
 
 . 
@@ -819,12 +777,12 @@ Warning: chi2 < 0 ==> model fitted on these data
 . sort weight_type section variable
 
 . export delimited using "${OUT_DIR}/主模型系数表.csv", replace
-file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM
+file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM
 > 主模型/主模型系数表.csv saved
 
 . save "${STATA_DIR}/主模型系数表.dta", replace
 file
-    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SD
+    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SD
     > M主模型/stata/主模型系数表.dta saved
 
 . 
@@ -833,12 +791,12 @@ file
 . sort weight_type effect_type variable
 
 . export delimited using "${OUT_DIR}/空间效应分解表.csv", replace
-file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM
+file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM
 > 主模型/空间效应分解表.csv saved
 
 . save "${STATA_DIR}/空间效应分解表.dta", replace
 file
-    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SD
+    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SD
     > M主模型/stata/空间效应分解表.dta saved
 
 . 
@@ -847,12 +805,18 @@ file
 . sort weight_type test_name
 
 . export delimited using "${OUT_DIR}/空间Hausman检验结果.csv", replace
-file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM
+(file
+    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SD
+    > M主模型/空间Hausman检验结果.csv not found)
+file C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM
 > 主模型/空间Hausman检验结果.csv saved
 
 . save "${STATA_DIR}/空间Hausman检验结果.dta", replace
+(file
+    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SD
+    > M主模型/stata/空间Hausman检验结果.dta not found)
 file
-    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SD
+    C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SD
     > M主模型/stata/空间Hausman检验结果.dta saved
 
 . 
@@ -863,19 +827,19 @@ file
 结果文件已输出：
 
 . display as text "${OUT_DIR}/主模型系数表.csv"
-C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM主模
+C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM主模
 > 型/主模型系数表.csv
 
 . display as text "${OUT_DIR}/空间效应分解表.csv"
-C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM主模
+C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM主模
 > 型/空间效应分解表.csv
 
 . display as text "${OUT_DIR}/空间Hausman检验结果.csv"
-C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM主模
+C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM主模
 > 型/空间Hausman检验结果.csv
 
 . display as text "${STATA_DIR}/SDM主模型_*.log"
-C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空间SDM主模
+C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40_空间SDM主模
 > 型/stata/SDM主模型_*.log
 
 . display as text "============================================"
@@ -884,10 +848,10 @@ C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40_空�
 . 
 . log close
       name:  <unnamed>
-       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/baseline/40
+       log:  C:/Users/abc0x7f/Desktop/PRO/统计建模/outputs/空间分析/滞后一期/40
 > _空间SDM主模型/stata/空间SDM主模型总日志.log
   log type:  text
- closed on:  31 May 2026, 18:50:08
+ closed on:   4 Jun 2026, 04:05:15
 -------------------------------------------------------------------------------
 
 . 
